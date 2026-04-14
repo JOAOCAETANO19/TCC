@@ -1,1 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lift.me</title>
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
 
+<body>
+
+<header>
+  <h1>Lift.me</h1>
+  <nav>
+    <a href="#home">Início</a>
+    <a href="#projetos">Projetos</a>
+    <a href="#dashboard">Dashboard</a>
+    <button onclick="mostrarLogin()">Login</button>
+  </nav>
+</header>
+
+<section id="home" class="hero">
+  <h2>Aprenda na prática.</h2>
+  <p>Transforme conhecimento em experiência real.</p>
+  <button onclick="mostrarCadastro()">Começar</button>
+</section>
+
+<section id="projetos">
+  <h2>Projetos Práticos</h2>
+
+  <div class="cards">
+
+    <div class="card">
+      <h3>Projeto Web</h3>
+      <p>Crie um site responsivo com HTML, CSS e JavaScript.</p>
+      <button>Iniciar</button>
+    </div>
+
+    <div class="card">
+      <h3>Projeto Dados</h3>
+      <p>Analise dados e crie gráficos interativos.</p>
+      <button>Iniciar</button>
+    </div>
+
+    <div class="card">
+      <h3>Projeto App</h3>
+      <p>Desenvolva um aplicativo simples.</p>
+      <button>Iniciar</button>
+    </div>
+
+  </div>
+</section>
+
+<section id="dashboard">
+  <h2>Dashboard do Estudante</h2>
+
+  <div class="dashboard">
+
+    <div class="info">
+      <h3>Projetos Concluídos</h3>
+      <p id="projetosConcluidos">0</p>
+    </div>
+
+    <div class="info">
+      <h3>Nível</h3>
+      <p>Iniciante</p>
+    </div>
+
+    <div class="info">
+      <h3>Habilidades</h3>
+      <p>HTML, CSS</p>
+    </div>
+
+  </div>
+
+</section>
+
+<div class="modal" id="login">
+  <div class="form">
+    <h2>Login</h2>
+    <input type="email" placeholder="Email">
+    <input type="password" placeholder="Senha">
+    <button onclick="login()">Entrar</button>
+    <p onclick="mostrarCadastro()">Criar conta</p>
+  </div>
+</div>
+
+<div class="modal" id="cadastro">
+  <div class="form">
+    <h2>Cadastro</h2>
+    <input type="text" placeholder="Nome">
+    <input type="email" placeholder="Email">
+    <input type="password" placeholder="Senha">
+    <button onclick="cadastrar()">Cadastrar</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
