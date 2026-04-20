@@ -10,90 +10,101 @@
 
 <body>
 
-<header>
-  <h1>Lift.me</h1>
-  <nav>
-    <a href="#home">Início</a>
-    <a href="#projetos">Projetos</a>
-    <a href="#dashboard">Dashboard</a>
-    <button onclick="mostrarLogin()">Login</button>
-  </nav>
-</header>
+<div class="app">
 
-<section id="home" class="hero">
-  <h2>Aprenda na prática.</h2>
-  <p>Transforme conhecimento em experiência real.</p>
-  <button onclick="mostrarCadastro()">Começar</button>
-</section>
+<!-- Sidebar -->
+<aside class="sidebar">
+  <h2>Lift.me</h2>
+  <button onclick="trocarAba('home')">🏠 Início</button>
+  <button onclick="trocarAba('projetos')">📚 Projetos</button>
+  <button onclick="trocarAba('dashboard')">📊 Dashboard</button>
+  <button onclick="trocarAba('carreiras')">🚀 Carreiras</button>
+</aside>
 
-<section id="projetos">
-  <h2>Projetos Práticos</h2>
+<!-- Conteúdo -->
+<main>
 
-  <div class="cards">
+<section id="home" class="aba ativa">
+  <h1>Bem-vindo ao Lift.me</h1>
+  <p>Aprenda na prática, evolua com projetos e planeje seu futuro.</p>
 
-    <div class="card">
-      <h3>Projeto Web</h3>
-      <p>Crie um site responsivo com HTML, CSS e JavaScript.</p>
-      <button>Iniciar</button>
+  <div class="hero-cards">
+    <div class="hero-box">
+      <h3>📘 Aprendizado Ativo</h3>
+      <p>Coloque em prática tudo o que você aprende.</p>
     </div>
 
-    <div class="card">
-      <h3>Projeto Dados</h3>
-      <p>Analise dados e crie gráficos interativos.</p>
-      <button>Iniciar</button>
+    <div class="hero-box">
+      <h3>🧠 Evolução Contínua</h3>
+      <p>Acompanhe seu progresso em tempo real.</p>
     </div>
 
-    <div class="card">
-      <h3>Projeto App</h3>
-      <p>Desenvolva um aplicativo simples.</p>
-      <button>Iniciar</button>
+    <div class="hero-box">
+      <h3>🎯 Planejamento Futuro</h3>
+      <p>Descubra caminhos para sua carreira.</p>
     </div>
-
   </div>
 </section>
 
-<section id="dashboard">
-  <h2>Dashboard do Estudante</h2>
+<section id="projetos" class="aba">
+  <h1>Projetos Práticos</h1>
+
+  <div class="cards">
+    <div class="card">
+      <h3>Site Responsivo</h3>
+      <p>Crie um site completo.</p>
+      <button onclick="concluirProjeto()">Concluir</button>
+    </div>
+
+    <div class="card">
+      <h3>Análise de Dados</h3>
+      <p>Trabalhe com gráficos.</p>
+      <button onclick="concluirProjeto()">Concluir</button>
+    </div>
+  </div>
+</section>
+
+<section id="dashboard" class="aba">
+  <h1>Dashboard</h1>
 
   <div class="dashboard">
-
     <div class="info">
-      <h3>Projetos Concluídos</h3>
-      <p id="projetosConcluidos">0</p>
+      <h3>Projetos</h3>
+      <p id="projetos">0</p>
     </div>
 
     <div class="info">
       <h3>Nível</h3>
-      <p>Iniciante</p>
+      <p id="nivel">Iniciante</p>
     </div>
 
     <div class="info">
-      <h3>Habilidades</h3>
-      <p>HTML, CSS</p>
+      <h3>XP</h3>
+      <p id="xp">0</p>
     </div>
-
   </div>
+</section>
+
+<section id="carreiras" class="aba">
+  <h1>Guia de Carreiras</h1>
+
+  <div class="carreira">
+    <h3>Desenvolvedor Web</h3>
+    <p>Cria sites e sistemas.</p>
+    <button onclick="verDetalhe('web')">Ver Caminho</button>
+  </div>
+
+  <div class="carreira">
+    <h3>Analista de Dados</h3>
+    <p>Analisa informações e gera insights.</p>
+    <button onclick="verDetalhe('dados')">Ver Caminho</button>
+  </div>
+
+  <div id="detalheCarreira"></div>
 
 </section>
 
-<div class="modal" id="login">
-  <div class="form">
-    <h2>Login</h2>
-    <input type="email" placeholder="Email">
-    <input type="password" placeholder="Senha">
-    <button onclick="login()">Entrar</button>
-    <p onclick="mostrarCadastro()">Criar conta</p>
-  </div>
-</div>
-
-<div class="modal" id="cadastro">
-  <div class="form">
-    <h2>Cadastro</h2>
-    <input type="text" placeholder="Nome">
-    <input type="email" placeholder="Email">
-    <input type="password" placeholder="Senha">
-    <button onclick="cadastrar()">Cadastrar</button>
-  </div>
+</main>
 </div>
 
 <script src="script.js"></script>

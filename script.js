@@ -1,28 +1,65 @@
-function mostrarLogin(){
-document.getElementById("login").style.display="flex"
+// Alternar abas
+function trocarAba(id){
+document.querySelectorAll(".aba").forEach(sec=>{
+sec.classList.remove("ativa")
+})
+document.getElementById(id).classList.add("ativa")
 }
 
-function mostrarCadastro(){
-document.getElementById("cadastro").style.display="flex"
-}
+// Dados persistentes
+let projetos = localStorage.getItem("projetos") || 0
+let xp = localStorage.getItem("xp") || 0
 
-function login(){
-alert("Login realizado!")
-document.getElementById("login").style.display="none"
-}
+document.getElementById("projetos").innerText = projetos
+document.getElementById("xp").innerText = xp
 
-function cadastrar(){
-alert("Conta criada com sucesso!")
-document.getElementById("cadastro").style.display="none"
-}
-
-let projetos = 0
-
-const botoes = document.querySelectorAll(".card button")
-
-botoes.forEach(botao=>{
-botao.addEventListener("click",()=>{
+// Concluir projeto
+function concluirProjeto(){
 projetos++
-document.getElementById("projetosConcluidos").innerText = projetos
-})
-})
+xp += 10
+
+localStorage.setItem("projetos", projetos)
+localStorage.setItem("xp", xp)
+
+document.getElementById("projetos").innerText = projetos
+document.getElementById("xp").innerText = xp
+
+atualizarNivel()
+}
+
+// Sistema de nível
+function atualizarNivel(){
+let nivel = "Iniciante"
+
+if(xp >= 50) nivel = "Intermediário"
+if(xp >= 100) nivel = "Avançado"
+
+document.getElementById("nivel").innerText = nivel
+}
+
+atualizarNivel()
+
+// Carreiras
+function verDetalhe(area){
+let box = document.getElementById("detalheCarreira")
+
+if(area === "web"){
+box.innerHTML = `
+<h3>Caminho Desenvolvedor Web</h3>
+<p>1. Aprender HTML, CSS</p>
+<p>2. Aprender JavaScript</p>
+<p>3. Criar projetos</p>
+<p>4. Aprender frameworks</p>
+`
+}
+
+if(area === "dados"){
+box.innerHTML = `
+<h3>Caminho Analista de Dados</h3>
+<p>1. Aprender Excel</p>
+<p>2. Aprender SQL</p>
+<p>3. Aprender Python</p>
+<p>4. Criar análises reais</p>
+`
+}
+}
