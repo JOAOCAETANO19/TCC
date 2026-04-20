@@ -10,55 +10,50 @@
 
 <body>
 
-<div class="app">
+<div id="loginTela" class="login-container">
+  <div class="login-box">
+    <h1>Lift.me</h1>
+    <p>Entre para continuar</p>
+    <input type="text" id="user" placeholder="Nome">
+    <button onclick="login()">Entrar</button>
+  </div>
+</div>
 
-<!-- Sidebar -->
+<div id="app" class="app hidden">
+
 <aside class="sidebar">
   <h2>Lift.me</h2>
   <button onclick="trocarAba('home')">🏠 Início</button>
   <button onclick="trocarAba('projetos')">📚 Projetos</button>
   <button onclick="trocarAba('dashboard')">📊 Dashboard</button>
   <button onclick="trocarAba('carreiras')">🚀 Carreiras</button>
+  <button onclick="trocarAba('trilhas')">🧠 Trilhas</button>
+  <button onclick="trocarAba('comunidade')">💬 Comunidade</button>
+  <button onclick="trocarAba('ajuda')">❓ Ajuda</button>
 </aside>
 
-<!-- Conteúdo -->
 <main>
 
 <section id="home" class="aba ativa">
-  <h1>Bem-vindo ao Lift.me</h1>
-  <p>Aprenda na prática, evolua com projetos e planeje seu futuro.</p>
+  <h1>Bem-vindo</h1>
+  <p id="boasVindas"></p>
 
-  <div class="hero-cards">
-    <div class="hero-box">
-      <h3>📘 Aprendizado Ativo</h3>
-      <p>Coloque em prática tudo o que você aprende.</p>
-    </div>
-
-    <div class="hero-box">
-      <h3>🧠 Evolução Contínua</h3>
-      <p>Acompanhe seu progresso em tempo real.</p>
-    </div>
-
-    <div class="hero-box">
-      <h3>🎯 Planejamento Futuro</h3>
-      <p>Descubra caminhos para sua carreira.</p>
-    </div>
+  <div class="grid">
+    <div class="box">🔥 Continue aprendendo</div>
+    <div class="box">📈 Veja seu progresso</div>
+    <div class="box">🎯 Defina metas</div>
   </div>
 </section>
 
 <section id="projetos" class="aba">
-  <h1>Projetos Práticos</h1>
-
+  <h1>Projetos</h1>
   <div class="cards">
     <div class="card">
-      <h3>Site Responsivo</h3>
-      <p>Crie um site completo.</p>
+      <h3>Site Completo</h3>
       <button onclick="concluirProjeto()">Concluir</button>
     </div>
-
     <div class="card">
-      <h3>Análise de Dados</h3>
-      <p>Trabalhe com gráficos.</p>
+      <h3>Dashboard Dados</h3>
       <button onclick="concluirProjeto()">Concluir</button>
     </div>
   </div>
@@ -66,42 +61,43 @@
 
 <section id="dashboard" class="aba">
   <h1>Dashboard</h1>
-
-  <div class="dashboard">
-    <div class="info">
-      <h3>Projetos</h3>
-      <p id="projetos">0</p>
-    </div>
-
-    <div class="info">
-      <h3>Nível</h3>
-      <p id="nivel">Iniciante</p>
-    </div>
-
-    <div class="info">
-      <h3>XP</h3>
-      <p id="xp">0</p>
-    </div>
+  <div class="grid">
+    <div class="box">Projetos: <span id="projetos"></span></div>
+    <div class="box">XP: <span id="xp"></span></div>
+    <div class="box">Nível: <span id="nivel"></span></div>
   </div>
 </section>
 
 <section id="carreiras" class="aba">
-  <h1>Guia de Carreiras</h1>
+  <h1>Carreiras</h1>
+  <button onclick="carreira('web')">Dev Web</button>
+  <button onclick="carreira('dados')">Dados</button>
+  <div id="info"></div>
+</section>
 
-  <div class="carreira">
-    <h3>Desenvolvedor Web</h3>
-    <p>Cria sites e sistemas.</p>
-    <button onclick="verDetalhe('web')">Ver Caminho</button>
-  </div>
+<section id="trilhas" class="aba">
+  <h1>Trilhas</h1>
+  <p>Escolha seu caminho:</p>
+  <ul>
+    <li>Front-end</li>
+    <li>Back-end</li>
+    <li>Dados</li>
+  </ul>
+</section>
 
-  <div class="carreira">
-    <h3>Analista de Dados</h3>
-    <p>Analisa informações e gera insights.</p>
-    <button onclick="verDetalhe('dados')">Ver Caminho</button>
-  </div>
+<section id="comunidade" class="aba">
+  <h1>Comunidade</h1>
+  <p>Compartilhe ideias e projetos</p>
+  <textarea placeholder="Escreva algo..."></textarea>
+  <button onclick="postar()">Postar</button>
+  <div id="posts"></div>
+</section>
 
-  <div id="detalheCarreira"></div>
-
+<section id="ajuda" class="aba">
+  <h1>Ajuda</h1>
+  <button onclick="ajuda('como')">Como usar</button>
+  <button onclick="ajuda('carreira')">Escolher carreira</button>
+  <div id="ajudaBox"></div>
 </section>
 
 </main>

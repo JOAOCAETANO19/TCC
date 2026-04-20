@@ -1,65 +1,84 @@
-// Alternar abas
+// Login
+function login(){
+let nome = document.getElementById("user").value
+if(nome){
+localStorage.setItem("user", nome)
+iniciar()
+}
+}
+
+function iniciar(){
+document.getElementById("loginTela").classList.add("hidden")
+document.getElementById("app").classList.remove("hidden")
+
+let nome = localStorage.getItem("user")
+document.getElementById("boasVindas").innerText = "Olá, " + nome
+
+carregar()
+}
+
+// Abas
 function trocarAba(id){
-document.querySelectorAll(".aba").forEach(sec=>{
-sec.classList.remove("ativa")
-})
+document.querySelectorAll(".aba").forEach(a=>a.classList.remove("ativa"))
 document.getElementById(id).classList.add("ativa")
 }
 
-// Dados persistentes
-let projetos = localStorage.getItem("projetos") || 0
+// Dados
+let projetos = localStorage.getItem("p") || 0
 let xp = localStorage.getItem("xp") || 0
 
+function carregar(){
 document.getElementById("projetos").innerText = projetos
 document.getElementById("xp").innerText = xp
+nivel()
+}
 
-// Concluir projeto
 function concluirProjeto(){
 projetos++
 xp += 10
-
-localStorage.setItem("projetos", projetos)
+localStorage.setItem("p", projetos)
 localStorage.setItem("xp", xp)
-
-document.getElementById("projetos").innerText = projetos
-document.getElementById("xp").innerText = xp
-
-atualizarNivel()
+carregar()
 }
 
-// Sistema de nível
-function atualizarNivel(){
-let nivel = "Iniciante"
-
-if(xp >= 50) nivel = "Intermediário"
-if(xp >= 100) nivel = "Avançado"
-
-document.getElementById("nivel").innerText = nivel
+function nivel(){
+let n="Iniciante"
+if(xp>=50)n="Intermediário"
+if(xp>=100)n="Avançado"
+document.getElementById("nivel").innerText=n
 }
 
-atualizarNivel()
-
-// Carreiras
-function verDetalhe(area){
-let box = document.getElementById("detalheCarreira")
-
-if(area === "web"){
-box.innerHTML = `
-<h3>Caminho Desenvolvedor Web</h3>
-<p>1. Aprender HTML, CSS</p>
-<p>2. Aprender JavaScript</p>
-<p>3. Criar projetos</p>
-<p>4. Aprender frameworks</p>
-`
+// Carreira
+function carreira(tipo){
+let box=document.getElementById("info")
+if(tipo=="web"){
+box.innerHTML="HTML → CSS → JS → Projetos"
+}
+if(tipo=="dados"){
+box.innerHTML="Excel → SQL → Python → Projetos"
+}
 }
 
-if(area === "dados"){
-box.innerHTML = `
-<h3>Caminho Analista de Dados</h3>
-<p>1. Aprender Excel</p>
-<p>2. Aprender SQL</p>
-<p>3. Aprender Python</p>
-<p>4. Criar análises reais</p>
-`
+// Comunidade
+function postar(){
+let texto=document.querySelector("textarea").value
+let post=document.createElement("p")
+post.innerText=texto
+document.getElementById("posts").appendChild(post)
 }
+
+// Ajuda
+function ajuda(tipo){
+let box=document.getElementById("ajudaBox")
+if(tipo=="como"){
+box.innerHTML="Use projetos para evoluir."
+}
+if(tipo=="carreira"){
+box.innerHTML="Explore áreas e pratique."
+}
+}
+
+// Auto login
+if(localStorage.getItem("user")){
+iniciar()
 }
