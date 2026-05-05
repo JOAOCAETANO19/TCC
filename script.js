@@ -1,78 +1,74 @@
-// ESTADO
-let user = localStorage.getItem("u")
-let xp = parseInt(localStorage.getItem("xp")) || 0
+// CONFIGURAÇÃO DOS DADOS
+const TRAILS = [
+    { id: 'web', title: 'Desenvolvimento Web', icon: '🌐', color: 'emerald', steps: ['HTML Básico','CSS Styling','JavaScript','Responsividade','Projeto Final'] },
+    { id: 'data', title: 'Ciência de Dados', icon: '📊', color: 'cyan', steps: ['Python Básico','Pandas','Visualização','Machine Learning','Projeto Final'] },
+    { id: 'mobile', title: 'Mobile', icon: '📱', color: 'purple', steps: ['React Native Intro','Componentes','Navegação','APIs','Projeto Final'] }
+];
 
-let projetos = JSON.parse(localStorage.getItem("proj")) || {
-web: [false,false,false],
-dados: [false,false,false]
+const PROJECTS = [
+    { id: 'p1', title: 'Landing Page', trail: 'web', xp: 50, steps: ['Estrutura HTML','Estilização CSS','Responsividade','Deploy'] },
+    { id: 'p3', title: 'App de Tarefas', trail: 'web', xp: 60, steps: ['Layout','JavaScript','LocalStorage','Finalização'] }
+];
+
+let currentUser = null;
+
+// INICIALIZAÇÃO DOS ÍCONES LUCIDE
+document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+});
+
+// FUNÇÕES DE AUTENTICAÇÃO
+function handleLogin() {
+    const username = document.getElementById('login-username').value.trim();
+    const email = document.getElementById('login-email').value.trim();
+    
+    if (!username || !email) {
+        alert('Por favor, preencha todos os campos');
+        return;
+    }
+    
+    currentUser = { username, email };
+    document.getElementById('user-greeting').textContent = `Bem-vindo, ${username}!`;
+    
+    document.getElementById('page-login').classList.remove('active');
+    document.getElementById('main-nav').classList.remove('hidden');
+    showPage('home');
 }
 
-// LOGIN
-function login(){
-let nome = document.getElementById("nome").value
-localStorage.setItem("u", nome)
-init()
+function handleLogout() {
+    currentUser = null;
+    document.getElementById('page-login').classList.add('active');
+    document.getElementById('main-nav').classList.add('hidden');
+    showPage('login');
 }
 
-function init(){
-document.getElementById("login").classList.add("hidden")
-document.getElementById("app").classList.remove("hidden")
-document.getElementById("boas").innerText = "Olá " + localStorage.getItem("u")
-update()
+// NAVEGAÇÃO ENTRE PÁGINAS
+function showPage(id) {
+    if (!currentUser && id !== 'login') return;
+    
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const targetPage = document.getElementById('page-' + id);
+    if(targetPage) targetPage.classList.add('active');
+    
+    // Atualiza botões da Nav
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        const isTarget = btn.getAttribute('onclick').includes(`'${id}'`);
+        btn.classList.toggle('active', isTarget);
+    });
 }
 
-if(user) init()
-
-// ABAS
-function aba(id){
-document.querySelectorAll(".aba").forEach(a=>a.classList.remove("ativa"))
-document.getElementById(id).classList.add("ativa")
+// Renderização Simples (Exemplo para Trails)
+function renderTrails() {
+    const grid = document.getElementById('trails-grid');
+    if(!grid) return;
+    grid.innerHTML = TRAILS.map(t => `
+        <div class="bg-white/5 p-6 rounded-xl border border-white/10 card-hover">
+            <span class="text-4xl">${t.icon}</span>
+            <h3 class="text-xl font-bold mt-4">${t.title}</h3>
+            <p class="text-gray-400 text-sm">${t.steps.length} etapas</p>
+        </div>
+    `).join('');
 }
 
-// PROJETOS
-function abrirProjeto(tipo){
-
-let etapas = {
-web:["HTML","CSS","JS"],
-dados:["Coletar","Analisar","Visualizar"]
-}
-
-let html = "<h2>Projeto</h2>"
-
-etapas[tipo].forEach((e,i)=>{
-html += `<p onclick="toggle('${tipo}',${i})">
-${projetos[tipo][i]?"✅":"⬜"} ${e}
-</p>`
-})
-
-html += `<br><a href="https://youtube.com" target="_blank">Ver aula</a>`
-
-document.getElementById("conteudo").innerHTML = html
-document.getElementById("modal").style.display = "flex"
-}
-
-function toggle(tipo,i){
-projetos[tipo][i] = !projetos[tipo][i]
-xp += 5
-save()
-abrirProjeto(tipo)
-update()
-}
-
-// DASHBOARD
-function update(){
-document.getElementById("xp").innerText = xp
-
-let n = "Iniciante"
-if(xp>50)n="Intermediário"
-if(xp>100)n="Avançado"
-
-document.getElementById("nivel").innerText = n
-document.getElementById("bar").style.width = (xp/100)*100 + "%"
-}
-
-// SALVAR
-function save(){
-localStorage.setItem("xp", xp)
-localStorage.setItem("proj", JSON.stringify(projetos))
-}
+// Chamar renderizações ao carregar
+renderTrails();

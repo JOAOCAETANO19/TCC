@@ -1,86 +1,66 @@
-*{margin:0;padding:0;box-sizing:border-box;font-family:Poppins}
+* { font-family: 'Outfit', sans-serif; box-sizing: border-box; }
 
-body{
-background:radial-gradient(circle at top,#1e293b,#020617);
-color:#e2e8f0;
-overflow:hidden;
+html, body { height: 100%; }
+
+body {
+  background: linear-gradient(135deg, #0f1117 0%, #1a1d27 50%, #0f1620 100%);
+  overflow: hidden;
 }
 
-/* LOGIN */
-.login{
-display:flex;justify-content:center;align-items:center;height:100vh
+#app { height: 100%; }
+
+.page {
+  display: none;
+  opacity: 0;
+  position: absolute;
+  inset: 0;
 }
 
-.login-box{
-background:rgba(255,255,255,0.05);
-backdrop-filter:blur(10px);
-padding:40px;border-radius:20px;text-align:center;width:320px
+.page.active {
+  display: block;
+  opacity: 1;
+  position: relative;
+  animation: fadeInPage 0.5s ease-out forwards;
 }
 
-input{
-width:100%;padding:12px;margin-top:10px;border:none;border-radius:10px;
-background:#1e293b;color:white
+@keyframes fadeInPage {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-button{
-margin-top:10px;padding:12px;width:100%;
-border:none;border-radius:10px;
-background:linear-gradient(90deg,#3b82f6,#6366f1);
-color:white;cursor:pointer
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  cursor: pointer;
 }
 
-.hidden{display:none}
-.app{display:flex;height:100vh}
-
-/* SIDEBAR */
-.sidebar{
-width:240px;background:#020617;padding:20px;
-border-right:1px solid #1e293b
+.card-hover:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(16, 185, 129, 0.15), 0 0 40px rgba(6, 182, 212, 0.1);
 }
 
-.sidebar button{
-display:block;width:100%;padding:10px;margin:5px 0;
-background:none;border:none;color:#94a3b8;text-align:left
+.btn-primary {
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  transition: all 0.3s;
+  box-shadow: 0 8px 16px rgba(16, 185, 129, 0.2);
 }
 
-.sidebar button:hover{color:white}
-
-/* MAIN */
-main{flex:1;padding:30px;overflow:auto}
-
-/* ABAS */
-.aba{display:none}
-.ativa{display:block}
-
-/* HERO */
-.hero{
-padding:20px;
-background:linear-gradient(90deg,#3b82f6,#6366f1);
-border-radius:15px;
-margin-bottom:20px;
+.input-field {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: all 0.3s;
 }
 
-/* CARDS */
-.card{
-background:#1e293b;padding:20px;border-radius:15px;margin:10px 0
+.input-field:focus {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(16, 185, 129, 0.5);
+  outline: none;
 }
 
-/* PROGRESSO */
-.progress{
-height:10px;background:#0f172a;border-radius:10px;margin-top:10px
+.nav-btn.active {
+  background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+  box-shadow: 0 8px 16px rgba(16, 185, 129, 0.2);
 }
 
-.progress div{
-height:100%;background:#22c55e;width:0%
-}
-
-/* MODAL */
-.modal{
-position:fixed;top:0;left:0;width:100%;height:100%;
-background:rgba(0,0,0,0.7);
-display:none;justify-content:center;align-items:center
-}
-
-.modal-box{
-background:#020617;padding:20px;border-radius:15px;width:400px
+.xp-bar {
+  transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
 }

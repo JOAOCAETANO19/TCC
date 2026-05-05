@@ -1,118 +1,89 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+<!doctype html>
+<html lang="pt-BR" class="h-full">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lift.me</title>
-
-<link rel="stylesheet" href="style.css">
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lift.me - Aprenda Fazendo</title>
+    
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
 </head>
+<body class="h-full text-white">
+    <div id="app" class="h-full w-full flex flex-col relative">
+        
+        <div id="page-login" class="page active w-full h-full overflow-auto">
+            <div class="min-h-full w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+                <div class="w-full max-w-md">
+                    <div class="text-center mb-12">
+                        <div class="inline-block mb-4">
+                            <div class="text-5xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent" style="font-family: 'Space Grotesk', sans-serif;">
+                                Lift.me
+                            </div>
+                        </div>
+                        <p class="text-gray-300 text-lg mb-2">Aprenda Fazendo</p>
+                        <p class="text-gray-500 text-sm">Transforme suas habilidades em crescimento real</p>
+                    </div>
 
-<body>
+                    <div class="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-xl">
+                        <div class="space-y-4 mb-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-2 text-gray-300">Nome</label>
+                                <input id="login-username" type="text" placeholder="Seu nome completo" class="w-full input-field px-4 py-3 rounded-lg text-white placeholder-gray-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2 text-gray-300">Email</label>
+                                <input id="login-email" type="email" placeholder="seu@email.com" class="w-full input-field px-4 py-3 rounded-lg text-white placeholder-gray-500">
+                            </div>
+                        </div>
+                        <button onclick="handleLogin()" class="w-full btn-primary text-white font-semibold py-3 rounded-lg mb-4"> Começar Agora </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<!-- LOGIN -->
-<div id="login" class="login">
-<div class="login-box">
-<h1>Lift.me</h1>
-<p>Aprenda fazendo 🚀</p>
-<input id="nome" placeholder="Seu nome">
-<button onclick="login()">Entrar</button>
-</div>
-</div>
+        <nav id="main-nav" class="hidden fixed bottom-0 left-0 right-0 bg-gradient-to-r from-slate-900/95 to-slate-800/95 border-t border-white/10 backdrop-blur-xl z-40">
+            <div class="flex justify-around items-center h-20 px-4 max-w-md mx-auto w-full">
+                <button onclick="showPage('home')" class="nav-btn active flex flex-col items-center gap-1 p-3 rounded-lg transition-all">
+                    <i data-lucide="home"></i> <span class="text-xs">Home</span>
+                </button>
+                <button onclick="showPage('trails')" class="nav-btn flex flex-col items-center gap-1 p-3 rounded-lg transition-all">
+                    <i data-lucide="map"></i> <span class="text-xs">Trilhas</span>
+                </button>
+                <button onclick="showPage('projects')" class="nav-btn flex flex-col items-center gap-1 p-3 rounded-lg transition-all">
+                    <i data-lucide="code"></i> <span class="text-xs">Projetos</span>
+                </button>
+                <button onclick="showPage('progress')" class="nav-btn flex flex-col items-center gap-1 p-3 rounded-lg transition-all">
+                    <i data-lucide="trending-up"></i> <span class="text-xs">Progresso</span>
+                </button>
+                <button onclick="showPage('careers')" class="nav-btn flex flex-col items-center gap-1 p-3 rounded-lg transition-all">
+                    <i data-lucide="briefcase"></i> <span class="text-xs">Carreiras</span>
+                </button>
+            </div>
+        </nav>
 
-<!-- APP -->
-<div id="app" class="app hidden">
+        <main class="flex-1 overflow-auto pb-24">
+            <div id="page-home" class="page w-full h-full overflow-auto">
+                <div class="p-8 max-w-4xl mx-auto">
+                    <h1 id="user-greeting" class="text-3xl font-bold">Bem-vindo!</h1>
+                    </div>
+            </div>
+            
+            <div id="page-trails" class="page w-full h-full"><div id="trails-grid" class="p-8 grid grid-cols-1 md:grid-cols-3 gap-4"></div></div>
+            <div id="page-projects" class="page w-full h-full"><div id="projects-grid" class="p-8 grid grid-cols-1 md:grid-cols-3 gap-4"></div></div>
+            <div id="page-progress" class="page w-full h-full">
+                <div class="p-8">
+                    <div id="xp-bar" class="h-4 bg-emerald-500 rounded-full transition-all" style="width: 0%"></div>
+                    <div id="history-list" class="mt-4"></div>
+                </div>
+            </div>
+            <div id="page-careers" class="page w-full h-full"><div id="careers-grid" class="p-8 grid grid-cols-1 md:grid-cols-2 gap-4"></div></div>
+        </main>
+    </div>
 
-<aside class="sidebar">
-<h2>Lift.me</h2>
-<button onclick="aba('home')">Início</button>
-<button onclick="aba('projetos')">Projetos</button>
-<button onclick="aba('trilhas')">Trilhas</button>
-<button onclick="aba('dashboard')">Progresso</button>
-<button onclick="aba('ajuda')">Ajuda</button>
-</aside>
-
-<main>
-
-<!-- HOME -->
-<section id="home" class="aba ativa">
-<h1 id="boas"></h1>
-
-<div class="hero">
-<h2>Aprenda na prática</h2>
-<p>Construa projetos reais e evolua suas habilidades</p>
-</div>
-</section>
-
-<!-- PROJETOS -->
-<section id="projetos" class="aba">
-<h1>Projetos</h1>
-
-<div class="card">
-<h3>🌐 Criar Site</h3>
-<button onclick="abrirProjeto('web')">Começar</button>
-</div>
-
-<div class="card">
-<h3>📊 Análise de Dados</h3>
-<button onclick="abrirProjeto('dados')">Começar</button>
-</div>
-</section>
-
-<!-- TRILHAS -->
-<section id="trilhas" class="aba">
-<h1>Trilhas</h1>
-
-<div class="card">
-<h3>Front-end</h3>
-<p>HTML → CSS → JS</p>
-<a href="https://developer.mozilla.org/pt-BR/" target="_blank">Aprender</a>
-</div>
-
-<div class="card">
-<h3>Dados</h3>
-<p>Excel → SQL → Python</p>
-<a href="https://www.kaggle.com/" target="_blank">Praticar</a>
-</div>
-
-</section>
-
-<!-- DASHBOARD -->
-<section id="dashboard" class="aba">
-<h1>Seu Progresso</h1>
-
-<p>XP: <span id="xp"></span></p>
-<p>Nível: <span id="nivel"></span></p>
-
-<div class="progress"><div id="bar"></div></div>
-
-</section>
-
-<!-- AJUDA -->
-<section id="ajuda" class="aba">
-<h1>Ajuda</h1>
-
-<div class="card">
-<p>1. Escolha um projeto</p>
-<p>2. Siga os passos</p>
-<p>3. Conclua etapas</p>
-<p>4. Evolua 🚀</p>
-</div>
-
-<iframe width="100%" height="200"
-src="https://www.youtube.com/embed/UB1O30fR-EE"></iframe>
-
-</section>
-
-</main>
-</div>
-
-<!-- MODAL -->
-<div id="modal" class="modal">
-<div class="modal-box" id="conteudo"></div>
-</div>
-
-<script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
