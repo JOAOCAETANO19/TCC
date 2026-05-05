@@ -1,74 +1,64 @@
-// CONFIGURAÇÃO DOS DADOS
+// Dados Iniciais
 const TRAILS = [
-    { id: 'web', title: 'Desenvolvimento Web', icon: '🌐', color: 'emerald', steps: ['HTML Básico','CSS Styling','JavaScript','Responsividade','Projeto Final'] },
-    { id: 'data', title: 'Ciência de Dados', icon: '📊', color: 'cyan', steps: ['Python Básico','Pandas','Visualização','Machine Learning','Projeto Final'] },
-    { id: 'mobile', title: 'Mobile', icon: '📱', color: 'purple', steps: ['React Native Intro','Componentes','Navegação','APIs','Projeto Final'] }
-];
-
-const PROJECTS = [
-    { id: 'p1', title: 'Landing Page', trail: 'web', xp: 50, steps: ['Estrutura HTML','Estilização CSS','Responsividade','Deploy'] },
-    { id: 'p3', title: 'App de Tarefas', trail: 'web', xp: 60, steps: ['Layout','JavaScript','LocalStorage','Finalização'] }
+    { id: 'web', title: 'Desenvolvimento Web', icon: '🌐', stages: 5 },
+    { id: 'data', title: 'Ciência de Dados', icon: '📊', stages: 5 },
+    { id: 'mobile', title: 'Mobile', icon: '📱', stages: 5 }
 ];
 
 let currentUser = null;
+let userStats = { xp: 0, level: 1, completed: 0, streak: 0 };
 
-// INICIALIZAÇÃO DOS ÍCONES LUCIDE
+// Inicializar Ícones
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
+    renderTrails();
 });
 
-// FUNÇÕES DE AUTENTICAÇÃO
+// Autenticação
 function handleLogin() {
-    const username = document.getElementById('login-username').value.trim();
-    const email = document.getElementById('login-email').value.trim();
-    
-    if (!username || !email) {
-        alert('Por favor, preencha todos os campos');
-        return;
+    const name = document.getElementById('login-username').value;
+    const email = document.getElementById('login-email').value;
+
+    if (name && email) {
+        currentUser = { name, email };
+        document.getElementById('user-greeting').innerText = `Bem-vindo, ${name}!`;
+        document.getElementById('page-login').classList.remove('active');
+        document.getElementById('main-nav').classList.remove('hidden');
+        showPage('home');
+    } else {
+        alert("Preencha todos os campos!");
     }
-    
-    currentUser = { username, email };
-    document.getElementById('user-greeting').textContent = `Bem-vindo, ${username}!`;
-    
-    document.getElementById('page-login').classList.remove('active');
-    document.getElementById('main-nav').classList.remove('hidden');
-    showPage('home');
 }
 
 function handleLogout() {
     currentUser = null;
     document.getElementById('page-login').classList.add('active');
     document.getElementById('main-nav').classList.add('hidden');
-    showPage('login');
 }
 
-// NAVEGAÇÃO ENTRE PÁGINAS
-function showPage(id) {
-    if (!currentUser && id !== 'login') return;
-    
+// Navegação
+function showPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    const targetPage = document.getElementById('page-' + id);
-    if(targetPage) targetPage.classList.add('active');
+    document.getElementById(`page-${pageId}`).classList.add('active');
     
-    // Atualiza botões da Nav
+    // Atualiza botões da navegação
     document.querySelectorAll('.nav-btn').forEach(btn => {
-        const isTarget = btn.getAttribute('onclick').includes(`'${id}'`);
-        btn.classList.toggle('active', isTarget);
+        btn.classList.remove('active');
+        if(btn.getAttribute('onclick').includes(pageId)) btn.classList.add('active');
     });
 }
 
-// Renderização Simples (Exemplo para Trails)
+// Renderizar Trilhas
 function renderTrails() {
     const grid = document.getElementById('trails-grid');
     if(!grid) return;
-    grid.innerHTML = TRAILS.map(t => `
-        <div class="bg-white/5 p-6 rounded-xl border border-white/10 card-hover">
-            <span class="text-4xl">${t.icon}</span>
-            <h3 class="text-xl font-bold mt-4">${t.title}</h3>
-            <p class="text-gray-400 text-sm">${t.steps.length} etapas</p>
+    
+    grid.innerHTML = TRAILS.map(trail => `
+        <div class="bg-white/10 p-6 rounded-2xl border border-white/10 card-hover">
+            <div class="text-4xl mb-4">${trail.icon}</div>
+            <h3 class="font-bold text-xl mb-2">${trail.title}</h3>
+            <p class="text-gray-400 text-sm mb-4">${trail.stages} Etapas progressivas</p>
+            <button class="btn-primary w-full py-2 rounded-lg text-sm font-semibold">Iniciar Trilha</button>
         </div>
     `).join('');
 }
-
-// Chamar renderizações ao carregar
-renderTrails();

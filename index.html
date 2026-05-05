@@ -25,7 +25,6 @@
                             </div>
                         </div>
                         <p class="text-gray-300 text-lg mb-2">Aprenda Fazendo</p>
-                        <p class="text-gray-500 text-sm">Transforme suas habilidades em crescimento real</p>
                     </div>
 
                     <div class="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-xl">
@@ -47,40 +46,34 @@
 
         <nav id="main-nav" class="hidden fixed bottom-0 left-0 right-0 bg-gradient-to-r from-slate-900/95 to-slate-800/95 border-t border-white/10 backdrop-blur-xl z-40">
             <div class="flex justify-around items-center h-20 px-4 max-w-md mx-auto w-full">
-                <button onclick="showPage('home')" class="nav-btn active flex flex-col items-center gap-1 p-3 rounded-lg transition-all">
+                <button onclick="showPage('home')" class="nav-btn active flex flex-col items-center gap-1 p-3 rounded-lg" title="Home">
                     <i data-lucide="home"></i> <span class="text-xs">Home</span>
                 </button>
-                <button onclick="showPage('trails')" class="nav-btn flex flex-col items-center gap-1 p-3 rounded-lg transition-all">
+                <button onclick="showPage('trails')" class="nav-btn flex flex-col items-center gap-1 p-3 rounded-lg" title="Trilhas">
                     <i data-lucide="map"></i> <span class="text-xs">Trilhas</span>
                 </button>
-                <button onclick="showPage('projects')" class="nav-btn flex flex-col items-center gap-1 p-3 rounded-lg transition-all">
+                <button onclick="showPage('projects')" class="nav-btn flex flex-col items-center gap-1 p-3 rounded-lg" title="Projetos">
                     <i data-lucide="code"></i> <span class="text-xs">Projetos</span>
-                </button>
-                <button onclick="showPage('progress')" class="nav-btn flex flex-col items-center gap-1 p-3 rounded-lg transition-all">
-                    <i data-lucide="trending-up"></i> <span class="text-xs">Progresso</span>
-                </button>
-                <button onclick="showPage('careers')" class="nav-btn flex flex-col items-center gap-1 p-3 rounded-lg transition-all">
-                    <i data-lucide="briefcase"></i> <span class="text-xs">Carreiras</span>
                 </button>
             </div>
         </nav>
 
-        <main class="flex-1 overflow-auto pb-24">
-            <div id="page-home" class="page w-full h-full overflow-auto">
-                <div class="p-8 max-w-4xl mx-auto">
-                    <h1 id="user-greeting" class="text-3xl font-bold">Bem-vindo!</h1>
-                    </div>
-            </div>
-            
-            <div id="page-trails" class="page w-full h-full"><div id="trails-grid" class="p-8 grid grid-cols-1 md:grid-cols-3 gap-4"></div></div>
-            <div id="page-projects" class="page w-full h-full"><div id="projects-grid" class="p-8 grid grid-cols-1 md:grid-cols-3 gap-4"></div></div>
-            <div id="page-progress" class="page w-full h-full">
-                <div class="p-8">
-                    <div id="xp-bar" class="h-4 bg-emerald-500 rounded-full transition-all" style="width: 0%"></div>
-                    <div id="history-list" class="mt-4"></div>
+        <main class="flex-1 overflow-auto pb-24 md:pb-0">
+            <div id="page-home" class="page w-full h-full">
+                <div class="p-8 max-w-6xl mx-auto">
+                    <h1 id="user-greeting" class="text-4xl font-bold">Bem-vindo!</h1>
+                    <div id="stats-container" class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
+                        </div>
                 </div>
             </div>
-            <div id="page-careers" class="page w-full h-full"><div id="careers-grid" class="p-8 grid grid-cols-1 md:grid-cols-2 gap-4"></div></div>
+            
+            <div id="page-trails" class="page w-full h-full p-8">
+                <div id="trails-grid" class="grid grid-cols-1 lg:grid-cols-3 gap-8"></div>
+            </div>
+
+            <div id="page-projects" class="page w-full h-full p-8">
+                <div id="projects-grid" class="grid grid-cols-1 lg:grid-cols-3 gap-8"></div>
+            </div>
         </main>
     </div>
 
