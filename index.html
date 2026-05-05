@@ -14,8 +14,8 @@
 <div id="loginTela" class="login">
   <div class="login-box">
     <h1>Lift.me</h1>
-    <p>Aprenda. Pratique. Evolua.</p>
-    <input id="user" placeholder="Seu nome">
+    <p>Aprenda na prática e evolua seu futuro</p>
+    <input id="user" placeholder="Digite seu nome">
     <button onclick="login()">Entrar</button>
   </div>
 </div>
@@ -23,114 +23,171 @@
 <!-- APP -->
 <div id="app" class="app hidden">
 
+<!-- SIDEBAR -->
 <aside class="sidebar">
   <h2>Lift.me</h2>
-  <button onclick="trocarAba('home')">🏠 Início</button>
-  <button onclick="trocarAba('projetos')">📚 Projetos</button>
-  <button onclick="trocarAba('dashboard')">📊 Dashboard</button>
-  <button onclick="trocarAba('carreiras')">🚀 Carreiras</button>
-  <button onclick="trocarAba('metas')">🎯 Metas</button>
-  <button onclick="trocarAba('atividade')">📅 Atividade</button>
-  <button onclick="trocarAba('ajuda')">❓ Ajuda</button>
+
+  <nav>
+    <button onclick="trocarAba('home')">🏠 Início</button>
+    <button onclick="trocarAba('projetos')">📚 Projetos</button>
+    <button onclick="trocarAba('trilhas')">🧠 Trilhas</button>
+    <button onclick="trocarAba('carreiras')">🚀 Carreiras</button>
+    <button onclick="trocarAba('dashboard')">📊 Dashboard</button>
+    <button onclick="trocarAba('metas')">🎯 Metas</button>
+    <button onclick="trocarAba('ajuda')">❓ Ajuda</button>
+  </nav>
+
 </aside>
 
+<!-- CONTEÚDO -->
 <main>
 
-<!-- HOME SUPER COMPLETA -->
+<!-- HOME -->
 <section id="home" class="aba ativa">
 
-<div class="top-bar">
+<header class="top">
   <h1 id="boasVindas"></h1>
-  <div class="streak">🔥 Streak: <span id="streak">0</span></div>
-</div>
+  <button class="logout" onclick="logout()">Sair</button>
+</header>
 
 <div class="hero">
-  <h2>Continue evoluindo 🚀</h2>
-  <p>Você está no caminho certo para dominar suas habilidades.</p>
+  <h2>Transforme conhecimento em prática</h2>
+  <p>Use projetos reais, trilhas e planejamento para evoluir.</p>
 </div>
 
-<!-- MÉTRICAS -->
-<div class="metrics">
-  <div class="metric">
-    <h3>Projetos</h3>
-    <p id="projetos"></p>
-  </div>
-
-  <div class="metric">
-    <h3>XP</h3>
-    <p id="xp"></p>
-  </div>
-
-  <div class="metric">
-    <h3>Nível</h3>
-    <p id="nivel"></p>
-  </div>
+<div class="quick-actions">
+  <button onclick="abrirModal('modalProjeto')">➕ Novo Projeto</button>
+  <button onclick="trocarAba('trilhas')">🧠 Ver Trilhas</button>
+  <button onclick="trocarAba('carreiras')">🚀 Explorar Carreiras</button>
 </div>
 
-<!-- PROGRESSO -->
-<div class="progress-box">
-  <h3>Progresso geral</h3>
-  <div class="progress-bar">
-    <div id="progress"></div>
+<div class="cards-home">
+
+  <div class="card">
+    <h3>📊 Progresso</h3>
+    <p>Veja sua evolução no dashboard</p>
+    <button onclick="trocarAba('dashboard')">Abrir</button>
   </div>
-</div>
 
-<!-- AÇÕES RÁPIDAS -->
-<div class="actions">
-  <button onclick="trocarAba('projetos')">➕ Novo Projeto</button>
-  <button onclick="trocarAba('metas')">🎯 Definir Meta</button>
-  <button onclick="ganharXP()">⚡ Ganhar XP</button>
-</div>
+  <div class="card">
+    <h3>🎯 Metas</h3>
+    <p>Organize seus objetivos</p>
+    <button onclick="trocarAba('metas')">Gerenciar</button>
+  </div>
 
-<!-- ATIVIDADE RECENTE -->
-<div class="atividade">
-  <h3>Atividade recente</h3>
-  <div id="log"></div>
+  <div class="card">
+    <h3>📚 Projetos</h3>
+    <p>Pratique com desafios reais</p>
+    <button onclick="trocarAba('projetos')">Explorar</button>
+  </div>
+
 </div>
 
 </section>
 
 <!-- PROJETOS -->
 <section id="projetos" class="aba">
-<h1>Projetos</h1>
-<button onclick="concluirProjeto()">Concluir Projeto</button>
+<h1>Projetos Práticos</h1>
+
+<div class="grid">
+  <div class="card">
+    <h3>Site Responsivo</h3>
+    <p>HTML, CSS, JS</p>
+    <button onclick="abrirModal('modalProjeto')">Ver</button>
+  </div>
+
+  <div class="card">
+    <h3>Dashboard de Dados</h3>
+    <p>Gráficos e análise</p>
+    <button onclick="abrirModal('modalProjeto')">Ver</button>
+  </div>
+</div>
+
 </section>
 
-<!-- DASHBOARD -->
-<section id="dashboard" class="aba">
-<h1>Dashboard</h1>
-<p>Visão geral do seu progresso.</p>
+<!-- TRILHAS -->
+<section id="trilhas" class="aba">
+<h1>Trilhas de Aprendizado</h1>
+
+<div class="card">
+  <h3>Front-end</h3>
+  <p>HTML → CSS → JS</p>
+</div>
+
+<div class="card">
+  <h3>Dados</h3>
+  <p>Excel → SQL → Python</p>
+</div>
+
 </section>
 
 <!-- CARREIRAS -->
 <section id="carreiras" class="aba">
-<h1>Carreiras</h1>
-<button onclick="carreira('web')">Dev Web</button>
-<button onclick="carreira('dados')">Dados</button>
-<div id="info"></div>
+<h1>Guia de Carreiras</h1>
+
+<div class="grid">
+  <div class="card">
+    <h3>Desenvolvedor Web</h3>
+    <button onclick="abrirModal('modalCarreira')">Ver Caminho</button>
+  </div>
+
+  <div class="card">
+    <h3>Analista de Dados</h3>
+    <button onclick="abrirModal('modalCarreira')">Ver Caminho</button>
+  </div>
+</div>
+
+</section>
+
+<!-- DASHBOARD -->
+<section id="dashboard" class="aba">
+<h1>Seu Progresso</h1>
+<p>Visualização geral da evolução do estudante.</p>
 </section>
 
 <!-- METAS -->
 <section id="metas" class="aba">
 <h1>Metas</h1>
-<input id="metaInput" placeholder="Digite sua meta">
-<button onclick="salvarMeta()">Salvar</button>
-<ul id="listaMetas"></ul>
-</section>
-
-<!-- ATIVIDADE -->
-<section id="atividade" class="aba">
-<h1>Histórico</h1>
-<div id="historico"></div>
+<input placeholder="Nova meta">
+<button>Adicionar</button>
 </section>
 
 <!-- AJUDA -->
 <section id="ajuda" class="aba">
-<h1>Ajuda</h1>
-<p>Use projetos e metas para evoluir.</p>
+<h1>Central de Ajuda</h1>
+
+<button onclick="abrirModal('modalAjuda')">Como usar a plataforma</button>
+
 </section>
 
 </main>
+</div>
+
+<!-- MODAL PROJETO -->
+<div id="modalProjeto" class="modal">
+  <div class="modal-box">
+    <h2>Projeto</h2>
+    <p>Detalhes do projeto e instruções práticas.</p>
+    <button onclick="fecharModal()">Fechar</button>
+  </div>
+</div>
+
+<!-- MODAL CARREIRA -->
+<div id="modalCarreira" class="modal">
+  <div class="modal-box">
+    <h2>Caminho Profissional</h2>
+    <p>Passo a passo da carreira escolhida.</p>
+    <button onclick="fecharModal()">Fechar</button>
+  </div>
+</div>
+
+<!-- MODAL AJUDA -->
+<div id="modalAjuda" class="modal">
+  <div class="modal-box">
+    <h2>Ajuda</h2>
+    <p>Use projetos e trilhas para evoluir.</p>
+    <button onclick="fecharModal()">Fechar</button>
+  </div>
 </div>
 
 <script src="script.js"></script>

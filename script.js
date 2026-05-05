@@ -1,104 +1,171 @@
+// ======================
+// ESTADO GLOBAL
+// ======================
+const state = {
+user: localStorage.getItem("user") || null,
+projetos: parseInt(localStorage.getItem("projetos")) || 0,
+xp: parseInt(localStorage.getItem("xp")) || 0
+}
+
+// ======================
+// INICIALIZAÇÃO
+// ======================
+document.addEventListener("DOMContentLoaded", () => {
+if(state.user){
+iniciarApp()
+}
+})
+
+// ======================
 // LOGIN
+// ======================
 function login(){
-let nome=document.getElementById("user").value
-localStorage.setItem("user",nome)
-iniciar()
+const nome = document.getElementById("user").value.trim()
+
+if(!nome){
+alert("Digite seu nome")
+return
 }
 
-function iniciar(){
-document.getElementById("loginTela").classList.add("hidden")
-document.getElementById("app").classList.remove("hidden")
+state.user = nome
+salvar()
 
-document.getElementById("boasVindas").innerText="Olá, "+localStorage.getItem("user")
-
-carregar()
+iniciarApp()
 }
 
-// ABAS
+function logout(){
+localStorage.clear()
+location.reload()
+}
+
+function iniciarApp(){
+toggleTela("loginTela", false)
+toggleTela("app", true)
+
+document.getElementById("boasVindas").innerText = `Olá, ${state.user}`
+
+atualizarUI()
+}
+
+// ======================
+// UI
+// ======================
+function toggleTela(id, mostrar){
+document.getElementById(id).classList.toggle("hidden", !mostrar)
+}
+
 function trocarAba(id){
-document.querySelectorAll(".aba").forEach(a=>a.classList.remove("ativa"))
+document.querySelectorAll(".aba").forEach(el => el.classList.remove("ativa"))
 document.getElementById(id).classList.add("ativa")
 }
 
-// DADOS
-let projetos=localStorage.getItem("p")||0
-let xp=localStorage.getItem("xp")||0
-let streak=localStorage.getItem("streak")||0
-
-function carregar(){
-document.getElementById("projetos").innerText=projetos
-document.getElementById("xp").innerText=xp
-document.getElementById("streak").innerText=streak
-nivel()
-progresso()
-}
-
-// PROJETO
+// ======================
+// PROJETOS
+// ======================
 function concluirProjeto(){
-projetos++
-xp+=20
-streak++
-salvar("Projeto concluído 🚀")
-salvarDados()
+state.projetos++
+state.xp += 20
+
+registrarAtividade("Projeto concluído 🚀")
+
+salvar()
+atualizarUI()
 }
 
-// XP
-function ganharXP(){
-xp+=5
-salvar("Ganhou XP ⚡")
-salvarDados()
+// ======================
+// CARREIRAS
+// ======================
+function abrirCarreira(tipo){
+const conteudo = {
+web: "HTML → CSS → JS → Frameworks → Projetos reais",
+dados: "Excel → SQL → Python → Visualização → Projetos"
 }
 
-// SALVAR
-function salvarDados(){
-localStorage.setItem("p",projetos)
-localStorage.setItem("xp",xp)
-localStorage.setItem("streak",streak)
-carregar()
+alert(conteudo[tipo] || "Carreira não encontrada")
 }
 
-// NÍVEL
-function nivel(){
-let n="Iniciante"
-if(xp>=50)n="Intermediário"
-if(xp>=100)n="Avançado"
-document.getElementById("nivel").innerText=n
+// ======================
+// MODAIS
+// ======================
+function abrirModal(id){
+document.getElementById(id).style.display = "flex"
 }
 
-// PROGRESSO
-function progresso(){
-let porcentagem=(xp/100)*100
-document.getElementById("progress").style.width=porcentagem+"%"
+function fecharModal(){
+document.querySelectorAll(".modal").forEach(m => m.style.display = "none")
 }
 
-// LOG
-function salvar(msg){
-let log=document.getElementById("log")
-let item=document.createElement("p")
-item.innerText=msg
-log.prepend(item)
-}
-
+// ======================
 // METAS
-function salvarMeta(){
-let input=document.getElementById("metaInput")
-let li=document.createElement("li")
-li.innerText=input.value
-document.getElementById("listaMetas").appendChild(li)
+// ======================
+function adicionarMeta(){
+const input = document.querySelector("#metas input")
+const lista = document.querySelector("#metas ul")
+
+if(!input.value) return
+
+const li = document.createElement("li")
+li.innerText = input.value
+
+lista.appendChild(li)
+
+input.value = ""
 }
 
-// CARREIRA
-function carreira(tipo){
-let box=document.getElementById("info")
-if(tipo=="web"){
-box.innerHTML="HTML → CSS → JS → Projetos"
-}
-if(tipo=="dados"){
-box.innerHTML="Excel → SQL → Python"
-}
+// ======================
+// ATIVIDADE
+// ======================
+function registrarAtividade(msg){
+let atividades = JSON.parse(localStorage.getItem("atividades")) || []
+
+atividades.unshift(msg)
+localStorage.setItem("atividades", JSON.stringify(atividades))
 }
 
-// AUTO LOGIN
-if(localStorage.getItem("user")){
-iniciar()
+// ======================
+// UI UPDATE
+// ======================
+function atualizarUI(){
+document.getElementById("projetos").innerText = state.projetos
+document.getElementById("xp").innerText = state.xp
+document.getElementById("nivel").innerText = calcularNivel()
+
+renderAtividades()
+}
+
+// ======================
+// NÍVEL
+// ======================
+function calcularNivel(){
+if(state.xp >= 100) return "Avançado"
+if(state.xp >= 50) return "Intermediário"
+return "Iniciante"
+}
+
+// ======================
+// ATIVIDADES UI
+// ======================
+function renderAtividades(){
+const container = document.getElementById("historico")
+
+if(!container) return
+
+container.innerHTML = ""
+
+let atividades = JSON.parse(localStorage.getItem("atividades")) || []
+
+atividades.forEach(a => {
+let p = document.createElement("p")
+p.innerText = a
+container.appendChild(p)
+})
+}
+
+// ======================
+// STORAGE
+// ======================
+function salvar(){
+localStorage.setItem("user", state.user)
+localStorage.setItem("projetos", state.projetos)
+localStorage.setItem("xp", state.xp)
 }
