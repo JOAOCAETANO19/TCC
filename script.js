@@ -1,19 +1,24 @@
 // ======================
-// ESTADO GLOBAL
+// ESTADO GLOBAL AVANÇADO
 // ======================
 const state = {
 user: localStorage.getItem("user") || null,
-projetos: parseInt(localStorage.getItem("projetos")) || 0,
-xp: parseInt(localStorage.getItem("xp")) || 0
+xp: parseInt(localStorage.getItem("xp")) || 0,
+
+projetos: JSON.parse(localStorage.getItem("projetos")) || {
+web: { progresso: 0, etapas: [false,false,false,false] },
+dados: { progresso: 0, etapas: [false,false,false,false] }
+},
+
+metas: JSON.parse(localStorage.getItem("metas")) || [],
+atividades: JSON.parse(localStorage.getItem("atividades")) || []
 }
 
 // ======================
 // INICIALIZAÇÃO
 // ======================
 document.addEventListener("DOMContentLoaded", () => {
-if(state.user){
-iniciarApp()
-}
+if(state.user) iniciarApp()
 })
 
 // ======================
@@ -29,7 +34,6 @@ return
 
 state.user = nome
 salvar()
-
 iniciarApp()
 }
 
@@ -45,6 +49,8 @@ toggleTela("app", true)
 document.getElementById("boasVindas").innerText = `Olá, ${state.user}`
 
 atualizarUI()
+renderMetas()
+renderAtividades()
 }
 
 // ======================
@@ -60,39 +66,103 @@ document.getElementById(id).classList.add("ativa")
 }
 
 // ======================
-// PROJETOS
+// SISTEMA DE PROJETOS REAL
 // ======================
-function concluirProjeto(){
-state.projetos++
-state.xp += 20
+function abrirProjeto(tipo){
 
-registrarAtividade("Projeto concluído 🚀")
+const projetosInfo = {
+web: {
+titulo: "Projeto Web",
+etapas: [
+"Criar estrutura HTML",
+"Estilizar com CSS",
+"Adicionar JavaScript",
+"Testar e melhorar"
+],
+link: "https://www.youtube.com/watch?v=3JluqTojuME"
+},
+dados: {
+titulo: "Projeto Dados",
+etapas: [
+"Coletar dados",
+"Limpar dados",
+"Analisar dados",
+"Criar gráficos"
+],
+link: "https://www.youtube.com/watch?v=r-uOLxNrNk8"
+}
+}
+
+const projeto = state.projetos[tipo]
+const info = projetosInfo[tipo]
+
+let html = `<h2>${info.titulo}</h2><ul class="checklist">`
+
+info.etapas.forEach((etapa, i)=>{
+html += `
+<li onclick="toggleEtapa('${tipo}',${i})">
+${projeto.etapas[i] ? "✅" : "⬜"} ${etapa}
+</li>`
+})
+
+html += `</ul>
+
+<h3>🎥 Aula recomendada</h3>
+<a href="${info.link}" target="_blank" class="link">Assistir aula</a>
+
+<p>Progresso: ${projeto.progresso}%</p>
+`
+
+document.getElementById("modalContent").innerHTML = html
+abrirModal("modalProjeto")
+}
+
+// MARCAR ETAPA
+function toggleEtapa(tipo, index){
+let projeto = state.projetos[tipo]
+
+projeto.etapas[index] = !projeto.etapas[index]
+
+let concluido = projeto.etapas.filter(e => e).length
+projeto.progresso = Math.floor((concluido / projeto.etapas.length) * 100)
+
+// XP ao concluir etapa
+state.xp += 5
+
+if(projeto.progresso === 100){
+registrarAtividade("Projeto completo 🎉")
+state.xp += 20
+}
 
 salvar()
 atualizarUI()
+abrirProjeto(tipo)
 }
 
 // ======================
-// CARREIRAS
+// TRILHAS DE APRENDIZADO
 // ======================
-function abrirCarreira(tipo){
-const conteudo = {
-web: "HTML → CSS → JS → Frameworks → Projetos reais",
-dados: "Excel → SQL → Python → Visualização → Projetos"
+function verTrilha(tipo){
+
+const trilhas = {
+web: `
+<h2>Trilha Front-end</h2>
+<p>HTML → CSS → JavaScript → Frameworks</p>
+<a class="link" href="https://developer.mozilla.org/pt-BR/" target="_blank">
+Documentação oficial
+</a>
+`,
+dados: `
+<h2>Trilha Dados</h2>
+<p>Excel → SQL → Python → Análise</p>
+<a class="link" href="https://www.kaggle.com/" target="_blank">
+Praticar com dados reais
+</a>
+`
 }
 
-alert(conteudo[tipo] || "Carreira não encontrada")
-}
-
-// ======================
-// MODAIS
-// ======================
-function abrirModal(id){
-document.getElementById(id).style.display = "flex"
-}
-
-function fecharModal(){
-document.querySelectorAll(".modal").forEach(m => m.style.display = "none")
+document.getElementById("modalContent").innerHTML = trilhas[tipo]
+abrirModal("modalProjeto")
 }
 
 // ======================
@@ -100,65 +170,95 @@ document.querySelectorAll(".modal").forEach(m => m.style.display = "none")
 // ======================
 function adicionarMeta(){
 const input = document.querySelector("#metas input")
-const lista = document.querySelector("#metas ul")
 
 if(!input.value) return
 
-const li = document.createElement("li")
-li.innerText = input.value
+state.metas.push(input.value)
 
+registrarAtividade("Nova meta criada 🎯")
+
+input.value=""
+salvar()
+renderMetas()
+}
+
+function renderMetas(){
+const lista = document.querySelector("#metas ul")
+if(!lista) return
+
+lista.innerHTML=""
+
+state.metas.forEach(meta=>{
+let li=document.createElement("li")
+li.innerText=meta
 lista.appendChild(li)
-
-input.value = ""
+})
 }
 
 // ======================
 // ATIVIDADE
 // ======================
 function registrarAtividade(msg){
-let atividades = JSON.parse(localStorage.getItem("atividades")) || []
+state.atividades.unshift(msg)
+salvar()
+renderAtividades()
+}
 
-atividades.unshift(msg)
-localStorage.setItem("atividades", JSON.stringify(atividades))
+function renderAtividades(){
+const container = document.getElementById("historico")
+if(!container) return
+
+container.innerHTML=""
+
+state.atividades.forEach(a=>{
+let p=document.createElement("p")
+p.innerText=a
+container.appendChild(p)
+})
 }
 
 // ======================
-// UI UPDATE
+// DASHBOARD EVOLUÇÃO
 // ======================
 function atualizarUI(){
-document.getElementById("projetos").innerText = state.projetos
+
 document.getElementById("xp").innerText = state.xp
 document.getElementById("nivel").innerText = calcularNivel()
 
-renderAtividades()
+// progresso geral
+let total = 0
+let count = 0
+
+Object.values(state.projetos).forEach(p=>{
+total += p.progresso
+count++
+})
+
+let geral = Math.floor(total / count)
+
+let barra = document.getElementById("barraProgresso")
+if(barra) barra.style.width = geral + "%"
+
 }
 
 // ======================
 // NÍVEL
 // ======================
 function calcularNivel(){
-if(state.xp >= 100) return "Avançado"
-if(state.xp >= 50) return "Intermediário"
+if(state.xp >= 200) return "Avançado"
+if(state.xp >= 100) return "Intermediário"
 return "Iniciante"
 }
 
 // ======================
-// ATIVIDADES UI
+// MODAIS
 // ======================
-function renderAtividades(){
-const container = document.getElementById("historico")
+function abrirModal(id){
+document.getElementById(id).style.display="flex"
+}
 
-if(!container) return
-
-container.innerHTML = ""
-
-let atividades = JSON.parse(localStorage.getItem("atividades")) || []
-
-atividades.forEach(a => {
-let p = document.createElement("p")
-p.innerText = a
-container.appendChild(p)
-})
+function fecharModal(){
+document.querySelectorAll(".modal").forEach(m=>m.style.display="none")
 }
 
 // ======================
@@ -166,6 +266,8 @@ container.appendChild(p)
 // ======================
 function salvar(){
 localStorage.setItem("user", state.user)
-localStorage.setItem("projetos", state.projetos)
 localStorage.setItem("xp", state.xp)
+localStorage.setItem("projetos", JSON.stringify(state.projetos))
+localStorage.setItem("metas", JSON.stringify(state.metas))
+localStorage.setItem("atividades", JSON.stringify(state.atividades))
 }

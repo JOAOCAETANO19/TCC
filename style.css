@@ -1,4 +1,4 @@
-/* RESET */
+/* ================= RESET ================= */
 *{
 margin:0;
 padding:0;
@@ -7,11 +7,21 @@ font-family:'Poppins',sans-serif;
 }
 
 body{
-background:#0f172a;
+background:linear-gradient(135deg,#0f172a,#020617);
 color:#e2e8f0;
+overflow:hidden;
 }
 
-/* LOGIN */
+/* ================= SCROLL ================= */
+main::-webkit-scrollbar{
+width:6px;
+}
+main::-webkit-scrollbar-thumb{
+background:#3b82f6;
+border-radius:10px;
+}
+
+/* ================= LOGIN ================= */
 .login{
 display:flex;
 justify-content:center;
@@ -23,10 +33,19 @@ height:100vh;
 background:#020617;
 padding:40px;
 border-radius:16px;
-width:300px;
+width:320px;
 text-align:center;
-box-shadow:0 10px 30px rgba(0,0,0,0.5);
+box-shadow:0 20px 40px rgba(0,0,0,0.6);
 animation:fadeIn 0.8s;
+}
+
+.login-box h1{
+margin-bottom:10px;
+}
+
+.login-box p{
+font-size:14px;
+color:#94a3b8;
 }
 
 .login-box input{
@@ -55,7 +74,7 @@ transition:0.3s;
 transform:scale(1.05);
 }
 
-/* APP */
+/* ================= APP ================= */
 .hidden{display:none;}
 
 .app{
@@ -63,12 +82,14 @@ display:flex;
 height:100vh;
 }
 
-/* SIDEBAR */
+/* ================= SIDEBAR ================= */
 .sidebar{
-width:230px;
+width:240px;
 background:#020617;
 padding:20px;
 border-right:1px solid #1e293b;
+display:flex;
+flex-direction:column;
 }
 
 .sidebar h2{
@@ -78,46 +99,47 @@ margin-bottom:20px;
 .sidebar button{
 display:block;
 width:100%;
-padding:10px;
-margin:5px 0;
+padding:12px;
+margin:4px 0;
 border:none;
 background:none;
 color:#94a3b8;
 text-align:left;
 cursor:pointer;
-border-radius:8px;
+border-radius:10px;
 transition:0.3s;
 }
 
 .sidebar button:hover{
 background:#1e293b;
 color:white;
+transform:translateX(5px);
 }
 
-/* MAIN */
+/* ================= MAIN ================= */
 main{
 flex:1;
 padding:30px;
 overflow-y:auto;
 }
 
-/* ABAS */
+/* ================= ABAS ================= */
 .aba{display:none;}
 .ativa{
 display:block;
 animation:fadeIn 0.5s;
 }
 
-/* HERO */
+/* ================= HERO ================= */
 .hero{
 margin:20px 0;
+padding:20px;
+background:linear-gradient(90deg,#3b82f6,#6366f1);
+border-radius:12px;
+color:white;
 }
 
-.hero h2{
-font-size:28px;
-}
-
-/* CARDS */
+/* ================= CARDS ================= */
 .card{
 background:#1e293b;
 padding:20px;
@@ -128,22 +150,80 @@ box-shadow:0 5px 15px rgba(0,0,0,0.3);
 }
 
 .card:hover{
-transform:translateY(-5px);
+transform:translateY(-6px) scale(1.02);
 }
 
-/* GRID */
+/* ================= GRID ================= */
 .grid{
 display:flex;
 gap:20px;
 flex-wrap:wrap;
 }
 
-/* BOTÕES */
+/* ================= BOTÕES ================= */
 button{
 cursor:pointer;
 }
 
-/* MODAL */
+.primary-btn{
+background:#3b82f6;
+border:none;
+padding:10px;
+border-radius:8px;
+color:white;
+}
+
+.primary-btn:hover{
+background:#2563eb;
+}
+
+/* ================= PROGRESSO ================= */
+.progress-bar{
+height:12px;
+background:#1e293b;
+border-radius:10px;
+margin-top:10px;
+overflow:hidden;
+}
+
+.progress-bar div{
+height:100%;
+background:linear-gradient(90deg,#22c55e,#3b82f6);
+width:0%;
+transition:0.5s;
+}
+
+/* ================= CHECKLIST ================= */
+.checklist{
+margin-top:10px;
+}
+
+.checklist li{
+margin:5px 0;
+list-style:none;
+padding-left:25px;
+position:relative;
+cursor:pointer;
+}
+
+.checklist li::before{
+content:"✔";
+position:absolute;
+left:0;
+color:#22c55e;
+}
+
+/* ================= LINKS ================= */
+.link{
+color:#3b82f6;
+text-decoration:none;
+}
+
+.link:hover{
+text-decoration:underline;
+}
+
+/* ================= MODAL ================= */
 .modal{
 position:fixed;
 top:0;
@@ -154,17 +234,20 @@ background:rgba(0,0,0,0.7);
 display:none;
 justify-content:center;
 align-items:center;
+z-index:100;
 }
 
 .modal-box{
 background:#020617;
-padding:30px;
+padding:25px;
 border-radius:12px;
-width:350px;
+width:400px;
+max-height:80vh;
+overflow:auto;
 animation:fadeIn 0.3s;
 }
 
-/* HEADER */
+/* ================= HEADER ================= */
 .top{
 display:flex;
 justify-content:space-between;
@@ -179,7 +262,7 @@ border-radius:6px;
 color:white;
 }
 
-/* ANIMAÇÃO */
+/* ================= ANIMAÇÃO ================= */
 @keyframes fadeIn{
 from{opacity:0; transform:translateY(10px);}
 to{opacity:1;}

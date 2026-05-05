@@ -4,192 +4,302 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Lift.me</title>
-<link rel="stylesheet" href="style.css">
+
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+
+/* RESET */
+*{margin:0;padding:0;box-sizing:border-box;font-family:Poppins}
+body{background:#0f172a;color:#e2e8f0}
+
+/* LOGIN */
+.login{
+display:flex;justify-content:center;align-items:center;height:100vh
+}
+.login-box{
+background:#020617;padding:40px;border-radius:15px;width:300px;text-align:center;
+box-shadow:0 10px 30px rgba(0,0,0,0.5)
+}
+.login-box input{
+margin-top:10px;padding:10px;width:100%;border-radius:8px;border:none;background:#1e293b;color:white
+}
+.login-box button{
+margin-top:10px;padding:10px;width:100%;border:none;border-radius:8px;
+background:linear-gradient(90deg,#3b82f6,#6366f1);color:white
+}
+
+/* APP */
+.hidden{display:none}
+.app{display:flex;height:100vh}
+
+/* SIDEBAR */
+.sidebar{
+width:220px;background:#020617;padding:20px
+}
+.sidebar button{
+display:block;width:100%;margin:5px 0;padding:10px;background:none;border:none;
+color:#94a3b8;text-align:left;border-radius:8px
+}
+.sidebar button:hover{background:#1e293b;color:white}
+
+/* MAIN */
+main{flex:1;padding:25px;overflow:auto}
+
+/* ABAS */
+.aba{display:none}
+.ativa{display:block}
+
+/* CARDS */
+.card{
+background:#1e293b;padding:20px;border-radius:12px;margin:10px 0
+}
+.grid{display:flex;gap:15px;flex-wrap:wrap}
+
+/* BOTÕES */
+button{cursor:pointer}
+
+/* MODAL */
+.modal{
+position:fixed;top:0;left:0;width:100%;height:100%;
+background:rgba(0,0,0,0.7);display:none;justify-content:center;align-items:center
+}
+.modal-box{
+background:#020617;padding:20px;border-radius:12px;width:350px
+}
+
+/* PROGRESSO */
+.progress{
+height:10px;background:#1e293b;border-radius:10px;margin-top:10px
+}
+.progress div{
+height:100%;background:#3b82f6;width:0%;border-radius:10px
+}
+
+</style>
 </head>
 
 <body>
 
 <!-- LOGIN -->
 <div id="loginTela" class="login">
-  <div class="login-box">
-    <h1>Lift.me</h1>
-    <p>Aprenda na prática e evolua seu futuro</p>
-    <input id="user" placeholder="Digite seu nome">
-    <button onclick="login()">Entrar</button>
-  </div>
+<div class="login-box">
+<h1>Lift.me</h1>
+<p>Aprenda na prática</p>
+<input id="user" placeholder="Seu nome">
+<button onclick="login()">Entrar</button>
+</div>
 </div>
 
 <!-- APP -->
 <div id="app" class="app hidden">
 
-<!-- SIDEBAR -->
 <aside class="sidebar">
-  <h2>Lift.me</h2>
-
-  <nav>
-    <button onclick="trocarAba('home')">🏠 Início</button>
-    <button onclick="trocarAba('projetos')">📚 Projetos</button>
-    <button onclick="trocarAba('trilhas')">🧠 Trilhas</button>
-    <button onclick="trocarAba('carreiras')">🚀 Carreiras</button>
-    <button onclick="trocarAba('dashboard')">📊 Dashboard</button>
-    <button onclick="trocarAba('metas')">🎯 Metas</button>
-    <button onclick="trocarAba('ajuda')">❓ Ajuda</button>
-  </nav>
-
+<h2>Lift.me</h2>
+<button onclick="aba('home')">🏠 Início</button>
+<button onclick="aba('projetos')">📚 Projetos</button>
+<button onclick="aba('dashboard')">📊 Dashboard</button>
+<button onclick="aba('carreiras')">🚀 Carreiras</button>
+<button onclick="aba('metas')">🎯 Metas</button>
+<button onclick="aba('ajuda')">❓ Ajuda</button>
 </aside>
 
-<!-- CONTEÚDO -->
 <main>
 
 <!-- HOME -->
 <section id="home" class="aba ativa">
+<h1 id="boas"></h1>
 
-<header class="top">
-  <h1 id="boasVindas"></h1>
-  <button class="logout" onclick="logout()">Sair</button>
-</header>
-
-<div class="hero">
-  <h2>Transforme conhecimento em prática</h2>
-  <p>Use projetos reais, trilhas e planejamento para evoluir.</p>
-</div>
-
-<div class="quick-actions">
-  <button onclick="abrirModal('modalProjeto')">➕ Novo Projeto</button>
-  <button onclick="trocarAba('trilhas')">🧠 Ver Trilhas</button>
-  <button onclick="trocarAba('carreiras')">🚀 Explorar Carreiras</button>
-</div>
-
-<div class="cards-home">
-
-  <div class="card">
-    <h3>📊 Progresso</h3>
-    <p>Veja sua evolução no dashboard</p>
-    <button onclick="trocarAba('dashboard')">Abrir</button>
-  </div>
-
-  <div class="card">
-    <h3>🎯 Metas</h3>
-    <p>Organize seus objetivos</p>
-    <button onclick="trocarAba('metas')">Gerenciar</button>
-  </div>
-
-  <div class="card">
-    <h3>📚 Projetos</h3>
-    <p>Pratique com desafios reais</p>
-    <button onclick="trocarAba('projetos')">Explorar</button>
-  </div>
-
+<div class="card">
+<h3>Continue evoluindo 🚀</h3>
+<p>Faça projetos e acompanhe seu progresso.</p>
 </div>
 
 </section>
 
 <!-- PROJETOS -->
 <section id="projetos" class="aba">
-<h1>Projetos Práticos</h1>
-
-<div class="grid">
-  <div class="card">
-    <h3>Site Responsivo</h3>
-    <p>HTML, CSS, JS</p>
-    <button onclick="abrirModal('modalProjeto')">Ver</button>
-  </div>
-
-  <div class="card">
-    <h3>Dashboard de Dados</h3>
-    <p>Gráficos e análise</p>
-    <button onclick="abrirModal('modalProjeto')">Ver</button>
-  </div>
-</div>
-
-</section>
-
-<!-- TRILHAS -->
-<section id="trilhas" class="aba">
-<h1>Trilhas de Aprendizado</h1>
+<h1>Projetos</h1>
 
 <div class="card">
-  <h3>Front-end</h3>
-  <p>HTML → CSS → JS</p>
+<h3>🌐 Site Responsivo</h3>
+<p>Crie um site completo</p>
+<button onclick="modal('web')">Ver</button>
 </div>
 
 <div class="card">
-  <h3>Dados</h3>
-  <p>Excel → SQL → Python</p>
-</div>
-
-</section>
-
-<!-- CARREIRAS -->
-<section id="carreiras" class="aba">
-<h1>Guia de Carreiras</h1>
-
-<div class="grid">
-  <div class="card">
-    <h3>Desenvolvedor Web</h3>
-    <button onclick="abrirModal('modalCarreira')">Ver Caminho</button>
-  </div>
-
-  <div class="card">
-    <h3>Analista de Dados</h3>
-    <button onclick="abrirModal('modalCarreira')">Ver Caminho</button>
-  </div>
+<h3>📊 Análise de Dados</h3>
+<p>Trabalhe com dados</p>
+<button onclick="modal('dados')">Ver</button>
 </div>
 
 </section>
 
 <!-- DASHBOARD -->
 <section id="dashboard" class="aba">
-<h1>Seu Progresso</h1>
-<p>Visualização geral da evolução do estudante.</p>
+<h1>Progresso</h1>
+
+<p>Projetos: <span id="p"></span></p>
+<p>XP: <span id="xp"></span></p>
+<p>Nível: <span id="nivel"></span></p>
+
+<div class="progress"><div id="bar"></div></div>
+
+</section>
+
+<!-- CARREIRAS -->
+<section id="carreiras" class="aba">
+<h1>Carreiras</h1>
+
+<div class="card">
+<h3>Dev Web</h3>
+<p>HTML → CSS → JS</p>
+</div>
+
+<div class="card">
+<h3>Dados</h3>
+<p>Excel → SQL → Python</p>
+</div>
+
 </section>
 
 <!-- METAS -->
 <section id="metas" class="aba">
 <h1>Metas</h1>
-<input placeholder="Nova meta">
-<button>Adicionar</button>
+<input id="meta">
+<button onclick="meta()">Adicionar</button>
+<ul id="lista"></ul>
 </section>
 
 <!-- AJUDA -->
 <section id="ajuda" class="aba">
-<h1>Central de Ajuda</h1>
+<h1>Ajuda</h1>
 
-<button onclick="abrirModal('modalAjuda')">Como usar a plataforma</button>
+<div class="card">
+<p>1. Escolha um projeto</p>
+<p>2. Siga os passos</p>
+<p>3. Marque como concluído</p>
+</div>
+
+<iframe width="100%" height="200"
+src="https://www.youtube.com/embed/UB1O30fR-EE"></iframe>
 
 </section>
 
 </main>
 </div>
 
-<!-- MODAL PROJETO -->
-<div id="modalProjeto" class="modal">
-  <div class="modal-box">
-    <h2>Projeto</h2>
-    <p>Detalhes do projeto e instruções práticas.</p>
-    <button onclick="fecharModal()">Fechar</button>
-  </div>
+<!-- MODAL -->
+<div id="modal" class="modal">
+<div class="modal-box" id="modalContent"></div>
 </div>
 
-<!-- MODAL CARREIRA -->
-<div id="modalCarreira" class="modal">
-  <div class="modal-box">
-    <h2>Caminho Profissional</h2>
-    <p>Passo a passo da carreira escolhida.</p>
-    <button onclick="fecharModal()">Fechar</button>
-  </div>
-</div>
+<script>
 
-<!-- MODAL AJUDA -->
-<div id="modalAjuda" class="modal">
-  <div class="modal-box">
-    <h2>Ajuda</h2>
-    <p>Use projetos e trilhas para evoluir.</p>
-    <button onclick="fecharModal()">Fechar</button>
-  </div>
-</div>
+// ESTADO
+let user=localStorage.getItem("u")
+let p=localStorage.getItem("p")||0
+let xp=localStorage.getItem("xp")||0
 
-<script src="script.js"></script>
+// LOGIN
+function login(){
+let nome=document.getElementById("user").value
+localStorage.setItem("u",nome)
+init()
+}
+
+function init(){
+document.getElementById("loginTela").classList.add("hidden")
+document.getElementById("app").classList.remove("hidden")
+document.getElementById("boas").innerText="Olá "+localStorage.getItem("u")
+update()
+}
+
+if(user) init()
+
+// ABAS
+function aba(id){
+document.querySelectorAll(".aba").forEach(a=>a.classList.remove("ativa"))
+document.getElementById(id).classList.add("ativa")
+}
+
+// PROJETOS
+function concluir(){
+p++
+xp+=20
+save()
+update()
+fechar()
+}
+
+function modal(tipo){
+let c=document.getElementById("modalContent")
+
+if(tipo=="web"){
+c.innerHTML=`
+<h3>Site Responsivo</h3>
+<p>1. HTML</p>
+<p>2. CSS</p>
+<p>3. JS</p>
+
+<iframe width="100%" height="200"
+src="https://www.youtube.com/embed/3JluqTojuME"></iframe>
+
+<button onclick="concluir()">Concluir</button>
+<button onclick="fechar()">Fechar</button>
+`
+}
+
+if(tipo=="dados"){
+c.innerHTML=`
+<h3>Dados</h3>
+<p>1. Excel</p>
+<p>2. SQL</p>
+
+<iframe width="100%" height="200"
+src="https://www.youtube.com/embed/r-uOLxNrNk8"></iframe>
+
+<button onclick="concluir()">Concluir</button>
+<button onclick="fechar()">Fechar</button>
+`
+}
+
+document.getElementById("modal").style.display="flex"
+}
+
+function fechar(){
+document.getElementById("modal").style.display="none"
+}
+
+// DASHBOARD
+function update(){
+document.getElementById("p").innerText=p
+document.getElementById("xp").innerText=xp
+
+let n="Iniciante"
+if(xp>=50)n="Intermediário"
+if(xp>=100)n="Avançado"
+
+document.getElementById("nivel").innerText=n
+
+document.getElementById("bar").style.width=(xp/100)*100+"%"
+}
+
+// METAS
+function meta(){
+let txt=document.getElementById("meta").value
+let li=document.createElement("li")
+li.innerText=txt
+document.getElementById("lista").appendChild(li)
+}
+
+// SAVE
+function save(){
+localStorage.setItem("p",p)
+localStorage.setItem("xp",xp)
+}
+
+</script>
+
 </body>
 </html>
