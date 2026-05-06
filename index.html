@@ -62,33 +62,109 @@
           <div class="pillar-card" onclick="goTo('trilhas')">
             <div class="pillar-icon">📚</div>
             <h3>Trilhas Inteligentes</h3>
-            <p>Caminhos estruturados do básico ao avançado.</p>
+            <p>Caminhos estruturados do básico ao avançado. HTML → CSS → JS → Projetos.</p>
             <span class="pillar-link">Explorar →</span>
           </div>
           <div class="pillar-card" onclick="goTo('projetos')">
             <div class="pillar-icon">🛠️</div>
             <h3>Projetos Guiados</h3>
-            <p>Aprenda fazendo com checklists e progresso.</p>
+            <p>Cada projeto com objetivo claro, checklist de etapas e vídeos explicativos.</p>
             <span class="pillar-link">Ver projetos →</span>
           </div>
           <div class="pillar-card" onclick="goTo('dashboard')">
             <div class="pillar-icon">📊</div>
             <h3>Sistema de Evolução</h3>
-            <p>XP, níveis e conquistas para te manter motivado.</p>
+            <p>XP, níveis e progresso real. Veja sua evolução a cada etapa concluída.</p>
             <span class="pillar-link">Meu progresso →</span>
           </div>
           <div class="pillar-card" onclick="goTo('carreira')">
             <div class="pillar-icon">🚀</div>
             <h3>Guia de Carreira</h3>
-            <p>Descubra o que cada profissão exige.</p>
+            <p>Descubra o que cada profissão exige e quais projetos te preparam para ela.</p>
             <span class="pillar-link">Ver carreiras →</span>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Outras seções (Trilhas, Projetos, Dashboard, Carreira) permanecem iguais ao que você enviou anteriormente -->
-    <!-- Copie elas do seu código anterior se quiser, ou posso mandar completo também. -->
+    <!-- TRILHAS -->
+    <section class="page" id="page-trilhas">
+      <div class="page-header">
+        <h1>Trilhas de <span class="accent">Aprendizado</span></h1>
+        <p>Escolha sua área e siga um caminho estruturado do zero ao avançado.</p>
+      </div>
+      <div class="trilhas-grid">
+        <!-- Seus cards de trilhas aqui (mesmo código que você enviou antes) -->
+        <div class="trilha-card">
+          <div class="trilha-header">
+            <span class="trilha-emoji">🌐</span>
+            <div><h3>Desenvolvimento Web</h3><p>Do HTML ao JavaScript avançado</p></div>
+            <span class="trilha-badge">Iniciante</span>
+          </div>
+          <div class="trilha-steps">
+            <div class="step done">✔ HTML5 Semântico</div>
+            <div class="step done">✔ CSS3 & Responsividade</div>
+            <div class="step current">⬡ JavaScript ES6+</div>
+            <div class="step">⬡ DOM & Eventos</div>
+            <div class="step">⬡ Projetos Finais</div>
+          </div>
+          <div class="trilha-progress">
+            <div class="progress-bar"><div class="progress-fill" style="width:40%;background:#00ff88"></div></div>
+            <span>40% concluído</span>
+          </div>
+          <button class="btn-primary small">Continuar Trilha</button>
+        </div>
+        <!-- Repita os outros 3 cards de trilha aqui... -->
+      </div>
+    </section>
+
+    <!-- PROJETOS -->
+    <section class="page" id="page-projetos">
+      <div class="page-header">
+        <h1>Projetos <span class="accent">Guiados</span></h1>
+        <p>Aprenda fazendo. Cada projeto tem objetivo claro e etapas para te guiar.</p>
+      </div>
+      <div class="projetos-grid">
+        <!-- Seus 4 cards de projetos aqui (mesmo código anterior) -->
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section class="page" id="page-dashboard">
+      <div class="page-header">
+        <h1>Meu <span class="accent">Dashboard</span></h1>
+        <p>Acompanhe sua evolução em tempo real.</p>
+      </div>
+      <div class="dash-hero">
+        <div class="dash-avatar"><span id="dash-initials">EU</span></div>
+        <div class="dash-info">
+          <h2 id="dash-name">Estudante</h2>
+          <p class="dash-level" id="dash-level-text">⭐ Nível 1 — Iniciante</p>
+          <div class="xp-bar-big"><div class="xp-fill-big" id="xp-fill-big"></div></div>
+          <p class="xp-num" id="xp-num">0 / 100 XP para o próximo nível</p>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <!-- Seus 4 cards de estatísticas -->
+      </div>
+      <div class="conquistas-section">
+        <h2 class="section-title">Conquistas</h2>
+        <div class="conquistas-grid">
+          <!-- Suas 4 conquistas -->
+        </div>
+      </div>
+    </section>
+
+    <!-- CARREIRA -->
+    <section class="page" id="page-carreira">
+      <div class="page-header">
+        <h1>Guia de <span class="accent">Carreira</span></h1>
+        <p>Descubra o que cada profissão exige e como o Lift.me te prepara para ela.</p>
+      </div>
+      <div class="carreira-grid">
+        <!-- Seus 4 cards de carreira -->
+      </div>
+    </section>
 
   </main>
 
