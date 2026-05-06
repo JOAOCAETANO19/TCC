@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lift.me — Aprenda Fazendo</title>
+  <title>Lift.me | Aprenda Fazendo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
@@ -14,9 +14,10 @@
 
   <nav class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <span class="logo-icon">⬆</span>
+      <span class="logo-icon">⬆️</span>
       <span class="logo-text">Lift<span class="accent">.me</span></span>
     </div>
+    
     <div class="sidebar-user">
       <div class="avatar"><span id="avatar-initials">EU</span></div>
       <div class="user-info">
@@ -24,8 +25,10 @@
         <p class="user-level" id="user-level-nav">⭐ Nível 1 — Iniciante</p>
       </div>
     </div>
+
     <div class="xp-bar-mini"><div class="xp-fill-mini" id="xp-fill-mini"></div></div>
     <p class="xp-label" id="xp-label-nav">0 / 100 XP</p>
+
     <ul class="nav-links">
       <li><a href="#" class="nav-link active" data-page="home">🏠 Início</a></li>
       <li><a href="#" class="nav-link" data-page="trilhas">📚 Trilhas</a></li>
@@ -33,7 +36,6 @@
       <li><a href="#" class="nav-link" data-page="dashboard">📊 Dashboard</a></li>
       <li><a href="#" class="nav-link" data-page="carreira">🚀 Carreira</a></li>
     </ul>
-    <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
   </nav>
 
   <main class="main-content">
@@ -41,48 +43,15 @@
     <!-- HOME -->
     <section class="page active" id="page-home">
       <div class="hero">
-        <div class="hero-tag">Plataforma de aprendizado prático</div>
-        <h1 class="hero-title">Pare de assistir.<br /><span class="accent">Comece a construir.</span></h1>
-        <p class="hero-sub">O Lift.me transforma conhecimento teórico em habilidades reais através de projetos guiados, trilhas estruturadas e um sistema de evolução que te mantém motivado.</p>
+        <div class="hero-tag">PRONTO PARA O MERCADO</div>
+        <h1 class="hero-title">Pare de assistir.<br><span class="accent">Comece a construir seu futuro.</span></h1>
+        <p class="hero-sub">Projetos reais + trilhas guiadas + sistema de evolução = Portfólio profissional em poucos meses.</p>
+        
+        <div id="recomendacao-home" class="recomendacao-box"></div>
+
         <div class="hero-btns">
-          <button class="btn-primary" onclick="goTo('trilhas')">Explorar Trilhas →</button>
+          <button class="btn-primary" onclick="goTo('trilhas')">Explorar Trilhas</button>
           <button class="btn-ghost" onclick="goTo('projetos')">Ver Projetos</button>
-        </div>
-        <div class="hero-stats">
-          <div class="stat"><span class="stat-num">4</span><span class="stat-label">Trilhas</span></div>
-          <div class="stat-div"></div>
-          <div class="stat"><span class="stat-num">12</span><span class="stat-label">Projetos</span></div>
-          <div class="stat-div"></div>
-          <div class="stat"><span class="stat-num">∞</span><span class="stat-label">Evolução</span></div>
-        </div>
-      </div>
-      <div class="cards-section">
-        <h2 class="section-title">Os 4 pilares do <span class="accent">Lift.me</span></h2>
-        <div class="pillar-grid">
-          <div class="pillar-card" onclick="goTo('trilhas')">
-            <div class="pillar-icon">📚</div>
-            <h3>Trilhas Inteligentes</h3>
-            <p>Caminhos estruturados do básico ao avançado. HTML → CSS → JS → Projetos.</p>
-            <span class="pillar-link">Explorar →</span>
-          </div>
-          <div class="pillar-card" onclick="goTo('projetos')">
-            <div class="pillar-icon">🛠️</div>
-            <h3>Projetos Guiados</h3>
-            <p>Cada projeto com objetivo claro, checklist de etapas e vídeos explicativos.</p>
-            <span class="pillar-link">Ver projetos →</span>
-          </div>
-          <div class="pillar-card" onclick="goTo('dashboard')">
-            <div class="pillar-icon">📊</div>
-            <h3>Sistema de Evolução</h3>
-            <p>XP, níveis e progresso real. Veja sua evolução a cada etapa concluída.</p>
-            <span class="pillar-link">Meu progresso →</span>
-          </div>
-          <div class="pillar-card" onclick="goTo('carreira')">
-            <div class="pillar-icon">🚀</div>
-            <h3>Guia de Carreira</h3>
-            <p>Descubra o que cada profissão exige e quais projetos te preparam para ela.</p>
-            <span class="pillar-link">Ver carreiras →</span>
-          </div>
         </div>
       </div>
     </section>
@@ -91,30 +60,18 @@
     <section class="page" id="page-trilhas">
       <div class="page-header">
         <h1>Trilhas de <span class="accent">Aprendizado</span></h1>
-        <p>Escolha sua área e siga um caminho estruturado do zero ao avançado.</p>
+        <p>Escolha seu caminho e siga do básico ao avançado.</p>
       </div>
       <div class="trilhas-grid">
-        <!-- Seus cards de trilhas aqui (mesmo código que você enviou antes) -->
         <div class="trilha-card">
           <div class="trilha-header">
             <span class="trilha-emoji">🌐</span>
-            <div><h3>Desenvolvimento Web</h3><p>Do HTML ao JavaScript avançado</p></div>
-            <span class="trilha-badge">Iniciante</span>
+            <div><h3>Desenvolvimento Web</h3><p>HTML, CSS, JavaScript e mais</p></div>
+            <span class="trilha-badge">Recomendada</span>
           </div>
-          <div class="trilha-steps">
-            <div class="step done">✔ HTML5 Semântico</div>
-            <div class="step done">✔ CSS3 & Responsividade</div>
-            <div class="step current">⬡ JavaScript ES6+</div>
-            <div class="step">⬡ DOM & Eventos</div>
-            <div class="step">⬡ Projetos Finais</div>
-          </div>
-          <div class="trilha-progress">
-            <div class="progress-bar"><div class="progress-fill" style="width:40%;background:#00ff88"></div></div>
-            <span>40% concluído</span>
-          </div>
-          <button class="btn-primary small">Continuar Trilha</button>
+          <button class="btn-primary small" onclick="goTo('projetos')">Começar Trilha</button>
         </div>
-        <!-- Repita os outros 3 cards de trilha aqui... -->
+        <!-- Adicione mais trilhas se quiser -->
       </div>
     </section>
 
@@ -122,10 +79,49 @@
     <section class="page" id="page-projetos">
       <div class="page-header">
         <h1>Projetos <span class="accent">Guiados</span></h1>
-        <p>Aprenda fazendo. Cada projeto tem objetivo claro e etapas para te guiar.</p>
+        <p>Faça projetos reais que você pode colocar no currículo.</p>
       </div>
       <div class="projetos-grid">
-        <!-- Seus 4 cards de projetos aqui (mesmo código anterior) -->
+        <div class="projeto-card">
+          <div class="projeto-top">
+            <span class="projeto-area web">Web</span>
+            <span class="projeto-xp">+50 XP</span>
+          </div>
+          <h3>Portfólio Pessoal</h3>
+          <p>Crie seu próprio site portfólio do zero.</p>
+          <div class="checklist">
+            <label class="check-item"><input type="checkbox" data-proj="p1" data-step="0" onchange="handleCheck(this)"/> HTML Semântico</label>
+            <label class="check-item"><input type="checkbox" data-proj="p1" data-step="1" onchange="handleCheck(this)"/> CSS Responsivo</label>
+            <label class="check-item"><input type="checkbox" data-proj="p1" data-step="2" onchange="handleCheck(this)"/> Seção de Projetos</label>
+            <label class="check-item"><input type="checkbox" data-proj="p1" data-step="3" onchange="handleCheck(this)"/> Mobile First</label>
+            <label class="check-item"><input type="checkbox" data-proj="p1" data-step="4" onchange="handleCheck(this)"/> Publicar online</label>
+          </div>
+          <div class="projeto-progress">
+            <div class="progress-bar"><div class="progress-fill green" id="prog-p1"></div></div>
+            <span id="prog-label-p1">0 / 5</span>
+          </div>
+        </div>
+
+        <!-- Mais 3 projetos -->
+        <div class="projeto-card">
+          <div class="projeto-top">
+            <span class="projeto-area web">Web</span>
+            <span class="projeto-xp">+70 XP</span>
+          </div>
+          <h3>To-Do List Avançada</h3>
+          <p>Gerenciador de tarefas com JavaScript.</p>
+          <div class="checklist">
+            <label class="check-item"><input type="checkbox" data-proj="p2" data-step="0" onchange="handleCheck(this)"/> Interface</label>
+            <label class="check-item"><input type="checkbox" data-proj="p2" data-step="1" onchange="handleCheck(this)"/> Adicionar tarefas</label>
+            <label class="check-item"><input type="checkbox" data-proj="p2" data-step="2" onchange="handleCheck(this)"/> Marcar como feito</label>
+            <label class="check-item"><input type="checkbox" data-proj="p2" data-step="3" onchange="handleCheck(this)"/> Remover tarefas</label>
+            <label class="check-item"><input type="checkbox" data-proj="p2" data-step="4" onchange="handleCheck(this)"/> LocalStorage</label>
+          </div>
+          <div class="projeto-progress">
+            <div class="progress-bar"><div class="progress-fill green" id="prog-p2"></div></div>
+            <span id="prog-label-p2">0 / 5</span>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -133,24 +129,14 @@
     <section class="page" id="page-dashboard">
       <div class="page-header">
         <h1>Meu <span class="accent">Dashboard</span></h1>
-        <p>Acompanhe sua evolução em tempo real.</p>
       </div>
       <div class="dash-hero">
         <div class="dash-avatar"><span id="dash-initials">EU</span></div>
         <div class="dash-info">
           <h2 id="dash-name">Estudante</h2>
-          <p class="dash-level" id="dash-level-text">⭐ Nível 1 — Iniciante</p>
+          <p id="dash-level-text">⭐ Nível 1 — Iniciante</p>
           <div class="xp-bar-big"><div class="xp-fill-big" id="xp-fill-big"></div></div>
-          <p class="xp-num" id="xp-num">0 / 100 XP para o próximo nível</p>
-        </div>
-      </div>
-      <div class="stats-grid">
-        <!-- Seus 4 cards de estatísticas -->
-      </div>
-      <div class="conquistas-section">
-        <h2 class="section-title">Conquistas</h2>
-        <div class="conquistas-grid">
-          <!-- Suas 4 conquistas -->
+          <p id="xp-num">0 / 100 XP para próximo nível</p>
         </div>
       </div>
     </section>
@@ -159,27 +145,40 @@
     <section class="page" id="page-carreira">
       <div class="page-header">
         <h1>Guia de <span class="accent">Carreira</span></h1>
-        <p>Descubra o que cada profissão exige e como o Lift.me te prepara para ela.</p>
+        <p>Descubra onde você quer chegar.</p>
       </div>
       <div class="carreira-grid">
-        <!-- Seus 4 cards de carreira -->
+        <div class="carreira-card">
+          <h3>Desenvolvedor Front-end</h3>
+          <p>Salário inicial: R$ 3.000 - R$ 6.000</p>
+          <button class="btn-outline small" onclick="goTo('projetos')">Ver projetos recomendados</button>
+        </div>
       </div>
     </section>
 
   </main>
 
-  <!-- XP TOAST -->
-  <div class="xp-toast" id="xp-toast">
-    <span>⚡ +<span id="toast-xp">0</span> XP ganhos!</span>
-  </div>
+  <!-- TOAST -->
+  <div class="xp-toast" id="xp-toast"></div>
 
   <!-- MODAL -->
   <div class="modal-overlay" id="modal-overlay">
     <div class="modal">
-      <div class="modal-logo">⬆ Lift<span class="accent">.me</span></div>
-      <h2>Bem-vindo! Como posso te chamar?</h2>
-      <input type="text" id="name-input" placeholder="Seu nome..." maxlength="24" />
-      <button class="btn-primary" id="start-btn">Começar minha jornada →</button>
+      <div class="modal-logo">⬆️ Lift<span class="accent">.me</span></div>
+      <h2>Bem-vindo ao Lift.me!</h2>
+      <p>Qual seu nome?</p>
+      <input type="text" id="name-input" placeholder="Seu nome" maxlength="30" />
+      
+      <p style="margin:15px 0 8px;">Qual área te interessa mais?</p>
+      <select id="carreira-select">
+        <option value="">Selecione...</option>
+        <option value="web">Desenvolvimento Web</option>
+        <option value="dados">Análise de Dados</option>
+        <option value="fullstack">Full Stack</option>
+        <option value="ux">UX/UI Design</option>
+      </select>
+      
+      <button class="btn-primary" id="start-btn">Começar Minha Jornada →</button>
     </div>
   </div>
 
