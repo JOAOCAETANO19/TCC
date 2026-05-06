@@ -1,82 +1,468 @@
-<!doctype html>
-<html lang="pt-BR" class="h-full">
+<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lift.me - Aprenda Fazendo</title>
-    
-    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
-    
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lift.me — Aprenda Fazendo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
 </head>
-<body class="h-full text-white">
-    <div id="app" class="h-full w-full flex flex-col relative">
-        
-        <div id="page-login" class="page active w-full h-full overflow-auto">
-            <div class="min-h-full w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-                <div class="w-full max-w-md">
-                    <div class="text-center mb-12">
-                        <div class="inline-block mb-4">
-                            <div class="text-5xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent" style="font-family: 'Space Grotesk', sans-serif;">
-                                Lift.me
-                            </div>
-                        </div>
-                        <p class="text-gray-300 text-lg mb-2">Aprenda Fazendo</p>
-                    </div>
+<body>
 
-                    <div class="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-xl">
-                        <div class="space-y-4 mb-6">
-                            <div>
-                                <label class="block text-sm font-medium mb-2 text-gray-300">Nome</label>
-                                <input id="login-username" type="text" placeholder="Seu nome completo" class="w-full input-field px-4 py-3 rounded-lg text-white placeholder-gray-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-2 text-gray-300">Email</label>
-                                <input id="login-email" type="email" placeholder="seu@email.com" class="w-full input-field px-4 py-3 rounded-lg text-white placeholder-gray-500">
-                            </div>
-                        </div>
-                        <button onclick="handleLogin()" class="w-full btn-primary text-white font-semibold py-3 rounded-lg mb-4"> Começar Agora </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <nav id="main-nav" class="hidden fixed bottom-0 left-0 right-0 bg-gradient-to-r from-slate-900/95 to-slate-800/95 border-t border-white/10 backdrop-blur-xl z-40">
-            <div class="flex justify-around items-center h-20 px-4 max-w-md mx-auto w-full">
-                <button onclick="showPage('home')" class="nav-btn active flex flex-col items-center gap-1 p-3 rounded-lg" title="Home">
-                    <i data-lucide="home"></i> <span class="text-xs">Home</span>
-                </button>
-                <button onclick="showPage('trails')" class="nav-btn flex flex-col items-center gap-1 p-3 rounded-lg" title="Trilhas">
-                    <i data-lucide="map"></i> <span class="text-xs">Trilhas</span>
-                </button>
-                <button onclick="showPage('projects')" class="nav-btn flex flex-col items-center gap-1 p-3 rounded-lg" title="Projetos">
-                    <i data-lucide="code"></i> <span class="text-xs">Projetos</span>
-                </button>
-            </div>
-        </nav>
-
-        <main class="flex-1 overflow-auto pb-24 md:pb-0">
-            <div id="page-home" class="page w-full h-full">
-                <div class="p-8 max-w-6xl mx-auto">
-                    <h1 id="user-greeting" class="text-4xl font-bold">Bem-vindo!</h1>
-                    <div id="stats-container" class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-8">
-                        </div>
-                </div>
-            </div>
-            
-            <div id="page-trails" class="page w-full h-full p-8">
-                <div id="trails-grid" class="grid grid-cols-1 lg:grid-cols-3 gap-8"></div>
-            </div>
-
-            <div id="page-projects" class="page w-full h-full p-8">
-                <div id="projects-grid" class="grid grid-cols-1 lg:grid-cols-3 gap-8"></div>
-            </div>
-        </main>
+  <!-- SIDEBAR NAV -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <span class="logo-icon">⬆</span>
+      <span class="logo-text">Lift<span class="accent">.me</span></span>
     </div>
 
-    <script src="script.js"></script>
+    <div class="sidebar-user">
+      <div class="avatar">
+        <span id="avatar-initials">EU</span>
+      </div>
+      <div class="user-info">
+        <p class="user-name" id="user-name-nav">Estudante</p>
+        <p class="user-level" id="user-level-nav">⭐ Nível 1 — Iniciante</p>
+      </div>
+    </div>
+
+    <div class="xp-bar-mini">
+      <div class="xp-fill-mini" id="xp-fill-mini"></div>
+    </div>
+    <p class="xp-label" id="xp-label-nav">0 / 100 XP</p>
+
+    <ul class="nav-links">
+      <li><a href="#" class="nav-link active" data-page="home">🏠 Início</a></li>
+      <li><a href="#" class="nav-link" data-page="trilhas">📚 Trilhas</a></li>
+      <li><a href="#" class="nav-link" data-page="projetos">🛠️ Projetos</a></li>
+      <li><a href="#" class="nav-link" data-page="dashboard">📊 Dashboard</a></li>
+      <li><a href="#" class="nav-link" data-page="carreira">🚀 Carreira</a></li>
+    </ul>
+
+    <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content" id="main-content">
+
+    <!-- HOME -->
+    <section class="page active" id="page-home">
+      <div class="hero">
+        <div class="hero-tag">Plataforma de aprendizado prático</div>
+        <h1 class="hero-title">Pare de assistir.<br /><span class="accent">Comece a construir.</span></h1>
+        <p class="hero-sub">O Lift.me transforma conhecimento teórico em habilidades reais através de projetos guiados, trilhas estruturadas e um sistema de evolução que te mantém motivado.</p>
+        <div class="hero-btns">
+          <button class="btn-primary" onclick="goTo('trilhas')">Explorar Trilhas →</button>
+          <button class="btn-ghost" onclick="goTo('projetos')">Ver Projetos</button>
+        </div>
+        <div class="hero-stats">
+          <div class="stat"><span class="stat-num">4</span><span class="stat-label">Trilhas</span></div>
+          <div class="stat-div"></div>
+          <div class="stat"><span class="stat-num">12</span><span class="stat-label">Projetos</span></div>
+          <div class="stat-div"></div>
+          <div class="stat"><span class="stat-num">∞</span><span class="stat-label">Evolução</span></div>
+        </div>
+      </div>
+
+      <div class="cards-section">
+        <h2 class="section-title">Os 4 pilares do <span class="accent">Lift.me</span></h2>
+        <div class="pillar-grid">
+          <div class="pillar-card" onclick="goTo('trilhas')">
+            <div class="pillar-icon">📚</div>
+            <h3>Trilhas Inteligentes</h3>
+            <p>Caminhos estruturados do básico ao avançado. HTML → CSS → JS → Projetos.</p>
+            <span class="pillar-link">Explorar →</span>
+          </div>
+          <div class="pillar-card" onclick="goTo('projetos')">
+            <div class="pillar-icon">🛠️</div>
+            <h3>Projetos Guiados</h3>
+            <p>Cada projeto com objetivo claro, checklist de etapas e vídeos explicativos.</p>
+            <span class="pillar-link">Ver projetos →</span>
+          </div>
+          <div class="pillar-card" onclick="goTo('dashboard')">
+            <div class="pillar-icon">📊</div>
+            <h3>Sistema de Evolução</h3>
+            <p>XP, níveis e progresso real. Veja sua evolução a cada etapa concluída.</p>
+            <span class="pillar-link">Meu progresso →</span>
+          </div>
+          <div class="pillar-card" onclick="goTo('carreira')">
+            <div class="pillar-icon">🚀</div>
+            <h3>Guia de Carreira</h3>
+            <p>Descubra o que cada profissão exige e quais projetos te preparam para ela.</p>
+            <span class="pillar-link">Ver carreiras →</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TRILHAS -->
+    <section class="page" id="page-trilhas">
+      <div class="page-header">
+        <h1>Trilhas de <span class="accent">Aprendizado</span></h1>
+        <p>Escolha sua área e siga um caminho estruturado do zero ao avançado.</p>
+      </div>
+      <div class="trilhas-grid">
+        <div class="trilha-card">
+          <div class="trilha-header">
+            <span class="trilha-emoji">🌐</span>
+            <div>
+              <h3>Desenvolvimento Web</h3>
+              <p>Do HTML ao JavaScript avançado</p>
+            </div>
+            <span class="trilha-badge">Iniciante</span>
+          </div>
+          <div class="trilha-steps">
+            <div class="step done">✔ HTML5 Semântico</div>
+            <div class="step done">✔ CSS3 & Responsividade</div>
+            <div class="step current">⬡ JavaScript ES6+</div>
+            <div class="step">⬡ DOM & Eventos</div>
+            <div class="step">⬡ Projetos Finais</div>
+          </div>
+          <div class="trilha-progress">
+            <div class="progress-bar"><div class="progress-fill" style="width:40%;background:#00ff88"></div></div>
+            <span>40% concluído</span>
+          </div>
+          <button class="btn-primary small">Continuar Trilha</button>
+        </div>
+
+        <div class="trilha-card">
+          <div class="trilha-header">
+            <span class="trilha-emoji">📊</span>
+            <div>
+              <h3>Análise de Dados</h3>
+              <p>Python, Pandas e Visualização</p>
+            </div>
+            <span class="trilha-badge">Intermediário</span>
+          </div>
+          <div class="trilha-steps">
+            <div class="step">⬡ Python Básico</div>
+            <div class="step">⬡ Pandas & NumPy</div>
+            <div class="step">⬡ Visualização com Matplotlib</div>
+            <div class="step">⬡ SQL para Analistas</div>
+            <div class="step">⬡ Projeto Final</div>
+          </div>
+          <div class="trilha-progress">
+            <div class="progress-bar"><div class="progress-fill" style="width:0%;background:#00cfff"></div></div>
+            <span>0% concluído</span>
+          </div>
+          <button class="btn-outline small">Iniciar Trilha</button>
+        </div>
+
+        <div class="trilha-card">
+          <div class="trilha-header">
+            <span class="trilha-emoji">🧠</span>
+            <div>
+              <h3>Lógica & Fundamentos</h3>
+              <p>A base de tudo em tecnologia</p>
+            </div>
+            <span class="trilha-badge">Iniciante</span>
+          </div>
+          <div class="trilha-steps">
+            <div class="step done">✔ Lógica de Programação</div>
+            <div class="step">⬡ Estruturas de Dados</div>
+            <div class="step">⬡ Algoritmos</div>
+            <div class="step">⬡ Redes Básicas</div>
+            <div class="step">⬡ Sistemas Operacionais</div>
+          </div>
+          <div class="trilha-progress">
+            <div class="progress-bar"><div class="progress-fill" style="width:20%;background:#ffb800"></div></div>
+            <span>20% concluído</span>
+          </div>
+          <button class="btn-outline small">Continuar Trilha</button>
+        </div>
+
+        <div class="trilha-card">
+          <div class="trilha-header">
+            <span class="trilha-emoji">🎨</span>
+            <div>
+              <h3>UI/UX Design</h3>
+              <p>Figma, prototipagem e design systems</p>
+            </div>
+            <span class="trilha-badge">Iniciante</span>
+          </div>
+          <div class="trilha-steps">
+            <div class="step">⬡ Princípios de UX</div>
+            <div class="step">⬡ Figma do Zero</div>
+            <div class="step">⬡ Wireframes & Protótipos</div>
+            <div class="step">⬡ Design Systems</div>
+            <div class="step">⬡ Projeto Final</div>
+          </div>
+          <div class="trilha-progress">
+            <div class="progress-bar"><div class="progress-fill" style="width:0%;background:#ff6eb4"></div></div>
+            <span>0% concluído</span>
+          </div>
+          <button class="btn-outline small">Iniciar Trilha</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROJETOS -->
+    <section class="page" id="page-projetos">
+      <div class="page-header">
+        <h1>Projetos <span class="accent">Guiados</span></h1>
+        <p>Aprenda fazendo. Cada projeto tem objetivo claro e etapas para te guiar.</p>
+      </div>
+      <div class="projetos-grid">
+
+        <div class="projeto-card">
+          <div class="projeto-top">
+            <span class="projeto-area web">Web</span>
+            <span class="projeto-xp">+50 XP</span>
+          </div>
+          <h3>Portfólio Pessoal</h3>
+          <p>Crie sua página de portfólio com HTML e CSS do zero, com seções de apresentação, habilidades e projetos.</p>
+          <div class="checklist">
+            <label class="check-item"><input type="checkbox" data-proj="p1" data-step="0" onchange="handleCheck(this)"/> Estruturar o HTML semântico</label>
+            <label class="check-item"><input type="checkbox" data-proj="p1" data-step="1" onchange="handleCheck(this)"/> Criar o CSS com variáveis</label>
+            <label class="check-item"><input type="checkbox" data-proj="p1" data-step="2" onchange="handleCheck(this)"/> Adicionar seção de projetos</label>
+            <label class="check-item"><input type="checkbox" data-proj="p1" data-step="3" onchange="handleCheck(this)"/> Tornar responsivo (mobile)</label>
+            <label class="check-item"><input type="checkbox" data-proj="p1" data-step="4" onchange="handleCheck(this)"/> Publicar no GitHub Pages</label>
+          </div>
+          <div class="projeto-progress">
+            <div class="progress-bar"><div class="progress-fill green" id="prog-p1" style="width:0%"></div></div>
+            <span id="prog-label-p1">0 / 5 etapas</span>
+          </div>
+        </div>
+
+        <div class="projeto-card">
+          <div class="projeto-top">
+            <span class="projeto-area web">Web</span>
+            <span class="projeto-xp">+70 XP</span>
+          </div>
+          <h3>To-Do List com JS</h3>
+          <p>Construa um gerenciador de tarefas funcional com JavaScript puro, com adição, remoção e persistência no localStorage.</p>
+          <div class="checklist">
+            <label class="check-item"><input type="checkbox" data-proj="p2" data-step="0" onchange="handleCheck(this)"/> Criar a interface HTML/CSS</label>
+            <label class="check-item"><input type="checkbox" data-proj="p2" data-step="1" onchange="handleCheck(this)"/> Adicionar tarefas com JS</label>
+            <label class="check-item"><input type="checkbox" data-proj="p2" data-step="2" onchange="handleCheck(this)"/> Marcar tarefas como feitas</label>
+            <label class="check-item"><input type="checkbox" data-proj="p2" data-step="3" onchange="handleCheck(this)"/> Remover tarefas</label>
+            <label class="check-item"><input type="checkbox" data-proj="p2" data-step="4" onchange="handleCheck(this)"/> Salvar no localStorage</label>
+          </div>
+          <div class="projeto-progress">
+            <div class="progress-bar"><div class="progress-fill green" id="prog-p2" style="width:0%"></div></div>
+            <span id="prog-label-p2">0 / 5 etapas</span>
+          </div>
+        </div>
+
+        <div class="projeto-card">
+          <div class="projeto-top">
+            <span class="projeto-area dados">Dados</span>
+            <span class="projeto-xp">+80 XP</span>
+          </div>
+          <h3>Dashboard de Vendas</h3>
+          <p>Analise um dataset de vendas com Python e crie visualizações com Matplotlib para apresentar insights.</p>
+          <div class="checklist">
+            <label class="check-item"><input type="checkbox" data-proj="p3" data-step="0" onchange="handleCheck(this)"/> Importar e explorar o dataset</label>
+            <label class="check-item"><input type="checkbox" data-proj="p3" data-step="1" onchange="handleCheck(this)"/> Limpeza dos dados com Pandas</label>
+            <label class="check-item"><input type="checkbox" data-proj="p3" data-step="2" onchange="handleCheck(this)"/> Criar gráfico de vendas mensais</label>
+            <label class="check-item"><input type="checkbox" data-proj="p3" data-step="3" onchange="handleCheck(this)"/> Criar gráfico por categoria</label>
+            <label class="check-item"><input type="checkbox" data-proj="p3" data-step="4" onchange="handleCheck(this)"/> Exportar relatório em PDF</label>
+          </div>
+          <div class="projeto-progress">
+            <div class="progress-bar"><div class="progress-fill blue" id="prog-p3" style="width:0%"></div></div>
+            <span id="prog-label-p3">0 / 5 etapas</span>
+          </div>
+        </div>
+
+        <div class="projeto-card">
+          <div class="projeto-top">
+            <span class="projeto-area logica">Lógica</span>
+            <span class="projeto-xp">+60 XP</span>
+          </div>
+          <h3>Calculadora Científica</h3>
+          <p>Desenvolva uma calculadora científica completa em JavaScript com operações avançadas e histórico de cálculos.</p>
+          <div class="checklist">
+            <label class="check-item"><input type="checkbox" data-proj="p4" data-step="0" onchange="handleCheck(this)"/> Layout da calculadora (HTML/CSS)</label>
+            <label class="check-item"><input type="checkbox" data-proj="p4" data-step="1" onchange="handleCheck(this)"/> Operações básicas (+, -, *, /)</label>
+            <label class="check-item"><input type="checkbox" data-proj="p4" data-step="2" onchange="handleCheck(this)"/> Operações científicas (√, ², %)</label>
+            <label class="check-item"><input type="checkbox" data-proj="p4" data-step="3" onchange="handleCheck(this)"/> Histórico de operações</label>
+            <label class="check-item"><input type="checkbox" data-proj="p4" data-step="4" onchange="handleCheck(this)"/> Teclado via keyboard events</label>
+          </div>
+          <div class="projeto-progress">
+            <div class="progress-bar"><div class="progress-fill yellow" id="prog-p4" style="width:0%"></div></div>
+            <span id="prog-label-p4">0 / 5 etapas</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section class="page" id="page-dashboard">
+      <div class="page-header">
+        <h1>Meu <span class="accent">Dashboard</span></h1>
+        <p>Acompanhe sua evolução em tempo real.</p>
+      </div>
+      <div class="dash-hero">
+        <div class="dash-avatar"><span id="dash-initials">EU</span></div>
+        <div class="dash-info">
+          <h2 id="dash-name">Estudante</h2>
+          <p class="dash-level" id="dash-level-text">⭐ Nível 1 — Iniciante</p>
+          <div class="xp-bar-big"><div class="xp-fill-big" id="xp-fill-big"></div></div>
+          <p class="xp-num" id="xp-num">0 / 100 XP para o próximo nível</p>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-card-icon">⚡</span>
+          <span class="stat-card-num" id="stat-xp">0</span>
+          <span class="stat-card-label">XP Total</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-icon">🏅</span>
+          <span class="stat-card-num" id="stat-nivel">1</span>
+          <span class="stat-card-label">Nível Atual</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-icon">✅</span>
+          <span class="stat-card-num" id="stat-projetos">0</span>
+          <span class="stat-card-label">Projetos Feitos</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-card-icon">🔥</span>
+          <span class="stat-card-num" id="stat-etapas">0</span>
+          <span class="stat-card-label">Etapas Concluídas</span>
+        </div>
+      </div>
+      <div class="conquistas-section">
+        <h2 class="section-title">Conquistas</h2>
+        <div class="conquistas-grid">
+          <div class="conquista locked" id="c-first-step">
+            <span class="c-icon">🎯</span>
+            <span class="c-name">Primeiro Passo</span>
+            <span class="c-desc">Complete sua 1ª etapa</span>
+          </div>
+          <div class="conquista locked" id="c-first-proj">
+            <span class="c-icon">🏗️</span>
+            <span class="c-name">Construtor</span>
+            <span class="c-desc">Conclua 1 projeto completo</span>
+          </div>
+          <div class="conquista locked" id="c-level5">
+            <span class="c-icon">⭐</span>
+            <span class="c-name">Nível 5</span>
+            <span class="c-desc">Alcance o nível 5</span>
+          </div>
+          <div class="conquista locked" id="c-10steps">
+            <span class="c-icon">💪</span>
+            <span class="c-name">Dedicado</span>
+            <span class="c-desc">Complete 10 etapas no total</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CARREIRA -->
+    <section class="page" id="page-carreira">
+      <div class="page-header">
+        <h1>Guia de <span class="accent">Carreira</span></h1>
+        <p>Descubra o que cada profissão exige e como o Lift.me te prepara para ela.</p>
+      </div>
+      <div class="carreira-grid">
+        <div class="carreira-card">
+          <div class="carreira-top">
+            <span class="carreira-icon">💻</span>
+            <div>
+              <h3>Dev Front-end</h3>
+              <p class="carreira-sal">R$ 3.000 – R$ 8.000/mês</p>
+            </div>
+          </div>
+          <div class="carreira-skills">
+            <h4>Habilidades necessárias:</h4>
+            <div class="skill-tags">
+              <span class="tag">HTML5</span><span class="tag">CSS3</span><span class="tag">JavaScript</span><span class="tag">React</span><span class="tag">Git</span>
+            </div>
+          </div>
+          <div class="carreira-projetos">
+            <h4>Projetos recomendados:</h4>
+            <p>✔ Portfólio Pessoal &nbsp; ✔ To-Do List com JS</p>
+          </div>
+          <button class="btn-outline small" onclick="goTo('trilhas')">Ver Trilha Web →</button>
+        </div>
+
+        <div class="carreira-card">
+          <div class="carreira-top">
+            <span class="carreira-icon">🗄️</span>
+            <div>
+              <h3>Dev Back-end</h3>
+              <p class="carreira-sal">R$ 4.000 – R$ 10.000/mês</p>
+            </div>
+          </div>
+          <div class="carreira-skills">
+            <h4>Habilidades necessárias:</h4>
+            <div class="skill-tags">
+              <span class="tag">Python / Node.js</span><span class="tag">SQL</span><span class="tag">APIs REST</span><span class="tag">Git</span><span class="tag">Docker</span>
+            </div>
+          </div>
+          <div class="carreira-projetos">
+            <h4>Projetos recomendados:</h4>
+            <p>✔ API de Tarefas &nbsp; ✔ Dashboard de Dados</p>
+          </div>
+          <button class="btn-outline small" onclick="goTo('projetos')">Ver Projetos →</button>
+        </div>
+
+        <div class="carreira-card">
+          <div class="carreira-top">
+            <span class="carreira-icon">📊</span>
+            <div>
+              <h3>Analista de Dados</h3>
+              <p class="carreira-sal">R$ 4.000 – R$ 9.000/mês</p>
+            </div>
+          </div>
+          <div class="carreira-skills">
+            <h4>Habilidades necessárias:</h4>
+            <div class="skill-tags">
+              <span class="tag">Python</span><span class="tag">Pandas</span><span class="tag">SQL</span><span class="tag">Power BI</span><span class="tag">Excel</span>
+            </div>
+          </div>
+          <div class="carreira-projetos">
+            <h4>Projetos recomendados:</h4>
+            <p>✔ Dashboard de Vendas &nbsp; ✔ Análise de Dataset</p>
+          </div>
+          <button class="btn-outline small" onclick="goTo('trilhas')">Ver Trilha Dados →</button>
+        </div>
+
+        <div class="carreira-card">
+          <div class="carreira-top">
+            <span class="carreira-icon">🎨</span>
+            <div>
+              <h3>UX/UI Designer</h3>
+              <p class="carreira-sal">R$ 3.500 – R$ 8.000/mês</p>
+            </div>
+          </div>
+          <div class="carreira-skills">
+            <h4>Habilidades necessárias:</h4>
+            <div class="skill-tags">
+              <span class="tag">Figma</span><span class="tag">Prototipagem</span><span class="tag">Pesquisa UX</span><span class="tag">CSS</span><span class="tag">Design System</span>
+            </div>
+          </div>
+          <div class="carreira-projetos">
+            <h4>Projetos recomendados:</h4>
+            <p>✔ Portfólio Visual &nbsp; ✔ Protótipo de App</p>
+          </div>
+          <button class="btn-outline small" onclick="goTo('trilhas')">Ver Trilha UX →</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- XP TOAST -->
+  <div class="xp-toast" id="xp-toast">
+    <span>⚡ +<span id="toast-xp">0</span> XP ganhos!</span>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-logo">⬆ Lift<span class="accent">.me</span></div>
+      <h2>Bem-vindo! Como posso te chamar?</h2>
+      <input type="text" id="name-input" placeholder="Seu nome..." maxlength="24" />
+      <button class="btn-primary" onclick="startApp()">Começar minha jornada →</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>

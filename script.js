@@ -1,64 +1,68 @@
-// Dados Iniciais
-const TRAILS = [
-    { id: 'web', title: 'Desenvolvimento Web', icon: '🌐', stages: 5 },
-    { id: 'data', title: 'Ciência de Dados', icon: '📊', stages: 5 },
-    { id: 'mobile', title: 'Mobile', icon: '📱', stages: 5 }
-];
+/* LIFT.ME — app.js */
 
-let currentUser = null;
-let userStats = { xp: 0, level: 1, completed: 0, streak: 0 };
+const STATE = {
+  name: '',
+  xp: 0,
+  nivel: 1,
+  projetos: {},
+  totalEtapas: 0,
+  projetosCompletos: 0,
+  conquistas: {
+    'first-step': false,
+    'first-proj': false,
+    'level5':     false,
+    '10steps':    false,
+  }
+};
 
-// Inicializar Ícones
+const XP_POR_NIVEL = [0, 100, 250, 450, 700, 1000, 1400, 1900, 2500, 3200, 4000];
+const NOMES_NIVEL  = ['', 'Iniciante', 'Aprendiz', 'Desenvolvedor Jr', 'Desenvolvedor', 'Sênior', 'Especialista', 'Mestre', 'Expert', 'Lenda', 'God Mode'];
+const XP_POR_ETAPA = { p1: 10, p2: 14, p3: 16, p4: 12 };
+
+function saveState() {
+  localStorage.setItem('liftme_state', JSON.stringify(STATE));
+}
+
+function loadState() {
+  const raw = localStorage.getItem('liftme_state');
+  if (!raw) return false;
+  try { Object.assign(STATE, JSON.parse(raw)); return true; }
+  catch { return false; }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    lucide.createIcons();
-    renderTrails();
+  const loaded = loadState();
+  if (loaded && STATE.name) {
+    document.getElementById('modal-overlay').classList.add('hidden');
+    applyState();
+    restoreChecklists();
+  }
+
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', e => { e.preventDefault(); goTo(link.dataset.page); });
+  });
+
+  document.getElementById('sidebar-toggle').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('open');
+  });
+
+  document.getElementById('name-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') startApp();
+  });
 });
 
-// Autenticação
-function handleLogin() {
-    const name = document.getElementById('login-username').value;
-    const email = document.getElementById('login-email').value;
-
-    if (name && email) {
-        currentUser = { name, email };
-        document.getElementById('user-greeting').innerText = `Bem-vindo, ${name}!`;
-        document.getElementById('page-login').classList.remove('active');
-        document.getElementById('main-nav').classList.remove('hidden');
-        showPage('home');
-    } else {
-        alert("Preencha todos os campos!");
-    }
+function startApp() {
+  const input = document.getElementById('name-input').value.trim();
+  if (!input) { document.getElementById('name-input').style.borderColor = '#ff4444'; return; }
+  STATE.name = input;
+  document.getElementById('modal-overlay').classList.add('hidden');
+  applyState();
+  saveState();
 }
 
-function handleLogout() {
-    currentUser = null;
-    document.getElementById('page-login').classList.add('active');
-    document.getElementById('main-nav').classList.add('hidden');
-}
-
-// Navegação
-function showPage(pageId) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(`page-${pageId}`).classList.add('active');
-    
-    // Atualiza botões da navegação
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if(btn.getAttribute('onclick').includes(pageId)) btn.classList.add('active');
-    });
-}
-
-// Renderizar Trilhas
-function renderTrails() {
-    const grid = document.getElementById('trails-grid');
-    if(!grid) return;
-    
-    grid.innerHTML = TRAILS.map(trail => `
-        <div class="bg-white/10 p-6 rounded-2xl border border-white/10 card-hover">
-            <div class="text-4xl mb-4">${trail.icon}</div>
-            <h3 class="font-bold text-xl mb-2">${trail.title}</h3>
-            <p class="text-gray-400 text-sm mb-4">${trail.stages} Etapas progressivas</p>
-            <button class="btn-primary w-full py-2 rounded-lg text-sm font-semibold">Iniciar Trilha</button>
-        </div>
-    `).join('');
-}
+function goTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+  document.getElementById('sidebar').classList.remove('open');
