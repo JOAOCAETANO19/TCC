@@ -81,7 +81,7 @@ body {
 .nav-link:hover { background: var(--bg3); color: var(--text); }
 .nav-link.active { background: rgba(0,255,136,0.12); color: var(--green); border-left: 3px solid var(--green); }
 
-.sidebar-toggle { display: none; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 8px; }
+.sidebar-toggle { display: none; background: none; border: none; color: var(--muted); font-size: 20px; cursor: pointer; padding: 8px; margin-top: auto; }
 
 .main-content { margin-left: var(--sidebar-w); flex: 1; padding: 48px 56px; min-height: 100vh; }
 
@@ -167,10 +167,7 @@ body {
   background: rgba(0,255,136,0.12); color: var(--green); font-weight: 700; white-space: nowrap;
 }
 .trilha-steps { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
-.step {
-  font-size: 13px; color: var(--muted); padding: 8px 12px;
-  border-radius: 8px; background: var(--bg3); border: 1px solid var(--border);
-}
+.step { font-size: 13px; color: var(--muted); padding: 8px 12px; border-radius: 8px; background: var(--bg3); border: 1px solid var(--border); }
 .step.done { color: var(--green); border-color: rgba(0,255,136,0.2); background: rgba(0,255,136,0.06); }
 .step.current { color: var(--text); border-color: var(--green); }
 .trilha-progress { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }

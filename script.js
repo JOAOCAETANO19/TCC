@@ -66,8 +66,9 @@ function startApp() {
 function goTo(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  document.getElementById(`page-${page}`).classList.add('active');
-  document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+  document.getElementById('page-' + page).classList.add('active');
+  const link = document.querySelector('[data-page="' + page + '"]');
+  if (link) link.classList.add('active');
   document.getElementById('sidebar').classList.remove('open');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -75,7 +76,7 @@ function goTo(page) {
 function applyState() {
   const initials  = STATE.name ? STATE.name.slice(0, 2).toUpperCase() : 'EU';
   const nivelNome = NOMES_NIVEL[STATE.nivel] || 'Expert';
-  const nivelTxt  = `⭐ Nível ${STATE.nivel} — ${nivelNome}`;
+  const nivelTxt  = '⭐ Nível ' + STATE.nivel + ' — ' + nivelNome;
   const xpMin = XP_POR_NIVEL[STATE.nivel - 1] || 0;
   const xpMax = XP_POR_NIVEL[STATE.nivel] || 100;
   const xpPct = Math.min(100, ((STATE.xp - xpMin) / (xpMax - xpMin)) * 100);
@@ -84,12 +85,12 @@ function applyState() {
   document.getElementById('user-name-nav').textContent    = STATE.name || 'Estudante';
   document.getElementById('user-level-nav').textContent   = nivelTxt;
   document.getElementById('xp-fill-mini').style.width     = xpPct + '%';
-  document.getElementById('xp-label-nav').textContent     = `${STATE.xp} / ${xpMax} XP`;
+  document.getElementById('xp-label-nav').textContent     = STATE.xp + ' / ' + xpMax + ' XP';
   document.getElementById('dash-initials').textContent    = initials;
   document.getElementById('dash-name').textContent        = STATE.name || 'Estudante';
   document.getElementById('dash-level-text').textContent  = nivelTxt;
   document.getElementById('xp-fill-big').style.width      = xpPct + '%';
-  document.getElementById('xp-num').textContent           = `${STATE.xp - xpMin} / ${xpMax - xpMin} XP para o próximo nível`;
+  document.getElementById('xp-num').textContent           = (STATE.xp - xpMin) + ' / ' + (xpMax - xpMin) + ' XP para o próximo nível';
   document.getElementById('stat-xp').textContent          = STATE.xp;
   document.getElementById('stat-nivel').textContent       = STATE.nivel;
   document.getElementById('stat-projetos').textContent    = STATE.projetosCompletos;
@@ -102,11 +103,17 @@ function handleCheck(checkbox) {
   const proj    = checkbox.dataset.proj;
   const step    = parseInt(checkbox.dataset.step);
   const checked = checkbox.checked;
-  if (!STATE.projetos[proj]) STATE.projetos[proj] = [false,false,false,false,false];
+  if (!STATE.projetos[proj]) STATE.projetos[proj] = [false, false, false, false, false];
   const wasChecked = STATE.projetos[proj][step];
   const xpVal = XP_POR_ETAPA[proj] || 10;
-  if (checked && !wasChecked) { STATE.xp += xpVal; STATE.totalEtapas += 1; showXPToast(xpVal); }
-  else if (!checked && wasChecked) { STATE.xp = Math.max(0, STATE.xp - xpVal); STATE.totalEtapas = Math.max(0, STATE.totalEtapas - 1); }
+  if (checked && !wasChecked) {
+    STATE.xp += xpVal;
+    STATE.totalEtapas += 1;
+    showXPToast(xpVal);
+  } else if (!checked && wasChecked) {
+    STATE.xp = Math.max(0, STATE.xp - xpVal);
+    STATE.totalEtapas = Math.max(0, STATE.totalEtapas - 1);
+  }
   STATE.projetos[proj][step] = checked;
   updateProjectProgress(proj);
   checkNivelUp();
@@ -118,23 +125,23 @@ function handleCheck(checkbox) {
 function updateProjectProgress(proj) {
   const done  = (STATE.projetos[proj] || []).filter(Boolean).length;
   const pct   = (done / 5) * 100;
-  const bar   = document.getElementById(`prog-${proj}`);
-  const label = document.getElementById(`prog-label-${proj}`);
+  const bar   = document.getElementById('prog-' + proj);
+  const label = document.getElementById('prog-label-' + proj);
   if (bar)   bar.style.width = pct + '%';
-  if (label) label.textContent = `${done} / 5 etapas`;
+  if (label) label.textContent = done + ' / 5 etapas';
   let completos = 0;
-  for (const p of ['p1','p2','p3','p4']) {
+  for (const p of ['p1', 'p2', 'p3', 'p4']) {
     if ((STATE.projetos[p] || []).filter(Boolean).length === 5) completos++;
   }
   STATE.projetosCompletos = completos;
 }
 
 function restoreChecklists() {
-  for (const proj of ['p1','p2','p3','p4']) {
+  for (const proj of ['p1', 'p2', 'p3', 'p4']) {
     const steps = STATE.projetos[proj];
     if (!steps) continue;
-    steps.forEach((checked, i) => {
-      const cb = document.querySelector(`input[data-proj="${proj}"][data-step="${i}"]`);
+    steps.forEach(function(checked, i) {
+      const cb = document.querySelector('input[data-proj="' + proj + '"][data-step="' + i + '"]');
       if (cb) cb.checked = checked;
     });
     updateProjectProgress(proj);
@@ -160,17 +167,22 @@ function checkConquistas() {
 }
 
 function updateConquistas() {
-  const map = {
+  var map = {
     'first-step': 'c-first-step',
     'first-proj': 'c-first-proj',
     'level5':     'c-level5',
     '10steps':    'c-10steps'
   };
-  for (const [key, elId] of Object.entries(map)) {
-    const el = document.getElementById(elId);
+  for (var key in map) {
+    var el = document.getElementById(map[key]);
     if (!el) continue;
-    el.classList.toggle('unlocked', !!STATE.conquistas[key]);
-    el.classList.toggle('locked',  !STATE.conquistas[key]);
+    if (STATE.conquistas[key]) {
+      el.classList.remove('locked');
+      el.classList.add('unlocked');
+    } else {
+      el.classList.remove('unlocked');
+      el.classList.add('locked');
+    }
   }
 }
 
@@ -178,17 +190,17 @@ function showXPToast(xp) {
   const toast = document.getElementById('xp-toast');
   document.getElementById('toast-xp').textContent = xp;
   toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 2200);
+  setTimeout(function() { toast.classList.remove('show'); }, 2200);
 }
 
 function showLevelUpToast(nivel) {
   const toast = document.getElementById('xp-toast');
-  toast.querySelector('span').innerHTML = `🎉 Subiu para Nível ${nivel} — ${NOMES_NIVEL[nivel]}!`;
+  toast.querySelector('span').innerHTML = '🎉 Subiu para Nível ' + nivel + ' — ' + NOMES_NIVEL[nivel] + '!';
   toast.style.background = '#ffb800';
   toast.classList.add('show');
-  setTimeout(() => {
+  setTimeout(function() {
     toast.classList.remove('show');
     toast.style.background = '';
-    toast.querySelector('span').innerHTML = `⚡ +<span id="toast-xp">0</span> XP ganhos!`;
+    toast.querySelector('span').innerHTML = '⚡ +<span id="toast-xp">0</span> XP ganhos!';
   }, 3000);
 }
