@@ -3,184 +3,71 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Lift.me | Aprenda Fazendo</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <title>Pratica.dev - Aprendizado Inteligente</title>
   <link rel="stylesheet" href="style.css" />
   <script src="script.js" defer></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-  <nav class="sidebar" id="sidebar">
-    <div class="sidebar-logo">
-      <span class="logo-icon">⬆️</span>
-      <span class="logo-text">Lift<span class="accent">.me</span></span>
+  <nav class="sidebar">
+    <div class="logo">
+      <span class="logo-icon">⚡</span>
+      <span class="logo-text">Pratica<span class="accent">.dev</span></span>
     </div>
-    
-    <div class="sidebar-user">
-      <div class="avatar"><span id="avatar-initials">EU</span></div>
+
+    <div class="user">
+      <div class="avatar" id="avatar">JC</div>
       <div class="user-info">
-        <p class="user-name" id="user-name-nav">Estudante</p>
-        <p class="user-level" id="user-level-nav">⭐ Nível 1 — Iniciante</p>
+        <p id="user-name">João Cleberson</p>
+        <p id="user-level">Nível 5 • Desenvolvedor Jr</p>
       </div>
     </div>
 
-    <div class="xp-bar-mini"><div class="xp-fill-mini" id="xp-fill-mini"></div></div>
-    <p class="xp-label" id="xp-label-nav">0 / 100 XP</p>
-
-    <ul class="nav-links">
-      <li><a href="#" class="nav-link active" data-page="home">🏠 Início</a></li>
-      <li><a href="#" class="nav-link" data-page="trilhas">📚 Trilhas</a></li>
-      <li><a href="#" class="nav-link" data-page="projetos">🛠️ Projetos</a></li>
-      <li><a href="#" class="nav-link" data-page="dashboard">📊 Dashboard</a></li>
-      <li><a href="#" class="nav-link" data-page="carreira">🚀 Carreira</a></li>
+    <ul class="nav">
+      <li><a href="#" class="active" data-page="home">🏠 Início</a></li>
+      <li><a href="#" data-page="ia">🤖 Recomendação IA</a></li>
+      <li><a href="#" data-page="projetos">🛠️ Projetos</a></li>
+      <li><a href="#" data-page="dashboard">📊 Dashboard</a></li>
+      <li><a href="#" data-page="portfolio">📁 Meu Portfólio</a></li>
     </ul>
   </nav>
 
   <main class="main-content">
 
     <!-- HOME -->
-    <section class="page active" id="page-home">
-      <div class="hero">
-        <div class="hero-tag">PRONTO PARA O MERCADO</div>
-        <h1 class="hero-title">Pare de assistir.<br><span class="accent">Comece a construir seu futuro.</span></h1>
-        <p class="hero-sub">Projetos reais + trilhas guiadas + sistema de evolução = Portfólio profissional em poucos meses.</p>
-        
-        <div id="recomendacao-home" class="recomendacao-box"></div>
-
-        <div class="hero-btns">
-          <button class="btn-primary" onclick="goTo('trilhas')">Explorar Trilhas</button>
-          <button class="btn-ghost" onclick="goTo('projetos')">Ver Projetos</button>
-        </div>
-      </div>
+    <section id="page-home" class="page active">
+      <h1>Bem-vindo ao <span class="accent">Pratica.dev</span></h1>
+      <p class="subtitle">Plataforma de aprendizado personalizada com recomendação inteligente</p>
+      <div class="main-recomendation" id="home-recomendacao"></div>
     </section>
 
-    <!-- TRILHAS -->
-    <section class="page" id="page-trilhas">
-      <div class="page-header">
-        <h1>Trilhas de <span class="accent">Aprendizado</span></h1>
-        <p>Escolha seu caminho e siga do básico ao avançado.</p>
-      </div>
-      <div class="trilhas-grid">
-        <div class="trilha-card">
-          <div class="trilha-header">
-            <span class="trilha-emoji">🌐</span>
-            <div><h3>Desenvolvimento Web</h3><p>HTML, CSS, JavaScript e mais</p></div>
-            <span class="trilha-badge">Recomendada</span>
-          </div>
-          <button class="btn-primary small" onclick="goTo('projetos')">Começar Trilha</button>
-        </div>
-        <!-- Adicione mais trilhas se quiser -->
-      </div>
+    <!-- RECOMENDAÇÃO IA -->
+    <section id="page-ia" class="page">
+      <h1>🤖 Recomendação Inteligente</h1>
+      <div id="ia-container" class="ia-container"></div>
+      <button class="btn-primary" onclick="gerarRecomendacao()">Gerar Nova Recomendação</button>
     </section>
 
     <!-- PROJETOS -->
-    <section class="page" id="page-projetos">
-      <div class="page-header">
-        <h1>Projetos <span class="accent">Guiados</span></h1>
-        <p>Faça projetos reais que você pode colocar no currículo.</p>
-      </div>
-      <div class="projetos-grid">
-        <div class="projeto-card">
-          <div class="projeto-top">
-            <span class="projeto-area web">Web</span>
-            <span class="projeto-xp">+50 XP</span>
-          </div>
-          <h3>Portfólio Pessoal</h3>
-          <p>Crie seu próprio site portfólio do zero.</p>
-          <div class="checklist">
-            <label class="check-item"><input type="checkbox" data-proj="p1" data-step="0" onchange="handleCheck(this)"/> HTML Semântico</label>
-            <label class="check-item"><input type="checkbox" data-proj="p1" data-step="1" onchange="handleCheck(this)"/> CSS Responsivo</label>
-            <label class="check-item"><input type="checkbox" data-proj="p1" data-step="2" onchange="handleCheck(this)"/> Seção de Projetos</label>
-            <label class="check-item"><input type="checkbox" data-proj="p1" data-step="3" onchange="handleCheck(this)"/> Mobile First</label>
-            <label class="check-item"><input type="checkbox" data-proj="p1" data-step="4" onchange="handleCheck(this)"/> Publicar online</label>
-          </div>
-          <div class="projeto-progress">
-            <div class="progress-bar"><div class="progress-fill green" id="prog-p1"></div></div>
-            <span id="prog-label-p1">0 / 5</span>
-          </div>
-        </div>
-
-        <!-- Mais 3 projetos -->
-        <div class="projeto-card">
-          <div class="projeto-top">
-            <span class="projeto-area web">Web</span>
-            <span class="projeto-xp">+70 XP</span>
-          </div>
-          <h3>To-Do List Avançada</h3>
-          <p>Gerenciador de tarefas com JavaScript.</p>
-          <div class="checklist">
-            <label class="check-item"><input type="checkbox" data-proj="p2" data-step="0" onchange="handleCheck(this)"/> Interface</label>
-            <label class="check-item"><input type="checkbox" data-proj="p2" data-step="1" onchange="handleCheck(this)"/> Adicionar tarefas</label>
-            <label class="check-item"><input type="checkbox" data-proj="p2" data-step="2" onchange="handleCheck(this)"/> Marcar como feito</label>
-            <label class="check-item"><input type="checkbox" data-proj="p2" data-step="3" onchange="handleCheck(this)"/> Remover tarefas</label>
-            <label class="check-item"><input type="checkbox" data-proj="p2" data-step="4" onchange="handleCheck(this)"/> LocalStorage</label>
-          </div>
-          <div class="projeto-progress">
-            <div class="progress-bar"><div class="progress-fill green" id="prog-p2"></div></div>
-            <span id="prog-label-p2">0 / 5</span>
-          </div>
-        </div>
-      </div>
+    <section id="page-projetos" class="page">
+      <h1>Projetos Disponíveis</h1>
+      <div id="projetos-grid" class="grid"></div>
     </section>
 
     <!-- DASHBOARD -->
-    <section class="page" id="page-dashboard">
-      <div class="page-header">
-        <h1>Meu <span class="accent">Dashboard</span></h1>
-      </div>
-      <div class="dash-hero">
-        <div class="dash-avatar"><span id="dash-initials">EU</span></div>
-        <div class="dash-info">
-          <h2 id="dash-name">Estudante</h2>
-          <p id="dash-level-text">⭐ Nível 1 — Iniciante</p>
-          <div class="xp-bar-big"><div class="xp-fill-big" id="xp-fill-big"></div></div>
-          <p id="xp-num">0 / 100 XP para próximo nível</p>
-        </div>
-      </div>
+    <section id="page-dashboard" class="page">
+      <h1>Seu Progresso</h1>
+      <div class="stats-grid" id="dashboard-content"></div>
     </section>
 
-    <!-- CARREIRA -->
-    <section class="page" id="page-carreira">
-      <div class="page-header">
-        <h1>Guia de <span class="accent">Carreira</span></h1>
-        <p>Descubra onde você quer chegar.</p>
-      </div>
-      <div class="carreira-grid">
-        <div class="carreira-card">
-          <h3>Desenvolvedor Front-end</h3>
-          <p>Salário inicial: R$ 3.000 - R$ 6.000</p>
-          <button class="btn-outline small" onclick="goTo('projetos')">Ver projetos recomendados</button>
-        </div>
-      </div>
+    <!-- PORTFÓLIO -->
+    <section id="page-portfolio" class="page">
+      <h1>Meu Portfólio</h1>
+      <div id="portfolio-content"></div>
     </section>
 
   </main>
-
-  <!-- TOAST -->
-  <div class="xp-toast" id="xp-toast"></div>
-
-  <!-- MODAL -->
-  <div class="modal-overlay" id="modal-overlay">
-    <div class="modal">
-      <div class="modal-logo">⬆️ Lift<span class="accent">.me</span></div>
-      <h2>Bem-vindo ao Lift.me!</h2>
-      <p>Qual seu nome?</p>
-      <input type="text" id="name-input" placeholder="Seu nome" maxlength="30" />
-      
-      <p style="margin:15px 0 8px;">Qual área te interessa mais?</p>
-      <select id="carreira-select">
-        <option value="">Selecione...</option>
-        <option value="web">Desenvolvimento Web</option>
-        <option value="dados">Análise de Dados</option>
-        <option value="fullstack">Full Stack</option>
-        <option value="ux">UX/UI Design</option>
-      </select>
-      
-      <button class="btn-primary" id="start-btn">Começar Minha Jornada →</button>
-    </div>
-  </div>
 
 </body>
 </html>
