@@ -1,73 +1,64 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pratica.dev - Aprendizado Inteligente</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="script.js" defer></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-</head>
-<body>
+    <div class="cards">
+      <div class="card">
+        <h3>XP</h3>
+        <p id="xp">0</p>
+      </div>
 
-  <nav class="sidebar">
-    <div class="logo">
-      <span class="logo-icon">⚡</span>
-      <span class="logo-text">Pratica<span class="accent">.dev</span></span>
-    </div>
+      <div class="card">
+        <h3>Nível</h3>
+        <p id="level">1</p>
+      </div>
 
-    <div class="user">
-      <div class="avatar" id="avatar">JC</div>
-      <div class="user-info">
-        <p id="user-name">João Cleberson</p>
-        <p id="user-level">Nível 5 • Desenvolvedor Jr</p>
+      <div class="card">
+        <h3>Streak</h3>
+        <p id="streak">7 dias</p>
       </div>
     </div>
+  </section>
 
-    <ul class="nav">
-      <li><a href="#" class="active" data-page="home">🏠 Início</a></li>
-      <li><a href="#" data-page="ia">🤖 Recomendação IA</a></li>
-      <li><a href="#" data-page="projetos">🛠️ Projetos</a></li>
-      <li><a href="#" data-page="dashboard">📊 Dashboard</a></li>
-      <li><a href="#" data-page="portfolio">📁 Meu Portfólio</a></li>
-    </ul>
-  </nav>
+  <!-- TRILHAS -->
+  <section id="trilhas" class="reveal">
+    <h2>Trilha Front-end</h2>
+    <div id="modules"></div>
+  </section>
 
-  <main class="main-content">
+  <!-- PROJETOS -->
+  <section id="projects" class="reveal">
+    <h2>Projetos</h2>
+    <div id="projectList"></div>
+  </section>
 
-    <!-- HOME -->
-    <section id="page-home" class="page active">
-      <h1>Bem-vindo ao <span class="accent">Pratica.dev</span></h1>
-      <p class="subtitle">Plataforma de aprendizado personalizada com recomendação inteligente</p>
-      <div class="main-recomendation" id="home-recomendacao"></div>
-    </section>
+  <!-- PORTFÓLIO -->
+  <section id="portfolio" class="reveal">
+    <h2>Meu Portfólio</h2>
+    <div id="portfolioList"></div>
+  </section>
 
-    <!-- RECOMENDAÇÃO IA -->
-    <section id="page-ia" class="page">
-      <h1>🤖 Recomendação Inteligente</h1>
-      <div id="ia-container" class="ia-container"></div>
-      <button class="btn-primary" onclick="gerarRecomendacao()">Gerar Nova Recomendação</button>
-    </section>
+  <!-- CARREIRA -->
+  <section id="carreira" class="reveal">
+    <h2>Evolução Profissional</h2>
 
-    <!-- PROJETOS -->
-    <section id="page-projetos" class="page">
-      <h1>Projetos Disponíveis</h1>
-      <div id="projetos-grid" class="grid"></div>
-    </section>
+    <div class="roadmap">
+      <div>Iniciante</div>
+      <div>Júnior</div>
+      <div>Pleno</div>
+      <div>Especialista</div>
+    </div>
+  </section>
 
-    <!-- DASHBOARD -->
-    <section id="page-dashboard" class="page">
-      <h1>Seu Progresso</h1>
-      <div class="stats-grid" id="dashboard-content"></div>
-    </section>
+  <!-- PERFIL -->
+  <section id="perfil" class="reveal">
+    <h2>Meu Perfil</h2>
+    <p id="userProfile"></p>
+    <button onclick="resetQuiz()">Refazer Quiz</button>
+  </section>
 
-    <!-- PORTFÓLIO -->
-    <section id="page-portfolio" class="page">
-      <h1>Meu Portfólio</h1>
-      <div id="portfolio-content"></div>
-    </section>
+  <!-- FOOTER -->
+  <footer>
+    <p>© 2026 Pratica.dev — Transformando teoria em experiência real.</p>
+  </footer>
 
-  </main>
-
+  <script src="script.js"></script>
 </body>
 </html>
