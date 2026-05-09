@@ -1,5 +1,76 @@
 <!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pratica.dev</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Fundo animado -->
+  <canvas id="bgCanvas"></canvas>
+
+  <!-- Quiz -->
+  <div id="quizModal" class="modal active">
+    <div class="modal-card">
+      <h2>Bem-vindo ao Pratica.dev</h2>
+      <p>Vamos montar sua trilha personalizada.</p>
+      <div id="quizStep"></div>
+    </div>
+  </div>
+
+  <!-- Navbar -->
+  <header>
+    <nav>
+      <div class="logo">Pratica.dev</div>
+
+      <button id="menuBtn">☰</button>
+
+      <ul id="menu">
+        <li><a href="#hero">Início</a></li>
+        <li><a href="#trilhas">Trilhas</a></li>
+        <li><a href="#dashboard">Dashboard</a></li>
+        <li><a href="#projects">Projetos</a></li>
+        <li><a href="#portfolio">Portfólio</a></li>
+        <li><a href="#carreira">Carreira</a></li>
+        <li><a href="#perfil">Perfil</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <section id="hero" class="reveal">
+    <h1>Aprenda Programação na Prática com IA</h1>
+
+    <p>
+      Trilhas personalizadas, projetos reais
+      e evolução profissional.
+    </p>
+
+    <button onclick="scrollToSection('trilhas')">
+      Começar Agora
+    </button>
+  </section>
+
+  <!-- IA -->
+  <section id="ia" class="reveal">
+    <h2>Mentor IA</h2>
+    <p id="typing"></p>
+  </section>
+
+  <!-- Dashboard -->
+  <section id="dashboard" class="reveal">
+    <h2>Dashboard</h2>
+
     <div class="cards">
+
       <div class="card">
         <h3>XP</h3>
         <p id="xp">0</p>
@@ -14,28 +85,29 @@
         <h3>Streak</h3>
         <p id="streak">7 dias</p>
       </div>
+
     </div>
   </section>
 
-  <!-- TRILHAS -->
+  <!-- Trilhas -->
   <section id="trilhas" class="reveal">
     <h2>Trilha Front-end</h2>
     <div id="modules"></div>
   </section>
 
-  <!-- PROJETOS -->
+  <!-- Projetos -->
   <section id="projects" class="reveal">
     <h2>Projetos</h2>
     <div id="projectList"></div>
   </section>
 
-  <!-- PORTFÓLIO -->
+  <!-- Portfólio -->
   <section id="portfolio" class="reveal">
     <h2>Meu Portfólio</h2>
     <div id="portfolioList"></div>
   </section>
 
-  <!-- CARREIRA -->
+  <!-- Carreira -->
   <section id="carreira" class="reveal">
     <h2>Evolução Profissional</h2>
 
@@ -47,16 +119,20 @@
     </div>
   </section>
 
-  <!-- PERFIL -->
+  <!-- Perfil -->
   <section id="perfil" class="reveal">
     <h2>Meu Perfil</h2>
+
     <p id="userProfile"></p>
-    <button onclick="resetQuiz()">Refazer Quiz</button>
+
+    <button onclick="resetQuiz()">
+      Refazer Quiz
+    </button>
   </section>
 
-  <!-- FOOTER -->
+  <!-- Footer -->
   <footer>
-    <p>© 2026 Pratica.dev — Transformando teoria em experiência real.</p>
+    © 2026 Pratica.dev
   </footer>
 
   <script src="script.js"></script>
