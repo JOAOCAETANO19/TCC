@@ -1,3 +1,7 @@
+// =====================
+// DADOS
+// =====================
+
 const quiz = [
   {
     q: "Qual seu nível?",
@@ -10,9 +14,9 @@ const quiz = [
 ];
 
 const modules = [
-  { name:"HTML", steps:3 },
-  { name:"CSS", steps:3 },
-  { name:"JavaScript", steps:3 }
+  { name: "HTML", total: 3 },
+  { name: "CSS", total: 3 },
+  { name: "JavaScript", total: 3 }
 ];
 
 const projects = [
@@ -21,43 +25,130 @@ const projects = [
   "Dashboard"
 ];
 
-let step = 0;
-
-const quizModal =
-document.getElementById("quizModal");
-
-const quizStep =
-document.getElementById("quizStep");
+let currentQuiz = 0;
 
 
-function renderQuiz(){
+// =====================
+// INICIALIZAÇÃO
+// =====================
 
-  if(localStorage.getItem("quizDone")){
-    quizModal.classList.remove("active");
-    loadApp();
-    return;
-  }
+document.addEventListener("DOMContentLoaded", init);
 
-  const q = quiz[step];
-
-  let html = "<h3>"+q.q+"</h3>";
-
-  q.a.forEach(function(op){
-    html +=
-    `<button class="quiz-btn"
-      onclick="answerQuiz('${op}')">
-      ${op}
-    </button>`;
-  });
-
-  quizStep.innerHTML = html;
+function init(){
+  setupMenu();
+  checkLogin();
+  renderQuiz();
+  loadApp();
 }
 
 
-function answerQuiz(v){
-  step++;
+// =====================
+// LOGIN
+// =====================
 
-  if(step < quiz.length){
+function register(){
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  if(!email || !password){
+    alert("Preencha tudo");
+    return;
+  }
+
+  localStorage.setItem(
+    "user",
+    JSON.stringify({ email, password })
+  );
+
+  alert("Cadastro realizado!");
+}
+
+function login(){
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  const user =
+    JSON.parse(localStorage.getItem("user"));
+
+  if(
+    user &&
+    user.email === email &&
+    user.password === password
+  ){
+    localStorage.setItem("logged","true");
+    checkLogin();
+    alert("Login realizado!");
+  }else{
+    alert("Dados inválidos");
+  }
+}
+
+function logout(){
+  localStorage.removeItem("logged");
+  checkLogin();
+}
+
+function checkLogin(){
+  const status =
+    document.getElementById("userStatus");
+
+  const user =
+    JSON.parse(localStorage.getItem("user"));
+
+  const logged =
+    localStorage.getItem("logged");
+
+  if(user && logged){
+    status.textContent =
+      "Logado: " + user.email;
+  }else{
+    status.textContent =
+      "Não logado";
+  }
+}
+
+
+// =====================
+// QUIZ
+// =====================
+
+function renderQuiz(){
+
+  const modal =
+    document.getElementById("quizModal");
+
+  const box =
+    document.getElementById("quizStep");
+
+  if(localStorage.getItem("quizDone")){
+    modal.classList.remove("active");
+    return;
+  }
+
+  modal.classList.add("active");
+
+  const q = quiz[currentQuiz];
+
+  let html =
+    `<h3>${q.q}</h3>`;
+
+  q.a.forEach(function(op){
+    html += `
+      <button
+        class="quiz-btn"
+        onclick="answerQuiz('${op}')">
+        ${op}
+      </button>
+    `;
+  });
+
+  box.innerHTML = html;
+}
+
+function answerQuiz(answer){
+  currentQuiz++;
+
+  if(currentQuiz < quiz.length){
     renderQuiz();
   }else{
     localStorage.setItem(
@@ -65,72 +156,55 @@ function answerQuiz(v){
       "true"
     );
 
-    quizModal.classList.remove(
-      "active"
-    );
-
-    loadApp();
+    document
+      .getElementById("quizModal")
+      .classList.remove("active");
   }
 }
 
 
-function continueLearning(){
-  document
-  .getElementById("trilhas")
-  .scrollIntoView({
-    behavior:"smooth"
-  });
-}
-
+// =====================
+// DASHBOARD
+// =====================
 
 function loadDashboard(){
-
   const xp =
-  Number(
-    localStorage.getItem("xp")
-  ) || 0;
+    Number(localStorage.getItem("xp")) || 0;
 
-  document.getElementById(
-    "xp"
-  ).textContent = xp;
+  document.getElementById("xp").textContent =
+    xp;
 
-  document.getElementById(
-    "level"
-  ).textContent =
-  Math.floor(xp/50)+1;
+  document.getElementById("level").textContent =
+    Math.floor(xp/50)+1;
 
-  document.getElementById(
-    "nextStep"
-  ).textContent =
-  "Finalize Flexbox";
+  document.getElementById("nextStep").textContent =
+    "Finalize Flexbox";
 }
 
+
+// =====================
+// TRILHAS
+// =====================
 
 function loadModules(){
 
   const box =
-  document.getElementById(
-    "modules"
-  );
+    document.getElementById("modules");
 
   box.innerHTML = "";
 
   modules.forEach(function(m,i){
 
-    let done =
-    Number(
-      localStorage.getItem(
-        "m"+i
-      )
-    ) || 0;
+    const done =
+      Number(localStorage.getItem("m"+i)) || 0;
 
-    let percent =
-    (done/m.steps)*100;
+    const percent =
+      (done/m.total)*100;
 
     box.innerHTML += `
       <div class="module">
         <h3>${m.name}</h3>
-        <p>${done}/${m.steps}</p>
+        <p>${done}/${m.total} etapas</p>
 
         <div class="progress">
           <div
@@ -147,32 +221,22 @@ function loadModules(){
   });
 }
 
-
 function nextStep(i){
 
   let done =
-  Number(
-    localStorage.getItem(
-      "m"+i
-    )
-  ) || 0;
+    Number(localStorage.getItem("m"+i)) || 0;
 
-  if(done < modules[i].steps){
+  if(done < modules[i].total){
     done++;
 
-    localStorage.setItem(
-      "m"+i,
-      done
-    );
+    localStorage.setItem("m"+i,done);
 
     let xp =
-    Number(
-      localStorage.getItem("xp")
-    ) || 0;
+      Number(localStorage.getItem("xp")) || 0;
 
     localStorage.setItem(
       "xp",
-      xp+10
+      xp + 10
     );
   }
 
@@ -180,31 +244,42 @@ function nextStep(i){
 }
 
 
+// =====================
+// PROJETOS
+// =====================
+
 function loadProjects(){
 
   const box =
-  document.getElementById(
-    "projectList"
-  );
+    document.getElementById("projectList");
 
   box.innerHTML = "";
 
   projects.forEach(function(p){
-    box.innerHTML +=
-    `<div class="project">
-      <h3>${p}</h3>
-    </div>`;
+    box.innerHTML += `
+      <div class="project">
+        <h3>${p}</h3>
+      </div>
+    `;
   });
 }
 
+
+// =====================
+// PORTFÓLIO
+// =====================
 
 function loadPortfolio(){
   document.getElementById(
     "portfolioList"
   ).innerHTML =
-  "<div>Seu portfólio cresce com seu progresso.</div>";
+    "<div>Seu portfólio cresce com seu progresso.</div>";
 }
 
+
+// =====================
+// APP
+// =====================
 
 function loadApp(){
   loadDashboard();
@@ -214,76 +289,18 @@ function loadApp(){
 }
 
 
-/* LOGIN */
+// =====================
+// MENU MOBILE
+// =====================
 
-function register(){
+function setupMenu(){
+  const btn =
+    document.getElementById("menuBtn");
 
-  const email =
-  document.getElementById("email").value;
+  const menu =
+    document.getElementById("menu");
 
-  const password =
-  document.getElementById("password").value;
-
-  if(!email || !password){
-    alert("Preencha tudo");
-    return;
-  }
-
-  localStorage.setItem(
-    "user",
-    JSON.stringify({
-      email,
-      password
-    })
-  );
-
-  alert("Cadastro realizado");
+  btn.addEventListener("click",()=>{
+    menu.classList.toggle("open");
+  });
 }
-
-
-function login(){
-
-  const email =
-  document.getElementById("email").value;
-
-  const password =
-  document.getElementById("password").value;
-
-  const user =
-  JSON.parse(
-    localStorage.getItem("user")
-  );
-
-  if(
-    user &&
-    user.email === email &&
-    user.password === password
-  ){
-    localStorage.setItem(
-      "logged",
-      "true"
-    );
-
-    document.getElementById(
-      "userStatus"
-    ).textContent =
-    "Logado: "+email;
-
-    alert("Login realizado");
-  }else{
-    alert("Dados inválidos");
-  }
-}
-
-
-function logout(){
-  localStorage.removeItem("logged");
-
-  document.getElementById(
-    "userStatus"
-  ).textContent =
-  "Não logado";
-}
-
-
-renderQuiz();
