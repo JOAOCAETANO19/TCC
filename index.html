@@ -1,118 +1,189 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
+<!doctype html>
+<html lang="pt-BR" class="h-full">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pratica.dev</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pratica.dev 2.0</title>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+    <script src="/_sdk/element_sdk.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-
-  <canvas id="bgCanvas"></canvas>
-
-  <section id="authSection">
-    <div class="auth-box">
-      <h2>Login / Cadastro</h2>
-
-      <input type="email" id="email" placeholder="Digite seu email">
-      <input type="password" id="password" placeholder="Digite sua senha">
-
-      <button onclick="register()">Cadastrar</button>
-      <button onclick="login()">Entrar</button>
-      <button onclick="logout()">Sair</button>
-
-      <p id="userStatus">Não logado</p>
+<body class="h-full">
+    <div class="app-wrapper gradient-bg text-white" id="app">
+        <!-- LOGIN SCREEN -->
+        <div id="login-screen" class="flex items-center justify-center h-full p-4">
+            <div class="card-glass rounded-2xl p-8 w-full max-w-md fade-in">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold mb-2">
+                        <span class="text-green-400 font-mono">&lt;</span>Pratica.dev<span class="text-green-400 font-mono">/&gt;</span> 
+                        <span class="text-purple-400">2.0</span>
+                    </h1>
+                    <p class="text-white/50 text-sm">Seu mentor digital de carreira em tecnologia</p>
+                </div>
+                
+                <!-- Login Form -->
+                <div id="login-form">
+                    <div class="mb-4">
+                        <label class="block text-sm text-white/60 mb-1">Email</label>
+                        <input type="email" id="login-email" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-400" placeholder="seu@email.com">
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm text-white/60 mb-1">Senha</label>
+                        <input type="password" id="login-password" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-400" placeholder="••••••••">
+                    </div>
+                    <div id="login-error" class="text-red-400 text-sm mb-4 hidden"></div>
+                    <button onclick="handleLogin()" class="btn-primary w-full py-3 rounded-lg text-lg mb-3">Entrar</button>
+                    <button onclick="showRegister()" class="btn-secondary w-full py-3 rounded-lg">Criar Conta</button>
+                </div>
+                
+                <!-- Register Form -->
+                <div id="register-form" class="hidden">
+                    <div class="mb-3">
+                        <label class="block text-sm text-white/60 mb-1">Nome completo</label>
+                        <input type="text" id="reg-name" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-400" placeholder="Seu nome">
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm text-white/60 mb-1">Idade</label>
+                        <input type="number" id="reg-age" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-400" placeholder="17">
+                    </div>
+                    <div class="mb-3">
+                        <label class="block text-sm text-white/60 mb-1">Email</label>
+                        <input type="email" id="reg-email" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-400" placeholder="seu@email.com">
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm text-white/60 mb-1">Senha</label>
+                        <input type="password" id="reg-password" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-400" placeholder="••••••••">
+                    </div>
+                    <div id="reg-error" class="text-red-400 text-sm mb-4 hidden"></div>
+                    <button onclick="handleRegister()" class="btn-primary w-full py-3 rounded-lg text-lg mb-3">Cadastrar</button>
+                    <button onclick="showLogin()" class="btn-secondary w-full py-3 rounded-lg">Voltar ao Login</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- MAIN APP -->
+        <div id="main-app" class="hidden h-full flex flex-col">
+            <!-- TOP NAV -->
+            <header class="flex items-center justify-between px-6 py-4 border-b border-white/5">
+                <h1 class="text-xl font-bold">
+                    <span class="text-green-400 font-mono">&lt;</span>Pratica.dev<span class="text-green-400 font-mono">/&gt;</span> 
+                    <span class="text-purple-400 text-sm">2.0</span>
+                </h1>
+                <div class="flex items-center gap-4">
+                    <span id="nav-user" class="text-sm text-white/60"></span>
+                    <span id="nav-level" class="level-badge"></span>
+                    <span id="nav-xp" class="xp-badge"></span>
+                    <button onclick="handleLogout()" class="text-white/40 hover:text-red-400 transition text-sm">Sair</button>
+                </div>
+            </header>
+            
+            <div class="flex flex-1 overflow-hidden">
+                <!-- SIDEBAR -->
+                <nav class="w-56 p-4 border-r border-white/5 overflow-y-auto flex-shrink-0">
+                    <div class="space-y-1">
+                        <div class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard')">
+                            <i data-lucide="layout-dashboard" class="inline w-4 h-4 mr-2"></i>Dashboard
+                        </div>
+                        <div class="nav-item" data-tab="perfil" onclick="switchTab('perfil')">
+                            <i data-lucide="user" class="inline w-4 h-4 mr-2"></i>Perfil
+                        </div>
+                        <div class="nav-item" data-tab="evolucao" onclick="switchTab('evolucao')">
+                            <i data-lucide="trending-up" class="inline w-4 h-4 mr-2"></i>Evolução
+                        </div>
+                        <div class="nav-item" data-tab="estudos" onclick="switchTab('estudos')">
+                            <i data-lucide="book-open" class="inline w-4 h-4 mr-2"></i>Centro de Estudos
+                        </div>
+                        <div class="nav-item" data-tab="sobre" onclick="switchTab('sobre')">
+                            <i data-lucide="info" class="inline w-4 h-4 mr-2"></i>Sobre o Curso
+                        </div>
+                        <div class="nav-item" data-tab="projetos" onclick="switchTab('projetos')">
+                            <i data-lucide="code-2" class="inline w-4 h-4 mr-2"></i>Projetos
+                        </div>
+                        <div class="nav-item" data-tab="portfolio" onclick="switchTab('portfolio')">
+                            <i data-lucide="briefcase" class="inline w-4 h-4 mr-2"></i>Portfólio
+                        </div>
+                    </div>
+                </nav>
+                
+                <!-- CONTENT -->
+                <main class="flex-1 overflow-y-auto p-6" id="main-content">
+                    <!-- Dashboard -->
+                    <div class="tab-content active" id="tab-dashboard">
+                        <div class="fade-in">
+                            <h2 class="text-2xl font-bold mb-6">Bem-vindo de volta, <span id="dash-name" class="text-green-400"></span>!</h2>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                <div class="card-glass rounded-xl p-5">
+                                    <p class="text-white/50 text-sm mb-1">Nível Atual</p>
+                                    <p id="dash-level" class="text-2xl font-bold text-purple-400"></p>
+                                </div>
+                                <div class="card-glass rounded-xl p-5">
+                                    <p class="text-white/50 text-sm mb-1">XP Total</p>
+                                    <p id="dash-xp" class="text-2xl font-bold text-yellow-400"></p>
+                                </div>
+                                <div class="card-glass rounded-xl p-5">
+                                    <p class="text-white/50 text-sm mb-1">Trilha</p>
+                                    <p id="dash-track" class="text-2xl font-bold text-green-400"></p>
+                                </div>
+                            </div>
+                            <div class="card-glass rounded-xl p-5 mb-6">
+                                <p class="text-white/50 text-sm mb-2">Progresso Geral</p>
+                                <div class="progress-track">
+                                    <div class="progress-bar" id="dash-progress" style="width:0%"></div>
+                                </div>
+                                <p class="text-xs text-white/40 mt-2"><span id="dash-progress-text">0</span>% concluído</p>
+                            </div>
+                            <div class="card-glass rounded-xl p-5 glow-green">
+                                <p class="text-sm text-green-400 font-semibold mb-2">🎯 Próximo Passo Recomendado</p>
+                                <p id="dash-recommendation" class="text-white/80"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Perfil -->
+                    <div class="tab-content" id="tab-perfil">
+                        <!-- Conteúdo gerado dinamicamente -->
+                    </div>
+                    
+                    <!-- Evolução -->
+                    <div class="tab-content" id="tab-evolucao">
+                        <!-- Conteúdo gerado dinamicamente -->
+                    </div>
+                    
+                    <!-- Estudos -->
+                    <div class="tab-content" id="tab-estudos">
+                        <!-- Conteúdo gerado dinamicamente -->
+                    </div>
+                    
+                    <!-- Sobre -->
+                    <div class="tab-content" id="tab-sobre">
+                        <!-- Conteúdo gerado dinamicamente -->
+                    </div>
+                    
+                    <!-- Projetos -->
+                    <div class="tab-content" id="tab-projetos">
+                        <!-- Conteúdo gerado dinamicamente -->
+                    </div>
+                    
+                    <!-- Portfólio -->
+                    <div class="tab-content" id="tab-portfolio">
+                        <!-- Conteúdo gerado dinamicamente -->
+                    </div>
+                </main>
+            </div>
+        </div>
+        
+        <!-- QUIZ MODAL -->
+        <div id="quiz-modal" class="modal-overlay hidden">
+            <div class="card-glass rounded-2xl p-8 w-full max-w-lg mx-4 fade-in">
+                <h2 class="text-xl font-bold mb-2 text-center">🚀 Vamos personalizar sua jornada!</h2>
+                <p class="text-white/50 text-sm text-center mb-6">Responda 3 perguntas rápidas para montar sua trilha.</p>
+                <div id="quiz-steps"></div>
+            </div>
+        </div>
     </div>
-  </section>
-
-  <div id="quizModal" class="modal active">
-    <div class="modal-card">
-      <h2>Bem-vindo ao Pratica.dev</h2>
-      <p>Vamos montar sua trilha personalizada.</p>
-      <div id="quizStep"></div>
-    </div>
-  </div>
-
-  <header>
-    <nav>
-      <div class="logo">Pratica.dev</div>
-
-      <button id="menuBtn">☰</button>
-
-      <ul id="menu">
-        <li><a href="#hero">Início</a></li>
-        <li><a href="#dashboard">Dashboard</a></li>
-        <li><a href="#trilhas">Trilhas</a></li>
-        <li><a href="#projects">Projetos</a></li>
-        <li><a href="#portfolio">Portfólio</a></li>
-        <li><a href="#carreira">Carreira</a></li>
-      </ul>
-    </nav>
-  </header>
-
-  <section id="hero" class="reveal">
-    <h1>Aprenda Programação na Prática com IA</h1>
-    <p>Trilhas personalizadas, projetos reais e evolução profissional.</p>
-    <button onclick="continueLearning()">Continuar de onde parei</button>
-  </section>
-
-  <section id="dashboard" class="reveal">
-    <h2>Dashboard</h2>
-
-    <div class="cards">
-      <div class="card">
-        <h3>XP</h3>
-        <p id="xp">0</p>
-      </div>
-
-      <div class="card">
-        <h3>Nível</h3>
-        <p id="level">1</p>
-      </div>
-
-      <div class="card">
-        <h3>Próximo passo</h3>
-        <p id="nextStep">...</p>
-      </div>
-    </div>
-  </section>
-
-  <section id="trilhas" class="reveal">
-    <h2>Trilha Front-end</h2>
-    <div id="modules"></div>
-  </section>
-
-  <section id="projects" class="reveal">
-    <h2>Projetos</h2>
-    <div id="projectList"></div>
-  </section>
-
-  <section id="portfolio" class="reveal">
-    <h2>Meu Portfólio</h2>
-    <div id="portfolioList"></div>
-  </section>
-
-  <section id="carreira" class="reveal">
-    <h2>Evolução Profissional</h2>
-
-    <div class="roadmap">
-      <div>HTML ✓</div>
-      <div>CSS</div>
-      <div>JavaScript</div>
-      <div>Projeto Final</div>
-    </div>
-  </section>
-
-  <footer>
-    © 2026 Pratica.dev
-  </footer>
-
-  <script src="script.js"></script>
+    
+    <script src="script.js"></script>
 </body>
 </html>

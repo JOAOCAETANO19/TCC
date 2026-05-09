@@ -1,306 +1,624 @@
-// =====================
-// DADOS
-// =====================
-
-const quiz = [
-  {
-    q: "Qual seu nível?",
-    a: ["Nunca programei", "Iniciante", "Intermediário"]
-  },
-  {
-    q: "Qual área?",
-    a: ["Front-end", "Back-end", "Mobile"]
-  }
+// ===== DATA =====
+const careers = [
+    { name:"Front-end", desc:"Cria interfaces visuais de sites e apps", salary:"R$4.000 - R$15.000", skills:["HTML","CSS","JavaScript","React","TypeScript"], time:"6-12 meses", color:"text-blue-400" },
+    { name:"Back-end", desc:"Desenvolve a lógica e servidores das aplicações", salary:"R$5.000 - R$18.000", skills:["Python","Java","Node.js","SQL","APIs"], time:"8-14 meses", color:"text-green-400" },
+    { name:"Full Stack", desc:"Domina front-end e back-end completo", salary:"R$6.000 - R$20.000", skills:["HTML/CSS/JS","Node.js","SQL","Git","DevOps"], time:"12-18 meses", color:"text-purple-400" },
+    { name:"Mobile", desc:"Desenvolve apps para iOS e Android", salary:"R$5.000 - R$16.000", skills:["React Native","Flutter","Kotlin","Swift"], time:"8-14 meses", color:"text-cyan-400" },
+    { name:"QA / Testes", desc:"Garante qualidade e confiabilidade do software", salary:"R$3.500 - R$12.000", skills:["Testes","Selenium","Cypress","Lógica"], time:"4-8 meses", color:"text-yellow-400" },
+    { name:"Banco de Dados", desc:"Administra e otimiza bancos de dados", salary:"R$5.000 - R$14.000", skills:["SQL","MySQL","PostgreSQL","MongoDB"], time:"6-10 meses", color:"text-orange-400" },
+    { name:"UX/UI Design", desc:"Projeta experiências e interfaces de usuário", salary:"R$4.000 - R$14.000", skills:["Figma","Design","Pesquisa","Prototipação"], time:"6-12 meses", color:"text-pink-400" },
+    { name:"DevOps", desc:"Automatiza deploys e infraestrutura", salary:"R$7.000 - R$22.000", skills:["Linux","Docker","CI/CD","AWS","Git"], time:"10-16 meses", color:"text-red-400" },
+    { name:"Analista de Sistemas", desc:"Analisa requisitos e projeta soluções", salary:"R$5.000 - R$15.000", skills:["UML","Processos","SQL","Documentação"], time:"6-12 meses", color:"text-teal-400" }
 ];
 
-const modules = [
-  { name: "HTML", total: 3 },
-  { name: "CSS", total: 3 },
-  { name: "JavaScript", total: 3 }
+const subjects = [
+    { id:"html", name:"HTML", icon:"🌐", color:"bg-orange-500/20 border-orange-500/30" },
+    { id:"css", name:"CSS", icon:"🎨", color:"bg-blue-500/20 border-blue-500/30" },
+    { id:"js", name:"JavaScript", icon:"⚡", color:"bg-yellow-500/20 border-yellow-500/30" },
+    { id:"sql", name:"SQL", icon:"🗄️", color:"bg-cyan-500/20 border-cyan-500/30" },
+    { id:"python", name:"Python", icon:"🐍", color:"bg-green-500/20 border-green-500/30" },
+    { id:"java", name:"Java", icon:"☕", color:"bg-red-500/20 border-red-500/30" },
+    { id:"poo", name:"POO", icon:"🧩", color:"bg-purple-500/20 border-purple-500/30" },
+    { id:"git", name:"Git/GitHub", icon:"🔀", color:"bg-gray-500/20 border-gray-500/30" },
+    { id:"redes", name:"Redes", icon:"🌍", color:"bg-teal-500/20 border-teal-500/30" },
+    { id:"apis", name:"APIs", icon:"🔗", color:"bg-indigo-500/20 border-indigo-500/30" },
+    { id:"banco", name:"Banco de Dados", icon:"💾", color:"bg-amber-500/20 border-amber-500/30" },
+    { id:"logica", name:"Lógica", icon:"🧠", color:"bg-pink-500/20 border-pink-500/30" }
 ];
+
+const subjectContent = {
+    html: { title:"HTML - HyperText Markup Language", summary:"HTML é a linguagem de marcação padrão para criar páginas web. Ela define a estrutura e o conteúdo de uma página.", topics:["Tags e elementos","Estrutura básica (DOCTYPE, head, body)","Semântica (header, nav, main, footer)","Formulários e inputs","Tabelas e listas","Links e imagens","Atributos e classes"], example:`<!DOCTYPE html>\n<html>\n<head>\n  <title>Minha Página</title>\n</head>\n<body>\n  <h1>Olá, Mundo!</h1>\n  <p>Meu primeiro site.</p>\n</body>\n</html>`, exercise:"Crie uma página HTML com um cabeçalho, parágrafo, lista e um link para o Google.", video:"https://www.youtube.com/embed/Ejkb_YpuHWs" },
+    css: { title:"CSS - Cascading Style Sheets", summary:"CSS é a linguagem que estiliza páginas web, controlando cores, fontes, layouts e animações.", topics:["Seletores e propriedades","Box Model (margin, padding, border)","Flexbox e Grid","Responsividade (media queries)","Animações e transições","Variáveis CSS","Pseudo-classes e pseudo-elementos"], example:`body {\n  font-family: Arial;\n  background: #1a1a2e;\n  color: white;\n}\n\n.card {\n  display: flex;\n  padding: 20px;\n  border-radius: 12px;\n  background: rgba(255,255,255,0.05);\n}`, exercise:"Estilize um card com Flexbox, borda arredondada e sombra.", video:"https://www.youtube.com/embed/GPK8A-A156o" },
+    js: { title:"JavaScript - Linguagem da Web", summary:"JavaScript é a linguagem de programação que torna páginas web interativas e dinâmicas.", topics:["Variáveis (let, const, var)","Funções e Arrow Functions","DOM Manipulation","Eventos e Listeners","Arrays e Objetos","Promises e Async/Await","LocalStorage e Fetch API"], example:`const btn = document.querySelector('#meuBtn');\n\nbtn.addEventListener('click', () => {\n  alert('Clicou!');\n});\n\nconst soma = (a, b) => a + b;\nconsole.log(soma(2, 3)); // 5`, exercise:"Crie um contador que incrementa ao clicar em um botão e mostra o valor na tela.", video:"https://www.youtube.com/embed/i6Oi-YtXnAU" },
+    sql: { title:"SQL - Structured Query Language", summary:"SQL é a linguagem padrão para gerenciar e consultar bancos de dados relacionais.", topics:["SELECT, INSERT, UPDATE, DELETE","WHERE e condições","JOIN (INNER, LEFT, RIGHT)","GROUP BY e ORDER BY","Funções agregadas (COUNT, SUM, AVG)","Subqueries","Índices e otimização"], example:`SELECT nome, idade\nFROM alunos\nWHERE curso = 'Desenvolvimento'\nORDER BY nome ASC;\n\nINSERT INTO alunos (nome, idade)\nVALUES ('João', 17);`, exercise:"Escreva uma query que retorne todos os alunos maiores de 16 anos ordenados por nome.", video:"https://www.youtube.com/embed/byHcYRpMgI4" },
+    python: { title:"Python - Linguagem Versátil", summary:"Python é uma linguagem poderosa e fácil de aprender, usada em web, dados, IA e automação.", topics:["Variáveis e tipos de dados","Estruturas condicionais (if/elif/else)","Loops (for, while)","Funções e módulos","Listas, dicionários e tuplas","Orientação a objetos","Bibliotecas populares (Flask, Pandas)"], example:`def saudacao(nome):\n    return f"Olá, {nome}!"\n\nalunos = ["Ana", "João", "Maria"]\nfor aluno in alunos:\n    print(saudacao(aluno))`, exercise:"Crie uma função que recebe uma lista de notas e retorna a média.", video:"https://www.youtube.com/embed/S9uPNppGsGo" },
+    java: { title:"Java - Linguagem Corporativa", summary:"Java é uma das linguagens mais usadas no mundo corporativo, robusta e orientada a objetos.", topics:["Classes e objetos","Tipos primitivos e wrappers","Herança e polimorfismo","Interfaces e classes abstratas","Collections (List, Map, Set)","Exceções (try/catch)","Spring Boot (introdução)"], example:`public class Aluno {\n    private String nome;\n    private int idade;\n\n    public Aluno(String nome, int idade) {\n        this.nome = nome;\n        this.idade = idade;\n    }\n\n    public String getNome() {\n        return this.nome;\n    }\n}`, exercise:"Crie uma classe Carro com atributos marca, modelo e ano, e um método que exibe as informações.", video:"https://www.youtube.com/embed/grEKMHGYyns" },
+    poo: { title:"POO - Programação Orientada a Objetos", summary:"POO é um paradigma que organiza código em objetos com atributos e comportamentos.", topics:["Classes e Objetos","Encapsulamento","Herança","Polimorfismo","Abstração","Interfaces","Princípios SOLID (introdução)"], example:`class Animal {\n  constructor(nome) {\n    this.nome = nome;\n  }\n  falar() {\n    return "...";\n  }\n}\n\nclass Cachorro extends Animal {\n  falar() {\n    return "Au au!";\n  }\n}`, exercise:"Crie uma hierarquia de classes: Forma → Retângulo e Círculo, cada um com método calcularArea().", video:"https://www.youtube.com/embed/QY0Kdg83orY" },
+    git: { title:"Git & GitHub - Controle de Versão", summary:"Git permite versionar código e GitHub é a plataforma para colaboração e portfólio.", topics:["git init, add, commit","Branches e merge","git push e pull","Pull Requests","Conflitos e resolução","GitHub Pages",".gitignore e README"], example:`git init\ngit add .\ngit commit -m "primeiro commit"\ngit remote add origin https://github.com/user/repo.git\ngit push -u origin main`, exercise:"Inicialize um repositório, faça 3 commits diferentes e crie uma branch chamada 'feature'.", video:"https://www.youtube.com/embed/UBAX-13g8aw" },
+    redes: { title:"Redes de Computadores", summary:"Redes conectam computadores permitindo comunicação e compartilhamento de recursos.", topics:["Modelo OSI e TCP/IP","IP, DNS e portas","HTTP e HTTPS","Roteadores e switches","Protocolos (FTP, SSH, SMTP)","Firewall e segurança","Wi-Fi e cabeamento"], example:`IP Local: 192.168.1.100\nMáscara: 255.255.255.0\nGateway: 192.168.1.1\nDNS: 8.8.8.8\n\nHTTP GET /api/dados → 200 OK`, exercise:"Explique a diferença entre IP público e privado e como funciona o NAT.", video:"https://www.youtube.com/embed/Tq4RFqdaKPM" },
+    apis: { title:"APIs - Application Programming Interface", summary:"APIs permitem que sistemas se comuniquem entre si, essencial para apps modernos.", topics:["O que é uma API REST","Métodos HTTP (GET, POST, PUT, DELETE)","JSON e formato de dados","Headers e autenticação","Status codes (200, 404, 500)","Fetch API no JavaScript","Documentação (Swagger)"], example:`// Consumindo uma API\nfetch('https://api.exemplo.com/users')\n  .then(res => res.json())\n  .then(data => {\n    console.log(data);\n  })\n  .catch(err => console.error(err));`, exercise:"Consuma a API JSONPlaceholder e exiba uma lista de posts em uma página HTML.", video:"https://www.youtube.com/embed/vGuqKIRWosk" },
+    banco: { title:"Banco de Dados", summary:"Bancos de dados armazenam e organizam informações de forma estruturada e eficiente.", topics:["Modelagem de dados (MER)","Banco relacional vs NoSQL","Normalização (1FN, 2FN, 3FN)","Chaves primárias e estrangeiras","Relacionamentos (1:1, 1:N, N:N)","MySQL, PostgreSQL, MongoDB","Transações e ACID"], example:`CREATE TABLE alunos (\n  id INT PRIMARY KEY AUTO_INCREMENT,\n  nome VARCHAR(100) NOT NULL,\n  email VARCHAR(100) UNIQUE,\n  curso_id INT,\n  FOREIGN KEY (curso_id) REFERENCES cursos(id)\n);`, exercise:"Modele um banco de dados para uma biblioteca com tabelas: livros, autores e empréstimos.", video:"https://www.youtube.com/embed/Ofktsne-utM" },
+    logica: { title:"Lógica de Programação", summary:"Base fundamental para qualquer linguagem. Ensina a pensar como um programador.", topics:["Algoritmos e fluxogramas","Variáveis e tipos de dados","Estruturas condicionais","Loops (repetição)","Vetores e matrizes","Funções e procedimentos","Debugging e resolução de problemas"], example:`// Algoritmo: Verificar se é par ou ímpar\nfuncao verificarParidade(numero):\n  se (numero % 2 == 0):\n    retornar "Par"\n  senao:\n    retornar "Ímpar"`, exercise:"Crie um algoritmo que receba 5 números e retorne o maior e o menor.", video:"https://www.youtube.com/embed/8mei6uVttho" }
+};
 
 const projects = [
-  "Landing Page",
-  "To-do List",
-  "Dashboard"
+    { level:"Iniciante", color:"text-green-400", border:"border-green-500/30", items:[
+        { name:"Calculadora", desc:"Calculadora funcional com operações básicas", difficulty:"⭐" },
+        { name:"Lista de Tarefas", desc:"Todo list com adicionar, remover e marcar como concluído", difficulty:"⭐" },
+        { name:"Relógio Digital", desc:"Relógio com hora, data e cronômetro", difficulty:"⭐" }
+    ]},
+    { level:"Intermediário", color:"text-yellow-400", border:"border-yellow-500/30", items:[
+        { name:"Dashboard Analytics", desc:"Painel com gráficos e dados dinâmicos", difficulty:"⭐⭐" },
+        { name:"Sistema de Login", desc:"Autenticação com localStorage e rotas protegidas", difficulty:"⭐⭐" },
+        { name:"Quiz Interativo", desc:"Quiz com pontuação, timer e ranking", difficulty:"⭐⭐" }
+    ]},
+    { level:"Avançado", color:"text-red-400", border:"border-red-500/30", items:[
+        { name:"E-commerce", desc:"Loja virtual com carrinho, filtros e checkout", difficulty:"⭐⭐⭐" },
+        { name:"Rede Social", desc:"Feed, perfis, posts e interações", difficulty:"⭐⭐⭐" },
+        { name:"Chat em Tempo Real", desc:"Mensagens instantâneas com WebSocket", difficulty:"⭐⭐⭐" }
+    ]}
 ];
 
-let currentQuiz = 0;
+// ===== STATE =====
+let currentUser = null;
 
-
-// =====================
-// INICIALIZAÇÃO
-// =====================
-
-document.addEventListener("DOMContentLoaded", init);
-
-function init(){
-  setupMenu();
-  checkLogin();
-  renderQuiz();
-  loadApp();
+// ===== AUTH =====
+function handleLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const pass = document.getElementById('login-password').value;
+    if (!email || !pass) { 
+        showError('login-error','Preencha todos os campos.'); 
+        return; 
+    }
+    const users = JSON.parse(localStorage.getItem('pratica_users')||'{}');
+    if (!users[email] || users[email].password !== pass) { 
+        showError('login-error','Email ou senha incorretos.'); 
+        return; 
+    }
+    currentUser = users[email];
+    localStorage.setItem('pratica_current', email);
+    enterApp();
 }
 
-
-// =====================
-// LOGIN
-// =====================
-
-function register(){
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
-
-  if(!email || !password){
-    alert("Preencha tudo");
-    return;
-  }
-
-  localStorage.setItem(
-    "user",
-    JSON.stringify({ email, password })
-  );
-
-  alert("Cadastro realizado!");
+function handleRegister() {
+    const name = document.getElementById('reg-name').value.trim();
+    const age = document.getElementById('reg-age').value;
+    const email = document.getElementById('reg-email').value.trim();
+    const pass = document.getElementById('reg-password').value;
+    if (!name || !age || !email || !pass) { 
+        showError('reg-error','Preencha todos os campos.'); 
+        return; 
+    }
+    const users = JSON.parse(localStorage.getItem('pratica_users')||'{}');
+    if (users[email]) { 
+        showError('reg-error','Email já cadastrado.'); 
+        return; 
+    }
+    users[email] = { 
+        name, 
+        age:parseInt(age), 
+        email, 
+        password:pass, 
+        xp:0, 
+        level:1, 
+        track:'', 
+        goal:'', 
+        quizDone:false, 
+        completedProjects:[], 
+        certs:[] 
+    };
+    localStorage.setItem('pratica_users', JSON.stringify(users));
+    currentUser = users[email];
+    localStorage.setItem('pratica_current', email);
+    enterApp();
 }
 
-function login(){
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
-
-  const user =
-    JSON.parse(localStorage.getItem("user"));
-
-  if(
-    user &&
-    user.email === email &&
-    user.password === password
-  ){
-    localStorage.setItem("logged","true");
-    checkLogin();
-    alert("Login realizado!");
-  }else{
-    alert("Dados inválidos");
-  }
+function handleLogout() {
+    localStorage.removeItem('pratica_current');
+    currentUser = null;
+    document.getElementById('main-app').classList.add('hidden');
+    document.getElementById('login-screen').classList.remove('hidden');
 }
 
-function logout(){
-  localStorage.removeItem("logged");
-  checkLogin();
+function showError(id, msg) { 
+    const el = document.getElementById(id); 
+    el.textContent = msg; 
+    el.classList.remove('hidden'); 
+    setTimeout(() => el.classList.add('hidden'), 3000); 
 }
 
-function checkLogin(){
-  const status =
-    document.getElementById("userStatus");
-
-  const user =
-    JSON.parse(localStorage.getItem("user"));
-
-  const logged =
-    localStorage.getItem("logged");
-
-  if(user && logged){
-    status.textContent =
-      "Logado: " + user.email;
-  }else{
-    status.textContent =
-      "Não logado";
-  }
+function showRegister() { 
+    document.getElementById('login-form').classList.add('hidden'); 
+    document.getElementById('register-form').classList.remove('hidden'); 
 }
 
-
-// =====================
-// QUIZ
-// =====================
-
-function renderQuiz(){
-
-  const modal =
-    document.getElementById("quizModal");
-
-  const box =
-    document.getElementById("quizStep");
-
-  if(localStorage.getItem("quizDone")){
-    modal.classList.remove("active");
-    return;
-  }
-
-  modal.classList.add("active");
-
-  const q = quiz[currentQuiz];
-
-  let html =
-    `<h3>${q.q}</h3>`;
-
-  q.a.forEach(function(op){
-    html += `
-      <button
-        class="quiz-btn"
-        onclick="answerQuiz('${op}')">
-        ${op}
-      </button>
-    `;
-  });
-
-  box.innerHTML = html;
+function showLogin() { 
+    document.getElementById('register-form').classList.add('hidden'); 
+    document.getElementById('login-form').classList.remove('hidden'); 
 }
 
-function answerQuiz(answer){
-  currentQuiz++;
-
-  if(currentQuiz < quiz.length){
-    renderQuiz();
-  }else{
-    localStorage.setItem(
-      "quizDone",
-      "true"
-    );
-
-    document
-      .getElementById("quizModal")
-      .classList.remove("active");
-  }
+// ===== APP ENTRY =====
+function enterApp() {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('main-app').classList.remove('hidden');
+    if (!currentUser.quizDone) { 
+        showQuiz(); 
+    } else { 
+        renderDashboard(); 
+    }
+    lucide.createIcons();
 }
 
-
-// =====================
-// DASHBOARD
-// =====================
-
-function loadDashboard(){
-  const xp =
-    Number(localStorage.getItem("xp")) || 0;
-
-  document.getElementById("xp").textContent =
-    xp;
-
-  document.getElementById("level").textContent =
-    Math.floor(xp/50)+1;
-
-  document.getElementById("nextStep").textContent =
-    "Finalize Flexbox";
+// ===== QUIZ =====
+function showQuiz() {
+    document.getElementById('quiz-modal').classList.remove('hidden');
+    renderQuizStep(0);
 }
 
+const quizQuestions = [
+    { q:"Qual seu nível atual?", options:["Iniciante total","Já sei o básico","Intermediário"] },
+    { q:"Qual área mais te interessa?", options:["Front-end","Back-end","Full Stack","Mobile","Ainda não sei"] },
+    { q:"Qual seu objetivo profissional?", options:["Estágio em 6 meses","Primeiro emprego em 1 ano","Freelancer","Criar meu próprio produto"] }
+];
+let quizAnswers = [];
 
-// =====================
-// TRILHAS
-// =====================
-
-function loadModules(){
-
-  const box =
-    document.getElementById("modules");
-
-  box.innerHTML = "";
-
-  modules.forEach(function(m,i){
-
-    const done =
-      Number(localStorage.getItem("m"+i)) || 0;
-
-    const percent =
-      (done/m.total)*100;
-
-    box.innerHTML += `
-      <div class="module">
-        <h3>${m.name}</h3>
-        <p>${done}/${m.total} etapas</p>
-
-        <div class="progress">
-          <div
-            class="progress-fill"
-            style="width:${percent}%">
-          </div>
+function renderQuizStep(step) {
+    const container = document.getElementById('quiz-steps');
+    if (step >= quizQuestions.length) { 
+        finishQuiz(); 
+        return; 
+    }
+    const q = quizQuestions[step];
+    container.innerHTML = `
+        <p class="font-semibold mb-4 text-lg">${step+1}. ${q.q}</p>
+        <div class="space-y-3">
+            ${q.options.map((o,i) => `
+                <button onclick="answerQuiz(${step},${i},'${o}')" class="w-full text-left card-glass p-4 rounded-lg hover:border-green-400/50 transition border border-white/10">
+                    ${o}
+                </button>
+            `).join('')}
         </div>
-
-        <button onclick="nextStep(${i})">
-          Avançar
-        </button>
-      </div>
+        <p class="text-white/30 text-xs mt-4">${step+1} de ${quizQuestions.length}</p>
     `;
-  });
 }
 
-function nextStep(i){
-
-  let done =
-    Number(localStorage.getItem("m"+i)) || 0;
-
-  if(done < modules[i].total){
-    done++;
-
-    localStorage.setItem("m"+i,done);
-
-    let xp =
-      Number(localStorage.getItem("xp")) || 0;
-
-    localStorage.setItem(
-      "xp",
-      xp + 10
-    );
-  }
-
-  loadApp();
+function answerQuiz(step, idx, answer) {
+    quizAnswers[step] = answer;
+    renderQuizStep(step+1);
 }
 
+function finishQuiz() {
+    currentUser.quizDone = true;
+    currentUser.track = quizAnswers[1] || 'Full Stack';
+    currentUser.goal = quizAnswers[2] || 'Primeiro emprego';
+    currentUser.xp = 50;
+    saveUser();
+    document.getElementById('quiz-modal').classList.add('hidden');
+    renderDashboard();
+}
 
-// =====================
-// PROJETOS
-// =====================
+// ===== SAVE =====
+function saveUser() {
+    const users = JSON.parse(localStorage.getItem('pratica_users')||'{}');
+    users[currentUser.email] = currentUser;
+    localStorage.setItem('pratica_users', JSON.stringify(users));
+}
 
-function loadProjects(){
+// ===== TABS =====
+function switchTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('tab-'+tab).classList.add('active');
+    document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+    
+    if (tab === 'dashboard') renderDashboard();
+    if (tab === 'perfil') renderProfile();
+    if (tab === 'evolucao') renderCareers();
+    if (tab === 'estudos') renderSubjects();
+    if (tab === 'sobre') renderAbout();
+    if (tab === 'projetos') renderProjects();
+    if (tab === 'portfolio') renderPortfolio();
+}
 
-  const box =
-    document.getElementById("projectList");
+// ===== RENDER FUNCTIONS =====
+function renderDashboard() {
+    if (!currentUser) return;
+    document.getElementById('nav-user').textContent = currentUser.name;
+    document.getElementById('nav-level').textContent = 'Nível '+currentUser.level;
+    document.getElementById('nav-xp').textContent = currentUser.xp+' XP';
+    document.getElementById('dash-name').textContent = currentUser.name.split(' ')[0];
+    document.getElementById('dash-level').textContent = 'Nível '+currentUser.level;
+    document.getElementById('dash-xp').textContent = currentUser.xp+' XP';
+    document.getElementById('dash-track').textContent = currentUser.track || 'Não definida';
+    
+    const progress = Math.min(100, Math.round((currentUser.xp / 1000)*100));
+    document.getElementById('dash-progress').style.width = progress+'%';
+    document.getElementById('dash-progress-text').textContent = progress;
+    
+    const recs = [
+        "Comece estudando HTML no Centro de Estudos",
+        "Pratique CSS criando um card responsivo",
+        "Aprenda JavaScript criando uma calculadora",
+        "Explore Git/GitHub para versionar seus projetos",
+        "Tente criar seu primeiro projeto com banco de dados"
+    ];
+    document.getElementById('dash-recommendation').textContent = recs[currentUser.level-1] || recs[0];
+}
 
-  box.innerHTML = "";
-
-  projects.forEach(function(p){
-    box.innerHTML += `
-      <div class="project">
-        <h3>${p}</h3>
-      </div>
+function renderProfile() {
+    const container = document.getElementById('tab-perfil');
+    container.innerHTML = `
+        <div class="fade-in">
+            <h2 class="text-2xl font-bold mb-6">Meu Perfil</h2>
+            <div class="card-glass rounded-xl p-6 mb-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-white/50 text-xs">Nome</p>
+                        <p class="font-semibold">${currentUser.name}</p>
+                    </div>
+                    <div>
+                        <p class="text-white/50 text-xs">Idade</p>
+                        <p class="font-semibold">${currentUser.age} anos</p>
+                    </div>
+                    <div>
+                        <p class="text-white/50 text-xs">Curso</p>
+                        <p class="font-semibold">Desenvolvimento de Sistemas</p>
+                    </div>
+                    <div>
+                        <p class="text-white/50 text-xs">Objetivo</p>
+                        <p class="font-semibold text-green-400">${currentUser.goal || 'Não definido'}</p>
+                    </div>
+                    <div>
+                        <p class="text-white/50 text-xs">Nível</p>
+                        <p class="font-semibold text-purple-400">Nível ${currentUser.level}</p>
+                    </div>
+                    <div>
+                        <p class="text-white/50 text-xs">XP</p>
+                        <p class="font-semibold text-yellow-400">${currentUser.xp} XP</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-glass rounded-xl p-6 mb-6">
+                <h3 class="font-bold mb-3">Certificados</h3>
+                <div id="prof-certs" class="space-y-2">
+                    ${currentUser.certs.length ? 
+                        currentUser.certs.map(c => `<div class="bg-white/5 rounded-lg p-3 text-sm">🏆 ${c}</div>`).join('') : 
+                        '<p class="text-white/40 text-sm">Nenhum certificado ainda. Continue estudando!</p>'
+                    }
+                </div>
+            </div>
+            <div class="card-glass rounded-xl p-6">
+                <h3 class="font-bold mb-3">Projetos Concluídos</h3>
+                <div id="prof-projects" class="space-y-2">
+                    ${currentUser.completedProjects.length ? 
+                        currentUser.completedProjects.map(p => `<div class="bg-white/5 rounded-lg p-3 text-sm">✅ ${p}</div>`).join('') : 
+                        '<p class="text-white/40 text-sm">Nenhum projeto concluído. Vá para a aba Projetos!</p>'
+                    }
+                </div>
+            </div>
+        </div>
     `;
-  });
 }
 
-
-// =====================
-// PORTFÓLIO
-// =====================
-
-function loadPortfolio(){
-  document.getElementById(
-    "portfolioList"
-  ).innerHTML =
-    "<div>Seu portfólio cresce com seu progresso.</div>";
+function renderCareers() {
+    const container = document.getElementById('tab-evolucao');
+    container.innerHTML = `
+        <div class="fade-in">
+            <h2 class="text-2xl font-bold mb-2">Evolução Profissional</h2>
+            <p class="text-white/50 mb-6">Veja como transformar o que você aprende em oportunidades reais de carreira.</p>
+            <div class="card-glass rounded-xl p-5 mb-6">
+                <h3 class="font-bold text-green-400 mb-3">Como suas matérias viram carreira:</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="text-yellow-400">HTML</span><span class="text-white/40">→</span> Criação de sites
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-blue-400">CSS</span><span class="text-white/40">→</span> Interfaces profissionais
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-yellow-300">JavaScript</span><span class="text-white/40">→</span> Sistemas web interativos
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-orange-400">Banco de Dados</span><span class="text-white/40">→</span> Back-end e dados
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-purple-400">POO</span><span class="text-white/40">→</span> Softwares completos
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-cyan-400">Git/GitHub</span><span class="text-white/40">→</span> Colaboração profissional
+                    </div>
+                </div>
+            </div>
+            <h3 class="font-bold mb-4">Carreiras em Tecnologia</h3>
+            <div id="careers-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                ${careers.map(c => `
+                    <div class="card-glass career-card rounded-xl p-5 border border-white/5">
+                        <h4 class="font-bold ${c.color} mb-2">${c.name}</h4>
+                        <p class="text-white/60 text-sm mb-3">${c.desc}</p>
+                        <p class="text-xs text-white/40 mb-1">💰 ${c.salary}</p>
+                        <p class="text-xs text-white/40 mb-2">⏱️ ${c.time} para entrar</p>
+                        <div class="flex flex-wrap gap-1">
+                            ${c.skills.map(s => `<span class="text-xs bg-white/10 px-2 py-1 rounded">${s}</span>`).join('')}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
 }
 
-
-// =====================
-// APP
-// =====================
-
-function loadApp(){
-  loadDashboard();
-  loadModules();
-  loadProjects();
-  loadPortfolio();
+function renderSubjects() {
+    const container = document.getElementById('tab-estudos');
+    container.innerHTML = `
+        <div class="fade-in">
+            <h2 class="text-2xl font-bold mb-2">Centro de Estudos</h2>
+            <p class="text-white/50 mb-6">Escolha uma matéria para estudar com conteúdo completo.</p>
+            <div id="subjects-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                ${subjects.map(s => `
+                    <div class="subject-card card-glass rounded-xl p-5 border ${s.color} text-center" onclick="openSubject('${s.id}')">
+                        <div class="text-3xl mb-2">${s.icon}</div>
+                        <p class="font-semibold text-sm">${s.name}</p>
+                    </div>
+                `).join('')}
+            </div>
+            <div id="study-content" class="hidden mt-6"></div>
+        </div>
+    `;
 }
 
-
-// =====================
-// MENU MOBILE
-// =====================
-
-function setupMenu(){
-  const btn =
-    document.getElementById("menuBtn");
-
-  const menu =
-    document.getElementById("menu");
-
-  btn.addEventListener("click",()=>{
-    menu.classList.toggle("open");
-  });
+function openSubject(id) {
+    const content = subjectContent[id];
+    if (!content) return;
+    document.getElementById('subjects-grid').classList.add('hidden');
+    const el = document.getElementById('study-content');
+    el.classList.remove('hidden');
+    el.innerHTML = `
+        <button onclick="closeSubject()" class="btn-secondary mb-4 px-4 py-2 rounded-lg text-sm">← Voltar</button>
+        <div class="card-glass rounded-xl p-6 mb-4">
+            <h3 class="text-xl font-bold text-green-400 mb-2">${content.title}</h3>
+            <p class="text-white/70 mb-4">${content.summary}</p>
+            <h4 class="font-semibold mb-2">📚 Tópicos Principais:</h4>
+            <ul class="text-white/60 text-sm space-y-1 mb-4">
+                ${content.topics.map(t => `<li>• ${t}</li>`).join('')}
+            </ul>
+        </div>
+        <div class="card-glass rounded-xl p-6 mb-4">
+            <h4 class="font-semibold mb-2 text-yellow-400">💻 Exemplo Prático:</h4>
+            <pre class="bg-black/40 rounded-lg p-4 text-sm text-green-300 overflow-x-auto font-mono">${content.example}</pre>
+        </div>
+        <div class="card-glass rounded-xl p-6 mb-4">
+            <h4 class="font-semibold mb-2 text-purple-400">🎯 Exercício:</h4>
+            <p class="text-white/70 text-sm">${content.exercise}</p>
+            <button onclick="completeExercise('${id}')" class="btn-primary mt-3 px-4 py-2 rounded-lg text-sm">
+                Marcar como concluído (+30 XP)
+            </button>
+        </div>
+        <div class="card-glass rounded-xl p-6">
+            <h4 class="font-semibold mb-3 text-blue-400">🎬 Vídeo de Apoio:</h4>
+            <div class="aspect-video rounded-lg overflow-hidden bg-black/30">
+                <iframe src="${content.video}" class="w-full h-full" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+        </div>
+    `;
+    currentUser.xp += 10;
+    currentUser.level = Math.floor(currentUser.xp / 200) + 1;
+    saveUser();
+    renderDashboard();
 }
+
+function closeSubject() {
+    document.getElementById('study-content').classList.add('hidden');
+    document.getElementById('subjects-grid').classList.remove('hidden');
+}
+
+function completeExercise(id) {
+    currentUser.xp += 30;
+    currentUser.level = Math.floor(currentUser.xp / 200) + 1;
+    const subj = subjects.find(s => s.id === id);
+    if (subj && !currentUser.certs.includes(subj.name)) { 
+        currentUser.certs.push(subj.name + ' - Básico'); 
+    }
+    saveUser();
+    renderDashboard();
+    const btn = event.target;
+    btn.textContent = '✅ Concluído!';
+    btn.disabled = true;
+    btn.classList.add('opacity-50');
+}
+
+function renderAbout() {
+    const container = document.getElementById('tab-sobre');
+    container.innerHTML = `
+        <div class="fade-in">
+            <h2 class="text-2xl font-bold mb-6">Sobre o Curso Técnico</h2>
+            <div class="card-glass rounded-xl p-6 mb-6">
+                <h3 class="font-bold text-green-400 mb-3">O que é o curso?</h3>
+                <p class="text-white/70 leading-relaxed">O curso técnico em Desenvolvimento de Sistemas forma profissionais capazes de projetar, desenvolver e manter sistemas de software. Você aprende programação, banco de dados, análise de sistemas, redes e metodologias ágeis — tudo que o mercado exige de um desenvolvedor.</p>
+            </div>
+            <div class="card-glass rounded-xl p-6 mb-6">
+                <h3 class="font-bold text-green-400 mb-3">O que se aprende?</h3>
+                <ul class="text-white/70 space-y-2 text-sm">
+                    <li>• Lógica de Programação e Algoritmos</li>
+                    <li>• HTML, CSS e JavaScript (Front-end)</li>
+                    <li>• Python, Java (Back-end)</li>
+                    <li>• Banco de Dados e SQL</li>
+                    <li>• Programação Orientada a Objetos</li>
+                    <li>• Git, GitHub e Controle de Versão</li>
+                    <li>• APIs e Integração de Sistemas</li>
+                    <li>• Redes e Infraestrutura Básica</li>
+                </ul>
+            </div>
+            <div class="card-glass rounded-xl p-6 mb-6">
+                <h3 class="font-bold text-green-400 mb-3">Mercado de Trabalho</h3>
+                <p class="text-white/70 leading-relaxed mb-3">A área de tecnologia é uma das que mais cresce no Brasil e no mundo. Profissionais com conhecimento técnico em desenvolvimento são altamente requisitados, com salários competitivos mesmo no início da carreira.</p>
+            </div>
+            <div class="card-glass rounded-xl p-6">
+                <h3 class="font-bold text-green-400 mb-4">Linha do Tempo de Evolução</h3>
+                <div class="flex items-start gap-4">
+                    <div class="timeline-line h-64 flex-shrink-0 mt-2"></div>
+                    <div class="space-y-6 text-sm">
+                        <div>
+                            <span class="text-green-400 font-bold">Aluno</span>
+                            <p class="text-white/50">Aprendendo fundamentos no curso técnico</p>
+                        </div>
+                        <div>
+                            <span class="text-blue-400 font-bold">Estagiário</span>
+                            <p class="text-white/50">Primeiro contato com o mercado real</p>
+                        </div>
+                        <div>
+                            <span class="text-yellow-400 font-bold">Júnior</span>
+                            <p class="text-white/50">Primeiro emprego CLT (R$2.000-4.000)</p>
+                        </div>
+                        <div>
+                            <span class="text-orange-400 font-bold">Pleno</span>
+                            <p class="text-white/50">2-4 anos de experiência (R$5.000-9.000)</p>
+                        </div>
+                        <div>
+                            <span class="text-purple-400 font-bold">Sênior</span>
+                            <p class="text-white/50">5+ anos, liderança técnica (R$10.000-18.000)</p>
+                        </div>
+                        <div>
+                            <span class="text-pink-400 font-bold">Especialista</span>
+                            <p class="text-white/50">Referência na área (R$15.000-30.000+)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderProjects() {
+    const container = document.getElementById('tab-projetos');
+    container.innerHTML = `
+        <div class="fade-in">
+            <h2 class="text-2xl font-bold mb-2">Projetos Práticos</h2>
+            <p class="text-white/50 mb-6">Desenvolva projetos reais para seu portfólio.</p>
+            <div id="projects-grid" class="space-y-6">
+                ${projects.map(level => `
+                    <div>
+                        <h3 class="font-bold ${level.color} mb-3">${level.level}</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            ${level.items.map(p => `
+                                <div class="card-glass rounded-xl p-5 border ${level.border}">
+                                    <h4 class="font-semibold mb-1">${p.name}</h4>
+                                    <p class="text-white/50 text-xs mb-2">${p.desc}</p>
+                                    <p class="text-xs mb-3">${p.difficulty}</p>
+                                    <button onclick="startProject('${p.name}')" class="btn-primary px-3 py-1.5 rounded text-xs w-full">
+                                        Iniciar Projeto
+                                    </button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function startProject(name) {
+    if (!currentUser.completedProjects.includes(name)) {
+        currentUser.completedProjects.push(name);
+        currentUser.xp += 100;
+        currentUser.level = Math.floor(currentUser.xp / 200) + 1;
+        saveUser();
+    }
+    const btn = event.target;
+    btn.textContent = '✅ Concluído!';
+    btn.disabled = true;
+    btn.classList.add('opacity-50');
+    renderDashboard();
+}
+
+function renderPortfolio() {
+    const container = document.getElementById('tab-portfolio');
+    container.innerHTML = `
+        <div class="fade-in">
+            <h2 class="text-2xl font-bold mb-6">Meu Portfólio Digital</h2>
+            <div class="card-glass rounded-xl p-6 glow-purple">
+                <div class="text-center mb-6">
+                    <div class="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-purple-500 mx-auto mb-3 flex items-center justify-center text-2xl font-bold">
+                        ${currentUser.name.charAt(0)}
+                    </div>
+                    <h3 class="text-xl font-bold">${currentUser.name}</h3>
+                    <p class="text-white/50">Estudante de Desenvolvimento de Sistemas</p>
+                    <p class="text-green-400 text-sm">${currentUser.track || 'Explorando'} • Nível ${currentUser.level}</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <h4 class="font-semibold text-sm text-white/60 mb-2">🛠️ Habilidades</h4>
+                        <div class="flex flex-wrap gap-2">
+                            ${currentUser.certs.length ? 
+                                currentUser.certs.map(c => `<span class="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">${c.replace(' - Básico','')}</span>`).join('') : 
+                                '<span class="text-white/40 text-xs">Nenhuma ainda</span>'
+                            }
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-sm text-white/60 mb-2">📊 Estatísticas</h4>
+                        <p class="text-xs text-white/50">
+                            ${currentUser.xp} XP • ${currentUser.completedProjects.length} projetos • ${currentUser.certs.length} certificados
+                        </p>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-sm text-white/60 mb-2">📁 Projetos</h4>
+                    ${currentUser.completedProjects.length ? 
+                        currentUser.completedProjects.map(p => `<div class="bg-white/5 rounded-lg p-3 mb-2 text-sm">✅ ${p}</div>`).join('') : 
+                        '<p class="text-white/40 text-xs">Complete projetos na aba Projetos para preencher seu portfólio!</p>'
+                    }
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ===== INIT =====
+function init() {
+    const savedEmail = localStorage.getItem('pratica_current');
+    if (savedEmail) {
+        const users = JSON.parse(localStorage.getItem('pratica_users')||'{}');
+        if (users[savedEmail]) {
+            currentUser = users[savedEmail];
+            enterApp();
+            return;
+        }
+    }
+    document.getElementById('login-screen').classList.remove('hidden');
+    lucide.createIcons();
+}
+
+// Element SDK
+const defaultConfig = { 
+    site_title: "Pratica.dev 2.0", 
+    background_color: "#0f0f23", 
+    surface_color: "#1a1a3e", 
+    text_color: "#ffffff", 
+    primary_color: "#00ff88", 
+    secondary_color: "#8b5cf6", 
+    font_family: "Plus Jakarta Sans", 
+    font_size: 16 
+};
+
+window.elementSdk.init({
+    defaultConfig,
+    onConfigChange: async (config) => {
+        document.body.style.fontFamily = `${config.font_family || defaultConfig.font_family}, sans-serif`;
+    },
+    mapToCapabilities: (config) => ({
+        recolorables: [
+            { get:()=>config.background_color||defaultConfig.background_color, set:(v)=>{config.background_color=v;window.elementSdk.setConfig({background_color:v})} },
+            { get:()=>config.surface_color||defaultConfig.surface_color, set:(v)=>{config.surface_color=v;window.elementSdk.setConfig({surface_color:v})} },
+            { get:()=>config.text_color||defaultConfig.text_color, set:(v)=>{config.text_color=v;window.elementSdk.setConfig({text_color:v})} },
+            { get:()=>config.primary_color||defaultConfig.primary_color, set:(v)=>{config.primary_color=v;window.elementSdk.setConfig({primary_color:v})} },
+            { get:()=>config.secondary_color||defaultConfig.secondary_color, set:(v)=>{config.secondary_color=v;window.elementSdk.setConfig({secondary_color:v})} }
+        ],
+        borderables: [],
+        fontEditable: { get:()=>config.font_family||defaultConfig.font_family, set:(v)=>{config.font_family=v;window.elementSdk.setConfig({font_family:v})} },
+        fontSizeable: { get:()=>config.font_size||defaultConfig.font_size, set:(v)=>{config.font_size=v;window.elementSdk.setConfig({font_size:v})} }
+    }),
+    mapToEditPanelValues: (config) => new Map([["site_title", config.site_title || defaultConfig.site_title]])
+});
+
+init();
