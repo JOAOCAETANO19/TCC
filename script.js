@@ -1,286 +1,289 @@
 const quiz = [
   {
     q: "Qual seu nível?",
-    a: ["Nunca programei", "Iniciante", "Intermediário", "Avançado"]
+    a: ["Nunca programei", "Iniciante", "Intermediário"]
   },
   {
     q: "Qual área?",
-    a: ["Front-end", "Back-end", "Mobile", "Dados", "IA"]
-  },
-  {
-    q: "Objetivo?",
-    a: ["Estágio", "Emprego", "Freelance", "Hobby"]
+    a: ["Front-end", "Back-end", "Mobile"]
   }
 ];
 
 const modules = [
-  { name: "HTML", xp: 20 },
-  { name: "CSS", xp: 20 },
-  { name: "JavaScript", xp: 30 },
-  { name: "APIs", xp: 30 }
+  { name:"HTML", steps:3 },
+  { name:"CSS", steps:3 },
+  { name:"JavaScript", steps:3 }
 ];
 
 const projects = [
-  "Página de Perfil",
   "Landing Page",
   "To-do List",
-  "Weather App"
+  "Dashboard"
 ];
 
 let step = 0;
-let answers = [];
-let typingStarted = false;
 
-const quizModal = document.getElementById("quizModal");
-const quizStep = document.getElementById("quizStep");
+const quizModal =
+document.getElementById("quizModal");
 
-function renderQuiz() {
-  if (localStorage.getItem("quizDone")) {
+const quizStep =
+document.getElementById("quizStep");
+
+
+function renderQuiz(){
+
+  if(localStorage.getItem("quizDone")){
     quizModal.classList.remove("active");
     loadApp();
     return;
   }
 
-  const current = quiz[step];
-  let html = "<h3>" + current.q + "</h3>";
+  const q = quiz[step];
 
-  current.a.forEach(function(option) {
+  let html = "<h3>"+q.q+"</h3>";
+
+  q.a.forEach(function(op){
     html +=
-      '<button class="quiz-btn" onclick="answerQuiz(\'' +
-      option +
-      '\')">' +
-      option +
-      "</button>";
+    `<button class="quiz-btn"
+      onclick="answerQuiz('${op}')">
+      ${op}
+    </button>`;
   });
 
   quizStep.innerHTML = html;
 }
 
-function answerQuiz(value) {
-  answers.push(value);
+
+function answerQuiz(v){
   step++;
 
-  if (step < quiz.length) {
+  if(step < quiz.length){
     renderQuiz();
-  } else {
-    localStorage.setItem("quizDone", "true");
-    localStorage.setItem("profile", JSON.stringify(answers));
-    quizModal.classList.remove("active");
+  }else{
+    localStorage.setItem(
+      "quizDone",
+      "true"
+    );
+
+    quizModal.classList.remove(
+      "active"
+    );
+
     loadApp();
   }
 }
 
-function resetQuiz() {
-  localStorage.clear();
-  location.reload();
-}
 
-function loadApp() {
-  loadDashboard();
-  loadModules();
-  loadProjects();
-  loadPortfolio();
-  loadProfile();
-  startTyping();
-}
-
-function loadDashboard() {
-  const xp = Number(localStorage.getItem("xp")) || 0;
-
-  document.getElementById("xp").textContent = xp;
-  document.getElementById("level").textContent =
-    Math.floor(xp / 50) + 1;
-}
-
-function loadModules() {
-  const box = document.getElementById("modules");
-  box.innerHTML = "";
-
-  modules.forEach(function(module, index) {
-    const done = localStorage.getItem("m" + index);
-
-    const card =
-      '<div class="module">' +
-      "<h3>" + module.name + "</h3>" +
-      "<p>" + module.xp + " XP</p>" +
-      '<button onclick="completeModule(' + index + ')" ' +
-      (done ? "disabled" : "") +
-      ">" +
-      (done ? "Concluído" : "Concluir") +
-      "</button>" +
-      "</div>";
-
-    box.innerHTML += card;
+function continueLearning(){
+  document
+  .getElementById("trilhas")
+  .scrollIntoView({
+    behavior:"smooth"
   });
 }
 
-function completeModule(index) {
-  if (localStorage.getItem("m" + index)) return;
 
-  localStorage.setItem("m" + index, "true");
+function loadDashboard(){
 
-  let xp = Number(localStorage.getItem("xp")) || 0;
-  xp += modules[index].xp;
+  const xp =
+  Number(
+    localStorage.getItem("xp")
+  ) || 0;
 
-  localStorage.setItem("xp", xp);
+  document.getElementById(
+    "xp"
+  ).textContent = xp;
+
+  document.getElementById(
+    "level"
+  ).textContent =
+  Math.floor(xp/50)+1;
+
+  document.getElementById(
+    "nextStep"
+  ).textContent =
+  "Finalize Flexbox";
+}
+
+
+function loadModules(){
+
+  const box =
+  document.getElementById(
+    "modules"
+  );
+
+  box.innerHTML = "";
+
+  modules.forEach(function(m,i){
+
+    let done =
+    Number(
+      localStorage.getItem(
+        "m"+i
+      )
+    ) || 0;
+
+    let percent =
+    (done/m.steps)*100;
+
+    box.innerHTML += `
+      <div class="module">
+        <h3>${m.name}</h3>
+        <p>${done}/${m.steps}</p>
+
+        <div class="progress">
+          <div
+            class="progress-fill"
+            style="width:${percent}%">
+          </div>
+        </div>
+
+        <button onclick="nextStep(${i})">
+          Avançar
+        </button>
+      </div>
+    `;
+  });
+}
+
+
+function nextStep(i){
+
+  let done =
+  Number(
+    localStorage.getItem(
+      "m"+i
+    )
+  ) || 0;
+
+  if(done < modules[i].steps){
+    done++;
+
+    localStorage.setItem(
+      "m"+i,
+      done
+    );
+
+    let xp =
+    Number(
+      localStorage.getItem("xp")
+    ) || 0;
+
+    localStorage.setItem(
+      "xp",
+      xp+10
+    );
+  }
 
   loadApp();
 }
 
-function loadProjects() {
-  const box = document.getElementById("projectList");
-  box.innerHTML = "";
 
-  projects.forEach(function(project, index) {
-    const unlocked = localStorage.getItem("m" + index);
+function loadProjects(){
 
-    const card =
-      '<div class="project">' +
-      "<h3>" + project + "</h3>" +
-      "<p>" +
-      (unlocked ? "Desbloqueado" : "Bloqueado") +
-      "</p>" +
-      "</div>";
-
-    box.innerHTML += card;
-  });
-}
-
-function loadPortfolio() {
-  const box = document.getElementById("portfolioList");
-  box.innerHTML = "";
-
-  projects.forEach(function(project, index) {
-    if (localStorage.getItem("m" + index)) {
-      box.innerHTML += "<div>" + project + "</div>";
-    }
-  });
-}
-
-function loadProfile() {
-  const profile =
-    JSON.parse(localStorage.getItem("profile")) || [];
-
-  document.getElementById("userProfile").textContent =
-    profile.join(" • ");
-}
-
-function startTyping() {
-  if (typingStarted) return;
-  typingStarted = true;
-
-  const messages = [
-    "Próximo módulo: CSS",
-    "Projeto recomendado: Landing Page",
-    "Você está pronto para estágio!"
-  ];
-
-  const target = document.getElementById("typing");
-
-  let msg = 0;
-  let char = 0;
-
-  setInterval(function() {
-    target.textContent =
-      messages[msg].slice(0, char);
-
-    char++;
-
-    if (char > messages[msg].length) {
-      char = 0;
-      msg = (msg + 1) % messages.length;
-    }
-  }, 120);
-}
-
-document
-  .getElementById("menuBtn")
-  .addEventListener("click", function() {
-    document
-      .getElementById("menu")
-      .classList.toggle("open");
-  });
-
-function scrollToSection(id) {
-  document
-    .getElementById(id)
-    .scrollIntoView({
-      behavior: "smooth"
-    });
-}
-
-const observer = new IntersectionObserver(function(entries) {
-  entries.forEach(function(entry) {
-    if (entry.isIntersecting) {
-      entry.target.classList.add("show");
-    }
-  });
-});
-
-document
-  .querySelectorAll(".reveal")
-  .forEach(function(el) {
-    observer.observe(el);
-  });
-
-const canvas = document.getElementById("bgCanvas");
-const ctx = canvas.getContext("2d");
-
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-
-resizeCanvas();
-
-window.addEventListener(
-  "resize",
-  resizeCanvas
-);
-
-const particles = [];
-
-for (let i = 0; i < 70; i++) {
-  particles.push({
-    x: Math.random() * window.innerWidth,
-    y: Math.random() * window.innerHeight,
-    r: Math.random() * 2 + 1
-  });
-}
-
-function animateParticles() {
-  ctx.clearRect(
-    0,
-    0,
-    canvas.width,
-    canvas.height
+  const box =
+  document.getElementById(
+    "projectList"
   );
 
-  ctx.fillStyle =
-    "rgba(59,130,246,0.5)";
+  box.innerHTML = "";
 
-  particles.forEach(function(p) {
-    ctx.beginPath();
-    ctx.arc(
-      p.x,
-      p.y,
-      p.r,
-      0,
-      Math.PI * 2
+  projects.forEach(function(p){
+    box.innerHTML +=
+    `<div class="project">
+      <h3>${p}</h3>
+    </div>`;
+  });
+}
+
+
+function loadPortfolio(){
+  document.getElementById(
+    "portfolioList"
+  ).innerHTML =
+  "<div>Seu portfólio cresce com seu progresso.</div>";
+}
+
+
+function loadApp(){
+  loadDashboard();
+  loadModules();
+  loadProjects();
+  loadPortfolio();
+}
+
+
+/* LOGIN */
+
+function register(){
+
+  const email =
+  document.getElementById("email").value;
+
+  const password =
+  document.getElementById("password").value;
+
+  if(!email || !password){
+    alert("Preencha tudo");
+    return;
+  }
+
+  localStorage.setItem(
+    "user",
+    JSON.stringify({
+      email,
+      password
+    })
+  );
+
+  alert("Cadastro realizado");
+}
+
+
+function login(){
+
+  const email =
+  document.getElementById("email").value;
+
+  const password =
+  document.getElementById("password").value;
+
+  const user =
+  JSON.parse(
+    localStorage.getItem("user")
+  );
+
+  if(
+    user &&
+    user.email === email &&
+    user.password === password
+  ){
+    localStorage.setItem(
+      "logged",
+      "true"
     );
-    ctx.fill();
 
-    p.y += 0.3;
+    document.getElementById(
+      "userStatus"
+    ).textContent =
+    "Logado: "+email;
 
-    if (p.y > window.innerHeight) {
-      p.y = 0;
-    }
-  });
-
-  requestAnimationFrame(
-    animateParticles
-  );
+    alert("Login realizado");
+  }else{
+    alert("Dados inválidos");
+  }
 }
 
-animateParticles();
+
+function logout(){
+  localStorage.removeItem("logged");
+
+  document.getElementById(
+    "userStatus"
+  ).textContent =
+  "Não logado";
+}
+
+
 renderQuiz();

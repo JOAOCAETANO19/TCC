@@ -14,10 +14,23 @@
 </head>
 <body>
 
-  <!-- Fundo animado -->
   <canvas id="bgCanvas"></canvas>
 
-  <!-- Quiz -->
+  <section id="authSection">
+    <div class="auth-box">
+      <h2>Login / Cadastro</h2>
+
+      <input type="email" id="email" placeholder="Digite seu email">
+      <input type="password" id="password" placeholder="Digite sua senha">
+
+      <button onclick="register()">Cadastrar</button>
+      <button onclick="login()">Entrar</button>
+      <button onclick="logout()">Sair</button>
+
+      <p id="userStatus">Não logado</p>
+    </div>
+  </section>
+
   <div id="quizModal" class="modal active">
     <div class="modal-card">
       <h2>Bem-vindo ao Pratica.dev</h2>
@@ -26,7 +39,6 @@
     </div>
   </div>
 
-  <!-- Navbar -->
   <header>
     <nav>
       <div class="logo">Pratica.dev</div>
@@ -35,42 +47,25 @@
 
       <ul id="menu">
         <li><a href="#hero">Início</a></li>
-        <li><a href="#trilhas">Trilhas</a></li>
         <li><a href="#dashboard">Dashboard</a></li>
+        <li><a href="#trilhas">Trilhas</a></li>
         <li><a href="#projects">Projetos</a></li>
         <li><a href="#portfolio">Portfólio</a></li>
         <li><a href="#carreira">Carreira</a></li>
-        <li><a href="#perfil">Perfil</a></li>
       </ul>
     </nav>
   </header>
 
-  <!-- Hero -->
   <section id="hero" class="reveal">
     <h1>Aprenda Programação na Prática com IA</h1>
-
-    <p>
-      Trilhas personalizadas, projetos reais
-      e evolução profissional.
-    </p>
-
-    <button onclick="scrollToSection('trilhas')">
-      Começar Agora
-    </button>
+    <p>Trilhas personalizadas, projetos reais e evolução profissional.</p>
+    <button onclick="continueLearning()">Continuar de onde parei</button>
   </section>
 
-  <!-- IA -->
-  <section id="ia" class="reveal">
-    <h2>Mentor IA</h2>
-    <p id="typing"></p>
-  </section>
-
-  <!-- Dashboard -->
   <section id="dashboard" class="reveal">
     <h2>Dashboard</h2>
 
     <div class="cards">
-
       <div class="card">
         <h3>XP</h3>
         <p id="xp">0</p>
@@ -82,55 +77,38 @@
       </div>
 
       <div class="card">
-        <h3>Streak</h3>
-        <p id="streak">7 dias</p>
+        <h3>Próximo passo</h3>
+        <p id="nextStep">...</p>
       </div>
-
     </div>
   </section>
 
-  <!-- Trilhas -->
   <section id="trilhas" class="reveal">
     <h2>Trilha Front-end</h2>
     <div id="modules"></div>
   </section>
 
-  <!-- Projetos -->
   <section id="projects" class="reveal">
     <h2>Projetos</h2>
     <div id="projectList"></div>
   </section>
 
-  <!-- Portfólio -->
   <section id="portfolio" class="reveal">
     <h2>Meu Portfólio</h2>
     <div id="portfolioList"></div>
   </section>
 
-  <!-- Carreira -->
   <section id="carreira" class="reveal">
     <h2>Evolução Profissional</h2>
 
     <div class="roadmap">
-      <div>Iniciante</div>
-      <div>Júnior</div>
-      <div>Pleno</div>
-      <div>Especialista</div>
+      <div>HTML ✓</div>
+      <div>CSS</div>
+      <div>JavaScript</div>
+      <div>Projeto Final</div>
     </div>
   </section>
 
-  <!-- Perfil -->
-  <section id="perfil" class="reveal">
-    <h2>Meu Perfil</h2>
-
-    <p id="userProfile"></p>
-
-    <button onclick="resetQuiz()">
-      Refazer Quiz
-    </button>
-  </section>
-
-  <!-- Footer -->
   <footer>
     © 2026 Pratica.dev
   </footer>
