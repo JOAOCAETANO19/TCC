@@ -6,14 +6,20 @@
     <title>Pratica.dev 2.0</title>
     <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-    <script src="/_sdk/element_sdk.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <style>
+        body { 
+            box-sizing: border-box; 
+            margin: 0;
+            padding: 0;
+        }
+    </style>
 </head>
 <body class="h-full">
     <div class="app-wrapper gradient-bg text-white" id="app">
         <!-- LOGIN SCREEN -->
-        <div id="login-screen" class="flex items-center justify-center h-full p-4">
+        <div id="login-screen" class="flex items-center justify-center h-full p-4" style="display: flex;">
             <div class="card-glass rounded-2xl p-8 w-full max-w-md fade-in">
                 <div class="text-center mb-8">
                     <h1 class="text-3xl font-bold mb-2">
@@ -110,66 +116,19 @@
                 <!-- CONTENT -->
                 <main class="flex-1 overflow-y-auto p-6" id="main-content">
                     <!-- Dashboard -->
-                    <div class="tab-content active" id="tab-dashboard">
-                        <div class="fade-in">
-                            <h2 class="text-2xl font-bold mb-6">Bem-vindo de volta, <span id="dash-name" class="text-green-400"></span>!</h2>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                                <div class="card-glass rounded-xl p-5">
-                                    <p class="text-white/50 text-sm mb-1">Nível Atual</p>
-                                    <p id="dash-level" class="text-2xl font-bold text-purple-400"></p>
-                                </div>
-                                <div class="card-glass rounded-xl p-5">
-                                    <p class="text-white/50 text-sm mb-1">XP Total</p>
-                                    <p id="dash-xp" class="text-2xl font-bold text-yellow-400"></p>
-                                </div>
-                                <div class="card-glass rounded-xl p-5">
-                                    <p class="text-white/50 text-sm mb-1">Trilha</p>
-                                    <p id="dash-track" class="text-2xl font-bold text-green-400"></p>
-                                </div>
-                            </div>
-                            <div class="card-glass rounded-xl p-5 mb-6">
-                                <p class="text-white/50 text-sm mb-2">Progresso Geral</p>
-                                <div class="progress-track">
-                                    <div class="progress-bar" id="dash-progress" style="width:0%"></div>
-                                </div>
-                                <p class="text-xs text-white/40 mt-2"><span id="dash-progress-text">0</span>% concluído</p>
-                            </div>
-                            <div class="card-glass rounded-xl p-5 glow-green">
-                                <p class="text-sm text-green-400 font-semibold mb-2">🎯 Próximo Passo Recomendado</p>
-                                <p id="dash-recommendation" class="text-white/80"></p>
-                            </div>
-                        </div>
-                    </div>
-                    
+                    <div class="tab-content active" id="tab-dashboard"></div>
                     <!-- Perfil -->
-                    <div class="tab-content" id="tab-perfil">
-                        <!-- Conteúdo gerado dinamicamente -->
-                    </div>
-                    
+                    <div class="tab-content" id="tab-perfil"></div>
                     <!-- Evolução -->
-                    <div class="tab-content" id="tab-evolucao">
-                        <!-- Conteúdo gerado dinamicamente -->
-                    </div>
-                    
+                    <div class="tab-content" id="tab-evolucao"></div>
                     <!-- Estudos -->
-                    <div class="tab-content" id="tab-estudos">
-                        <!-- Conteúdo gerado dinamicamente -->
-                    </div>
-                    
+                    <div class="tab-content" id="tab-estudos"></div>
                     <!-- Sobre -->
-                    <div class="tab-content" id="tab-sobre">
-                        <!-- Conteúdo gerado dinamicamente -->
-                    </div>
-                    
+                    <div class="tab-content" id="tab-sobre"></div>
                     <!-- Projetos -->
-                    <div class="tab-content" id="tab-projetos">
-                        <!-- Conteúdo gerado dinamicamente -->
-                    </div>
-                    
+                    <div class="tab-content" id="tab-projetos"></div>
                     <!-- Portfólio -->
-                    <div class="tab-content" id="tab-portfolio">
-                        <!-- Conteúdo gerado dinamicamente -->
-                    </div>
+                    <div class="tab-content" id="tab-portfolio"></div>
                 </main>
             </div>
         </div>
