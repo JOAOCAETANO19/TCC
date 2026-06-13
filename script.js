@@ -1,4 +1,4 @@
-// ===== DATA =====
+// ===== DATA (inalterado) =====
 
 const careers = [
   { name: "Front-end",        desc: "Cria interfaces visuais de sites e apps",           salary: "R$4.000 - R$15.000", skills: ["HTML","CSS","JavaScript","React","TypeScript"],     time: "6-12 meses",  color: "text-blue-400"   },
@@ -13,201 +13,85 @@ const careers = [
 ];
 
 const subjects = [
-  { id: "html",   name: "HTML",         icon: "🌐", color: "bg-orange-500/20 border-orange-500/30" },
-  { id: "css",    name: "CSS",          icon: "🎨", color: "bg-blue-500/20 border-blue-500/30"   },
-  { id: "js",     name: "JavaScript",   icon: "⚡", color: "bg-yellow-500/20 border-yellow-500/30"},
-  { id: "sql",    name: "SQL",          icon: "🗄️", color: "bg-cyan-500/20 border-cyan-500/30"   },
-  { id: "python", name: "Python",       icon: "🐍", color: "bg-green-500/20 border-green-500/30" },
-  { id: "java",   name: "Java",         icon: "☕", color: "bg-red-500/20 border-red-500/30"     },
-  { id: "poo",    name: "POO",          icon: "🧩", color: "bg-purple-500/20 border-purple-500/30"},
-  { id: "git",    name: "Git/GitHub",   icon: "🔀", color: "bg-gray-500/20 border-gray-500/30"  },
-  { id: "redes",  name: "Redes",        icon: "🌍", color: "bg-teal-500/20 border-teal-500/30"  },
-  { id: "apis",   name: "APIs",         icon: "🔗", color: "bg-indigo-500/20 border-indigo-500/30"},
-  { id: "banco",  name: "Banco de Dados",icon: "💾", color: "bg-amber-500/20 border-amber-500/30"},
-  { id: "logica", name: "Lógica",       icon: "🧠", color: "bg-pink-500/20 border-pink-500/30"  }
+  { id: "html",   name: "HTML",          icon: "🌐", color: "bg-orange-500/20 border-orange-500/30" },
+  { id: "css",    name: "CSS",           icon: "🎨", color: "bg-blue-500/20 border-blue-500/30"    },
+  { id: "js",     name: "JavaScript",    icon: "⚡", color: "bg-yellow-500/20 border-yellow-500/30" },
+  { id: "sql",    name: "SQL",           icon: "🗄️", color: "bg-cyan-500/20 border-cyan-500/30"    },
+  { id: "python", name: "Python",        icon: "🐍", color: "bg-green-500/20 border-green-500/30"  },
+  { id: "java",   name: "Java",          icon: "☕", color: "bg-red-500/20 border-red-500/30"      },
+  { id: "poo",    name: "POO",           icon: "🧩", color: "bg-purple-500/20 border-purple-500/30" },
+  { id: "git",    name: "Git/GitHub",    icon: "🔀", color: "bg-gray-500/20 border-gray-500/30"   },
+  { id: "redes",  name: "Redes",         icon: "🌍", color: "bg-teal-500/20 border-teal-500/30"   },
+  { id: "apis",   name: "APIs",          icon: "🔗", color: "bg-indigo-500/20 border-indigo-500/30" },
+  { id: "banco",  name: "Banco de Dados",icon: "💾", color: "bg-amber-500/20 border-amber-500/30"  },
+  { id: "logica", name: "Lógica",        icon: "🧠", color: "bg-pink-500/20 border-pink-500/30"   }
 ];
 
 const subjectContent = {
-  html: {
-    title: "HTML - HyperText Markup Language",
-    summary: "HTML é a linguagem de marcação padrão para criar páginas web. Ela define a estrutura e o conteúdo de uma página.",
-    topics: ["Tags e elementos","Estrutura básica (DOCTYPE, head, body)","Semântica (header, nav, main, footer)","Formulários e inputs","Tabelas e listas","Links e imagens","Atributos e classes"],
-    example: `<!DOCTYPE html>\n<html>\n<head>\n  <title>Minha Página</title>\n</head>\n<body>\n  <h1>Olá, Mundo!</h1>\n  <p>Meu primeiro site.</p>\n</body>\n</html>`,
-    exercise: "Crie uma página HTML com um cabeçalho, parágrafo, lista e um link para o Google.",
-    video: "https://www.youtube.com/embed/Ejkb_YpuHWs"
-  },
-  css: {
-    title: "CSS - Cascading Style Sheets",
-    summary: "CSS é a linguagem que estiliza páginas web, controlando cores, fontes, layouts e animações.",
-    topics: ["Seletores e propriedades","Box Model (margin, padding, border)","Flexbox e Grid","Responsividade (media queries)","Animações e transições","Variáveis CSS","Pseudo-classes e pseudo-elementos"],
-    example: `body {\n  font-family: Arial;\n  background: #1a1a2e;\n  color: white;\n}\n\n.card {\n  display: flex;\n  padding: 20px;\n  border-radius: 12px;\n  background: rgba(255,255,255,0.05);\n}`,
-    exercise: "Estilize um card com Flexbox, borda arredondada e sombra.",
-    video: "https://www.youtube.com/embed/GPK8A-A156o"
-  },
-  js: {
-    title: "JavaScript - Linguagem da Web",
-    summary: "JavaScript é a linguagem de programação que torna páginas web interativas e dinâmicas.",
-    topics: ["Variáveis (let, const, var)","Funções e Arrow Functions","DOM Manipulation","Eventos e Listeners","Arrays e Objetos","Promises e Async/Await","LocalStorage e Fetch API"],
-    example: `const btn = document.querySelector('#meuBtn');\n\nbtn.addEventListener('click', () => {\n  alert('Clicou!');\n});\n\nconst soma = (a, b) => a + b;\nconsole.log(soma(2, 3)); // 5`,
-    exercise: "Crie um contador que incrementa ao clicar em um botão e mostra o valor na tela.",
-    video: "https://www.youtube.com/embed/i6Oi-YtXnAU"
-  },
-  sql: {
-    title: "SQL - Structured Query Language",
-    summary: "SQL é a linguagem padrão para gerenciar e consultar bancos de dados relacionais.",
-    topics: ["SELECT, INSERT, UPDATE, DELETE","WHERE e condições","JOIN (INNER, LEFT, RIGHT)","GROUP BY e ORDER BY","Funções agregadas (COUNT, SUM, AVG)","Subqueries","Índices e otimização"],
-    example: `SELECT nome, idade\nFROM alunos\nWHERE curso = 'Desenvolvimento'\nORDER BY nome ASC;\n\nINSERT INTO alunos (nome, idade)\nVALUES ('João', 17);`,
-    exercise: "Escreva uma query que retorne todos os alunos maiores de 16 anos ordenados por nome.",
-    video: "https://www.youtube.com/embed/byHcYRpMgI4"
-  },
-  python: {
-    title: "Python - Linguagem Versátil",
-    summary: "Python é uma linguagem poderosa e fácil de aprender, usada em web, dados, IA e automação.",
-    topics: ["Variáveis e tipos de dados","Estruturas condicionais (if/elif/else)","Loops (for, while)","Funções e módulos","Listas, dicionários e tuplas","Orientação a objetos","Bibliotecas populares (Flask, Pandas)"],
-    example: `def saudacao(nome):\n    return f"Olá, {nome}!"\n\nalunos = ["Ana", "João", "Maria"]\nfor aluno in alunos:\n    print(saudacao(aluno))`,
-    exercise: "Crie uma função que recebe uma lista de notas e retorna a média.",
-    video: "https://www.youtube.com/embed/S9uPNppGsGo"
-  },
-  java: {
-    title: "Java - Linguagem Corporativa",
-    summary: "Java é uma das linguagens mais usadas no mundo corporativo, robusta e orientada a objetos.",
-    topics: ["Classes e objetos","Tipos primitivos e wrappers","Herança e polimorfismo","Interfaces e classes abstratas","Collections (List, Map, Set)","Exceções (try/catch)","Spring Boot (introdução)"],
-    example: `public class Aluno {\n    private String nome;\n    private int idade;\n\n    public Aluno(String nome, int idade) {\n        this.nome = nome;\n        this.idade = idade;\n    }\n\n    public String getNome() {\n        return this.nome;\n    }\n}`,
-    exercise: "Crie uma classe Carro com atributos marca, modelo e ano, e um método que exibe as informações.",
-    video: "https://www.youtube.com/embed/grEKMHGYyns"
-  },
-  poo: {
-    title: "POO - Programação Orientada a Objetos",
-    summary: "POO é um paradigma que organiza código em objetos com atributos e comportamentos.",
-    topics: ["Classes e Objetos","Encapsulamento","Herança","Polimorfismo","Abstração","Interfaces","Princípios SOLID (introdução)"],
-    example: `class Animal {\n  constructor(nome) {\n    this.nome = nome;\n  }\n  falar() {\n    return "...";\n  }\n}\n\nclass Cachorro extends Animal {\n  falar() {\n    return "Au au!";\n  }\n}`,
-    exercise: "Crie uma hierarquia de classes: Forma → Retângulo e Círculo, cada um com método calcularArea().",
-    video: "https://www.youtube.com/embed/QY0Kdg83orY"
-  },
-  git: {
-    title: "Git & GitHub - Controle de Versão",
-    summary: "Git permite versionar código e GitHub é a plataforma para colaboração e portfólio.",
-    topics: ["git init, add, commit","Branches e merge","git push e pull","Pull Requests","Conflitos e resolução","GitHub Pages",".gitignore e README"],
-    example: `git init\ngit add .\ngit commit -m "primeiro commit"\ngit remote add origin https://github.com/user/repo.git\ngit push -u origin main`,
-    exercise: "Inicialize um repositório, faça 3 commits diferentes e crie uma branch chamada 'feature'.",
-    video: "https://www.youtube.com/embed/UBAX-13g8aw"
-  },
-  redes: {
-    title: "Redes de Computadores",
-    summary: "Redes conectam computadores permitindo comunicação e compartilhamento de recursos.",
-    topics: ["Modelo OSI e TCP/IP","IP, DNS e portas","HTTP e HTTPS","Roteadores e switches","Protocolos (FTP, SSH, SMTP)","Firewall e segurança","Wi-Fi e cabeamento"],
-    example: `IP Local: 192.168.1.100\nMáscara: 255.255.255.0\nGateway: 192.168.1.1\nDNS: 8.8.8.8\n\nHTTP GET /api/dados → 200 OK`,
-    exercise: "Explique a diferença entre IP público e privado e como funciona o NAT.",
-    video: "https://www.youtube.com/embed/Tq4RFqdaKPM"
-  },
-  apis: {
-    title: "APIs - Application Programming Interface",
-    summary: "APIs permitem que sistemas se comuniquem entre si, essencial para apps modernos.",
-    topics: ["O que é uma API REST","Métodos HTTP (GET, POST, PUT, DELETE)","JSON e formato de dados","Headers e autenticação","Status codes (200, 404, 500)","Fetch API no JavaScript","Documentação (Swagger)"],
-    example: `// Consumindo uma API\nfetch('https://api.exemplo.com/users')\n  .then(res => res.json())\n  .then(data => {\n    console.log(data);\n  })\n  .catch(err => console.error(err));`,
-    exercise: "Consuma a API JSONPlaceholder e exiba uma lista de posts em uma página HTML.",
-    video: "https://www.youtube.com/embed/vGuqKIRWosk"
-  },
-  banco: {
-    title: "Banco de Dados",
-    summary: "Bancos de dados armazenam e organizam informações de forma estruturada e eficiente.",
-    topics: ["Modelagem de dados (MER)","Banco relacional vs NoSQL","Normalização (1FN, 2FN, 3FN)","Chaves primárias e estrangeiras","Relacionamentos (1:1, 1:N, N:N)","MySQL, PostgreSQL, MongoDB","Transações e ACID"],
-    example: `CREATE TABLE alunos (\n  id INT PRIMARY KEY AUTO_INCREMENT,\n  nome VARCHAR(100) NOT NULL,\n  email VARCHAR(100) UNIQUE,\n  curso_id INT,\n  FOREIGN KEY (curso_id) REFERENCES cursos(id)\n);`,
-    exercise: "Modele um banco de dados para uma biblioteca com tabelas: livros, autores e empréstimos.",
-    video: "https://www.youtube.com/embed/Ofktsne-utM"
-  },
-  logica: {
-    title: "Lógica de Programação",
-    summary: "Base fundamental para qualquer linguagem. Ensina a pensar como um programador.",
-    topics: ["Algoritmos e fluxogramas","Variáveis e tipos de dados","Estruturas condicionais","Loops (repetição)","Vetores e matrizes","Funções e procedimentos","Debugging e resolução de problemas"],
-    example: `// Algoritmo: Verificar se é par ou ímpar\nfuncao verificarParidade(numero):\n  se (numero % 2 == 0):\n    retornar "Par"\n  senao:\n    retornar "Ímpar"`,
-    exercise: "Crie um algoritmo que receba 5 números e retorne o maior e o menor.",
-    video: "https://www.youtube.com/embed/8mei6uVttho"
-  }
+  html:   { title:"HTML - HyperText Markup Language", summary:"HTML é a linguagem de marcação padrão para criar páginas web.", topics:["Tags e elementos","Estrutura básica (DOCTYPE, head, body)","Semântica (header, nav, main, footer)","Formulários e inputs","Tabelas e listas","Links e imagens","Atributos e classes"], example:`<!DOCTYPE html>\n<html>\n<head>\n  <title>Minha Página</title>\n</head>\n<body>\n  <h1>Olá, Mundo!</h1>\n  <p>Meu primeiro site.</p>\n</body>\n</html>`, exercise:"Crie uma página HTML com um cabeçalho, parágrafo, lista e um link para o Google.", video:"https://www.youtube.com/embed/Ejkb_YpuHWs" },
+  css:    { title:"CSS - Cascading Style Sheets", summary:"CSS é a linguagem que estiliza páginas web, controlando cores, fontes, layouts e animações.", topics:["Seletores e propriedades","Box Model (margin, padding, border)","Flexbox e Grid","Responsividade (media queries)","Animações e transições","Variáveis CSS","Pseudo-classes e pseudo-elementos"], example:`body {\n  font-family: Arial;\n  background: #1a1a2e;\n  color: white;\n}\n\n.card {\n  display: flex;\n  padding: 20px;\n  border-radius: 12px;\n  background: rgba(255,255,255,0.05);\n}`, exercise:"Estilize um card com Flexbox, borda arredondada e sombra.", video:"https://www.youtube.com/embed/GPK8A-A156o" },
+  js:     { title:"JavaScript - Linguagem da Web", summary:"JavaScript é a linguagem de programação que torna páginas web interativas e dinâmicas.", topics:["Variáveis (let, const, var)","Funções e Arrow Functions","DOM Manipulation","Eventos e Listeners","Arrays e Objetos","Promises e Async/Await","LocalStorage e Fetch API"], example:`const btn = document.querySelector('#meuBtn');\n\nbtn.addEventListener('click', () => {\n  alert('Clicou!');\n});\n\nconst soma = (a, b) => a + b;\nconsole.log(soma(2, 3)); // 5`, exercise:"Crie um contador que incrementa ao clicar em um botão e mostra o valor na tela.", video:"https://www.youtube.com/embed/i6Oi-YtXnAU" },
+  sql:    { title:"SQL - Structured Query Language", summary:"SQL é a linguagem padrão para gerenciar e consultar bancos de dados relacionais.", topics:["SELECT, INSERT, UPDATE, DELETE","WHERE e condições","JOIN (INNER, LEFT, RIGHT)","GROUP BY e ORDER BY","Funções agregadas (COUNT, SUM, AVG)","Subqueries","Índices e otimização"], example:`SELECT nome, idade\nFROM alunos\nWHERE curso = 'Desenvolvimento'\nORDER BY nome ASC;\n\nINSERT INTO alunos (nome, idade)\nVALUES ('João', 17);`, exercise:"Escreva uma query que retorne todos os alunos maiores de 16 anos ordenados por nome.", video:"https://www.youtube.com/embed/byHcYRpMgI4" },
+  python: { title:"Python - Linguagem Versátil", summary:"Python é uma linguagem poderosa e fácil de aprender, usada em web, dados, IA e automação.", topics:["Variáveis e tipos de dados","Estruturas condicionais (if/elif/else)","Loops (for, while)","Funções e módulos","Listas, dicionários e tuplas","Orientação a objetos","Bibliotecas populares (Flask, Pandas)"], example:`def saudacao(nome):\n    return f"Olá, {nome}!"\n\nalunos = ["Ana", "João", "Maria"]\nfor aluno in alunos:\n    print(saudacao(aluno))`, exercise:"Crie uma função que recebe uma lista de notas e retorna a média.", video:"https://www.youtube.com/embed/S9uPNppGsGo" },
+  java:   { title:"Java - Linguagem Corporativa", summary:"Java é uma das linguagens mais usadas no mundo corporativo, robusta e orientada a objetos.", topics:["Classes e objetos","Tipos primitivos e wrappers","Herança e polimorfismo","Interfaces e classes abstratas","Collections (List, Map, Set)","Exceções (try/catch)","Spring Boot (introdução)"], example:`public class Aluno {\n    private String nome;\n    private int idade;\n\n    public Aluno(String nome, int idade) {\n        this.nome = nome;\n        this.idade = idade;\n    }\n\n    public String getNome() {\n        return this.nome;\n    }\n}`, exercise:"Crie uma classe Carro com atributos marca, modelo e ano, e um método que exibe as informações.", video:"https://www.youtube.com/embed/grEKMHGYyns" },
+  poo:    { title:"POO - Programação Orientada a Objetos", summary:"POO é um paradigma que organiza código em objetos com atributos e comportamentos.", topics:["Classes e Objetos","Encapsulamento","Herança","Polimorfismo","Abstração","Interfaces","Princípios SOLID (introdução)"], example:`class Animal {\n  constructor(nome) {\n    this.nome = nome;\n  }\n  falar() {\n    return "...";\n  }\n}\n\nclass Cachorro extends Animal {\n  falar() {\n    return "Au au!";\n  }\n}`, exercise:"Crie uma hierarquia de classes: Forma → Retângulo e Círculo, cada um com método calcularArea().", video:"https://www.youtube.com/embed/QY0Kdg83orY" },
+  git:    { title:"Git & GitHub - Controle de Versão", summary:"Git permite versionar código e GitHub é a plataforma para colaboração e portfólio.", topics:["git init, add, commit","Branches e merge","git push e pull","Pull Requests","Conflitos e resolução","GitHub Pages",".gitignore e README"], example:`git init\ngit add .\ngit commit -m "primeiro commit"\ngit remote add origin https://github.com/user/repo.git\ngit push -u origin main`, exercise:"Inicialize um repositório, faça 3 commits diferentes e crie uma branch chamada 'feature'.", video:"https://www.youtube.com/embed/UBAX-13g8aw" },
+  redes:  { title:"Redes de Computadores", summary:"Redes conectam computadores permitindo comunicação e compartilhamento de recursos.", topics:["Modelo OSI e TCP/IP","IP, DNS e portas","HTTP e HTTPS","Roteadores e switches","Protocolos (FTP, SSH, SMTP)","Firewall e segurança","Wi-Fi e cabeamento"], example:`IP Local: 192.168.1.100\nMáscara: 255.255.255.0\nGateway: 192.168.1.1\nDNS: 8.8.8.8\n\nHTTP GET /api/dados → 200 OK`, exercise:"Explique a diferença entre IP público e privado e como funciona o NAT.", video:"https://www.youtube.com/embed/Tq4RFqdaKPM" },
+  apis:   { title:"APIs - Application Programming Interface", summary:"APIs permitem que sistemas se comuniquem entre si, essencial para apps modernos.", topics:["O que é uma API REST","Métodos HTTP (GET, POST, PUT, DELETE)","JSON e formato de dados","Headers e autenticação","Status codes (200, 404, 500)","Fetch API no JavaScript","Documentação (Swagger)"], example:`// Consumindo uma API\nfetch('https://api.exemplo.com/users')\n  .then(res => res.json())\n  .then(data => {\n    console.log(data);\n  })\n  .catch(err => console.error(err));`, exercise:"Consuma a API JSONPlaceholder e exiba uma lista de posts em uma página HTML.", video:"https://www.youtube.com/embed/vGuqKIRWosk" },
+  banco:  { title:"Banco de Dados", summary:"Bancos de dados armazenam e organizam informações de forma estruturada e eficiente.", topics:["Modelagem de dados (MER)","Banco relacional vs NoSQL","Normalização (1FN, 2FN, 3FN)","Chaves primárias e estrangeiras","Relacionamentos (1:1, 1:N, N:N)","MySQL, PostgreSQL, MongoDB","Transações e ACID"], example:`CREATE TABLE alunos (\n  id INT PRIMARY KEY AUTO_INCREMENT,\n  nome VARCHAR(100) NOT NULL,\n  email VARCHAR(100) UNIQUE,\n  curso_id INT,\n  FOREIGN KEY (curso_id) REFERENCES cursos(id)\n);`, exercise:"Modele um banco de dados para uma biblioteca com tabelas: livros, autores e empréstimos.", video:"https://www.youtube.com/embed/Ofktsne-utM" },
+  logica: { title:"Lógica de Programação", summary:"Base fundamental para qualquer linguagem. Ensina a pensar como um programador.", topics:["Algoritmos e fluxogramas","Variáveis e tipos de dados","Estruturas condicionais","Loops (repetição)","Vetores e matrizes","Funções e procedimentos","Debugging e resolução de problemas"], example:`// Algoritmo: Verificar se é par ou ímpar\nfuncao verificarParidade(numero):\n  se (numero % 2 == 0):\n    retornar "Par"\n  senao:\n    retornar "Ímpar"`, exercise:"Crie um algoritmo que receba 5 números e retorne o maior e o menor.", video:"https://www.youtube.com/embed/8mei6uVttho" }
 };
 
 const projects = [
   {
     level: "Iniciante", color: "text-green-400", border: "border-green-500/30",
     items: [
-      { name: "Calculadora",      desc: "Calculadora funcional com operações básicas",               difficulty: "⭐" },
-      { name: "Lista de Tarefas", desc: "Todo list com adicionar, remover e marcar como concluído",  difficulty: "⭐" },
-      { name: "Relógio Digital",  desc: "Relógio com hora, data e cronômetro",                       difficulty: "⭐" }
+      { name: "Calculadora",      desc: "Calculadora funcional com operações básicas",               difficulty: "⭐",    dbId: 1 },
+      { name: "Lista de Tarefas", desc: "Todo list com adicionar, remover e marcar como concluído",  difficulty: "⭐",    dbId: 2 },
+      { name: "Relógio Digital",  desc: "Relógio com hora, data e cronômetro",                       difficulty: "⭐",    dbId: 3 }
     ]
   },
   {
     level: "Intermediário", color: "text-yellow-400", border: "border-yellow-500/30",
     items: [
-      { name: "Dashboard Analytics", desc: "Painel com gráficos e dados dinâmicos",                   difficulty: "⭐⭐" },
-      { name: "Sistema de Login",    desc: "Autenticação com localStorage e rotas protegidas",        difficulty: "⭐⭐" },
-      { name: "Quiz Interativo",     desc: "Quiz com pontuação, timer e ranking",                     difficulty: "⭐⭐" }
+      { name: "Dashboard Analytics", desc: "Painel com gráficos e dados dinâmicos",                  difficulty: "⭐⭐", dbId: 4 },
+      { name: "Sistema de Login",    desc: "Autenticação com rotas protegidas",                       difficulty: "⭐⭐", dbId: 5 },
+      { name: "Quiz Interativo",     desc: "Quiz com pontuação, timer e ranking",                     difficulty: "⭐⭐", dbId: 6 }
     ]
   },
   {
     level: "Avançado", color: "text-red-400", border: "border-red-500/30",
     items: [
-      { name: "E-commerce",         desc: "Loja virtual com carrinho, filtros e checkout",            difficulty: "⭐⭐⭐" },
-      { name: "Rede Social",        desc: "Feed, perfis, posts e interações",                         difficulty: "⭐⭐⭐" },
-      { name: "Chat em Tempo Real", desc: "Mensagens instantâneas com WebSocket",                     difficulty: "⭐⭐⭐" }
+      { name: "E-commerce",         desc: "Loja virtual com carrinho, filtros e checkout",            difficulty: "⭐⭐⭐", dbId: 7 },
+      { name: "Rede Social",        desc: "Feed, perfis, posts e interações",                         difficulty: "⭐⭐⭐", dbId: 8 },
+      { name: "Chat em Tempo Real", desc: "Mensagens instantâneas com WebSocket",                     difficulty: "⭐⭐⭐", dbId: 9 }
     ]
   }
 ];
 
 
 // ===== STATE =====
-let currentUser = null;
+let currentUser    = null;  // dados do perfil (tabela profiles)
+let currentAuthId  = null;  // UUID do auth.users
+let completedProjects = []; // array de project_id já concluídos
+let userCerts      = [];    // array de { subject_id, title }
+let quizAnswers    = [];
 
 
-// ===== AUTH =====
-
-function handleLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const pass  = document.getElementById('login-password').value;
-  if (!email || !pass) { showError('login-error', 'Preencha todos os campos.'); return; }
-
-  const users = JSON.parse(localStorage.getItem('pratica_users') || '{}');
-  if (!users[email] || users[email].password !== pass) {
-    showError('login-error', 'Email ou senha incorretos.');
-    return;
-  }
-  currentUser = users[email];
-  localStorage.setItem('pratica_current', email);
-  enterApp();
-}
-
-function handleRegister() {
-  const name  = document.getElementById('reg-name').value.trim();
-  const age   = document.getElementById('reg-age').value;
-  const email = document.getElementById('reg-email').value.trim();
-  const pass  = document.getElementById('reg-password').value;
-  if (!name || !age || !email || !pass) { showError('reg-error', 'Preencha todos os campos.'); return; }
-
-  const users = JSON.parse(localStorage.getItem('pratica_users') || '{}');
-  if (users[email]) { showError('reg-error', 'Email já cadastrado.'); return; }
-
-  users[email] = {
-    name, age: parseInt(age), email, password: pass,
-    xp: 0, level: 1, track: '', goal: '',
-    quizDone: false, completedProjects: [], certs: []
-  };
-  localStorage.setItem('pratica_users', JSON.stringify(users));
-  currentUser = users[email];
-  localStorage.setItem('pratica_current', email);
-  enterApp();
-}
-
-function handleLogout() {
-  localStorage.removeItem('pratica_current');
-  currentUser = null;
-  document.getElementById('main-app').classList.add('hidden');
-  document.getElementById('login-screen').classList.remove('hidden');
-}
+// ===== HELPERS UI =====
 
 function showError(id, msg) {
   const el = document.getElementById(id);
   el.textContent = msg;
   el.classList.remove('hidden');
-  setTimeout(() => el.classList.add('hidden'), 3000);
+  setTimeout(() => el.classList.add('hidden'), 4000);
+}
+
+function setLoading(btnId, loading, originalText) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.textContent = loading ? 'Aguarde...' : originalText;
 }
 
 function showRegister() {
@@ -221,12 +105,115 @@ function showLogin() {
 }
 
 
+// ===== AUTH — LOGIN =====
+
+async function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-password').value;
+  if (!email || !pass) { showError('login-error', 'Preencha todos os campos.'); return; }
+
+  setLoading('btn-login', true, 'Entrar');
+
+  try {
+    const user = await supabaseLogin(email, pass);
+    currentAuthId = user.id;
+    currentUser   = await fetchProfile(user.id);
+    await loadUserExtras(user.id);
+    enterApp();
+  } catch (err) {
+    showError('login-error', traduzirErroAuth(err.message));
+  } finally {
+    setLoading('btn-login', false, 'Entrar');
+  }
+}
+
+
+// ===== AUTH — CADASTRO =====
+
+async function handleRegister() {
+  const name  = document.getElementById('reg-name').value.trim();
+  const age   = document.getElementById('reg-age').value;
+  const email = document.getElementById('reg-email').value.trim();
+  const pass  = document.getElementById('reg-password').value;
+
+  if (!name || !age || !email || !pass) { showError('reg-error', 'Preencha todos os campos.'); return; }
+  if (pass.length < 6)                  { showError('reg-error', 'A senha precisa ter pelo menos 6 caracteres.'); return; }
+
+  setLoading('btn-register', true, 'Cadastrar');
+
+  try {
+    const user = await supabaseRegister(email, pass, name, age);
+    currentAuthId = user.id;
+    currentUser   = await fetchProfile(user.id);
+    completedProjects = [];
+    userCerts         = [];
+    enterApp();
+  } catch (err) {
+    showError('reg-error', traduzirErroAuth(err.message));
+  } finally {
+    setLoading('btn-register', false, 'Cadastrar');
+  }
+}
+
+
+// ===== AUTH — LOGOUT =====
+
+async function handleLogout() {
+  await supabaseLogout();
+  currentUser       = null;
+  currentAuthId     = null;
+  completedProjects = [];
+  userCerts         = [];
+  document.getElementById('main-app').classList.add('hidden');
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+
+// ===== TRADUÇÃO DE ERROS DO SUPABASE =====
+
+function traduzirErroAuth(msg) {
+  if (msg.includes('Invalid login'))        return 'Email ou senha incorretos.';
+  if (msg.includes('already registered'))   return 'Este email já está cadastrado.';
+  if (msg.includes('valid email'))          return 'Informe um email válido.';
+  if (msg.includes('Password should be'))   return 'A senha precisa ter pelo menos 6 caracteres.';
+  if (msg.includes('Network'))              return 'Erro de conexão. Verifique sua internet.';
+  return msg;
+}
+
+
+// ===== CARREGAR EXTRAS (projetos e certificados) =====
+
+async function loadUserExtras(userId) {
+  const [projs, certs] = await Promise.all([
+    fetchUserProjects(userId),
+    fetchCertificates(userId)
+  ]);
+  completedProjects = projs.map(p => p.project_id);
+  userCerts         = certs;
+}
+
+
+// ===== SALVAR PERFIL =====
+
+async function saveUser() {
+  if (!currentAuthId || !currentUser) return;
+  await saveProfile(currentAuthId, {
+    xp:        currentUser.xp,
+    level:     currentUser.level,
+    track:     currentUser.track,
+    goal:      currentUser.goal,
+    quiz_done: currentUser.quiz_done
+  });
+}
+
+
 // ===== APP ENTRY =====
 
 function enterApp() {
-  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-app').classList.remove('hidden');
-  if (!currentUser.quizDone) {
+
+  if (!currentUser.quiz_done) {
     showQuiz();
   } else {
     renderDashboard();
@@ -243,8 +230,6 @@ const quizQuestions = [
   { q: "Qual seu objetivo profissional?",  options: ["Estágio em 6 meses", "Primeiro emprego em 1 ano", "Freelancer", "Criar meu próprio produto"] }
 ];
 
-let quizAnswers = [];
-
 function showQuiz() {
   document.getElementById('quiz-modal').classList.remove('hidden');
   renderQuizStep(0);
@@ -258,7 +243,8 @@ function renderQuizStep(step) {
     <p class="font-semibold mb-4 text-lg">${step + 1}. ${q.q}</p>
     <div class="space-y-3">
       ${q.options.map((o, i) => `
-        <button onclick="answerQuiz(${step}, ${i}, '${o}')" class="w-full text-left card-glass p-4 rounded-lg hover:border-green-400/50 transition border border-white/10">
+        <button onclick="answerQuiz(${step}, ${i}, '${o}')"
+          class="w-full text-left card-glass p-4 rounded-lg hover:border-green-400/50 transition border border-white/10">
           ${o}
         </button>
       `).join('')}
@@ -272,23 +258,23 @@ function answerQuiz(step, idx, answer) {
   renderQuizStep(step + 1);
 }
 
-function finishQuiz() {
-  currentUser.quizDone = true;
-  currentUser.track    = quizAnswers[1] || 'Full Stack';
-  currentUser.goal     = quizAnswers[2] || 'Primeiro emprego';
-  currentUser.xp       = 50;
-  saveUser();
+async function finishQuiz() {
+  currentUser.quiz_done = true;
+  currentUser.track     = quizAnswers[1] || 'Full Stack';
+  currentUser.goal      = quizAnswers[2] || 'Primeiro emprego';
+  currentUser.xp        = (currentUser.xp || 0) + 50;
+  currentUser.level     = Math.floor(currentUser.xp / 200) + 1;
+
+  try {
+    // Salva respostas e atualiza perfil no banco
+    await saveQuizAnswers(currentAuthId, quizAnswers);
+    await saveUser();
+  } catch (e) {
+    console.warn('Erro ao salvar quiz:', e.message);
+  }
+
   document.getElementById('quiz-modal').classList.add('hidden');
   renderDashboard();
-}
-
-
-// ===== PERSISTENCE =====
-
-function saveUser() {
-  const users = JSON.parse(localStorage.getItem('pratica_users') || '{}');
-  users[currentUser.email] = currentUser;
-  localStorage.setItem('pratica_users', JSON.stringify(users));
 }
 
 
@@ -312,7 +298,7 @@ function switchTab(tab) {
 }
 
 
-// ===== RENDER FUNCTIONS =====
+// ===== RENDER: DASHBOARD =====
 
 function renderDashboard() {
   if (!currentUser) return;
@@ -338,6 +324,9 @@ function renderDashboard() {
   document.getElementById('dash-recommendation').textContent = recs[currentUser.level - 1] || recs[0];
 }
 
+
+// ===== RENDER: PERFIL =====
+
 function renderProfile() {
   document.getElementById('prof-name').textContent  = currentUser.name;
   document.getElementById('prof-age').textContent   = currentUser.age + ' anos';
@@ -345,16 +334,22 @@ function renderProfile() {
   document.getElementById('prof-level').textContent = 'Nível ' + currentUser.level;
   document.getElementById('prof-xp').textContent    = currentUser.xp + ' XP';
 
-  const certs = currentUser.certs.length
-    ? currentUser.certs.map(c => `<div class="bg-white/5 rounded-lg p-3 text-sm">🏆 ${c}</div>`).join('')
+  const certsHtml = userCerts.length
+    ? userCerts.map(c => `<div class="bg-white/5 rounded-lg p-3 text-sm">🏆 ${c.title}</div>`).join('')
     : '<p class="text-white/40 text-sm">Nenhum certificado ainda. Continue estudando!</p>';
-  document.getElementById('prof-certs').innerHTML = certs;
+  document.getElementById('prof-certs').innerHTML = certsHtml;
 
-  const projs = currentUser.completedProjects.length
-    ? currentUser.completedProjects.map(p => `<div class="bg-white/5 rounded-lg p-3 text-sm">✅ ${p}</div>`).join('')
+  const projsHtml = completedProjects.length
+    ? completedProjects.map(id => {
+        const proj = projects.flatMap(g => g.items).find(p => p.dbId === id);
+        return proj ? `<div class="bg-white/5 rounded-lg p-3 text-sm">✅ ${proj.name}</div>` : '';
+      }).join('')
     : '<p class="text-white/40 text-sm">Nenhum projeto concluído. Vá para a aba Projetos!</p>';
-  document.getElementById('prof-projects').innerHTML = projs;
+  document.getElementById('prof-projects').innerHTML = projsHtml;
 }
+
+
+// ===== RENDER: CARREIRAS =====
 
 function renderCareers() {
   document.getElementById('careers-grid').innerHTML = careers.map(c => `
@@ -370,6 +365,9 @@ function renderCareers() {
   `).join('');
 }
 
+
+// ===== RENDER: MATÉRIAS =====
+
 function renderSubjects() {
   document.getElementById('study-content').classList.add('hidden');
   document.getElementById('subjects-grid').innerHTML = subjects.map(s => `
@@ -381,7 +379,7 @@ function renderSubjects() {
   document.getElementById('subjects-grid').classList.remove('hidden');
 }
 
-function openSubject(id) {
+async function openSubject(id) {
   const content = subjectContent[id];
   if (!content) return;
 
@@ -412,16 +410,22 @@ function openSubject(id) {
       <div class="aspect-video rounded-lg overflow-hidden bg-black/30">
         <iframe src="${content.video}" class="w-full h-full" frameborder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowfullscreen>
-        </iframe>
+          allowfullscreen></iframe>
       </div>
     </div>
   `;
 
-  // XP por visualizar o conteúdo
+  // +10 XP por abrir o conteúdo, salva progresso no banco
   currentUser.xp += 10;
   currentUser.level = Math.floor(currentUser.xp / 200) + 1;
-  saveUser();
+
+  try {
+    await saveUser();
+    await upsertSubjectProgress(currentAuthId, id, { viewed_count: 1, xp_earned: 10 });
+  } catch (e) {
+    console.warn('Erro ao salvar progresso:', e.message);
+  }
+
   renderDashboard();
 }
 
@@ -430,15 +434,28 @@ function closeSubject() {
   document.getElementById('subjects-grid').classList.remove('hidden');
 }
 
-function completeExercise(id) {
+async function completeExercise(id) {
   currentUser.xp += 30;
   currentUser.level = Math.floor(currentUser.xp / 200) + 1;
 
   const subj = subjects.find(s => s.id === id);
-  if (subj && !currentUser.certs.includes(subj.name + ' - Básico')) {
-    currentUser.certs.push(subj.name + ' - Básico');
+  const certTitle = subj ? subj.name + ' - Básico' : id + ' - Básico';
+
+  try {
+    await saveUser();
+    await upsertSubjectProgress(currentAuthId, id, {
+      completed:    true,
+      xp_earned:    40,
+      completed_at: new Date().toISOString()
+    });
+    await issueCertificate(currentAuthId, id, certTitle);
+
+    // Atualiza lista local
+    userCerts = await fetchCertificates(currentAuthId);
+  } catch (e) {
+    console.warn('Erro ao concluir exercício:', e.message);
   }
-  saveUser();
+
   renderDashboard();
 
   const btn = event.target;
@@ -446,42 +463,72 @@ function completeExercise(id) {
   btn.disabled = true;
   btn.classList.add('opacity-50');
 }
+
+
+// ===== RENDER: PROJETOS =====
 
 function renderProjects() {
   document.getElementById('projects-grid').innerHTML = projects.map(level => `
     <div>
       <h3 class="font-bold ${level.color} mb-3">${level.level}</h3>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-        ${level.items.map(p => `
-          <div class="card-glass rounded-xl p-5 border ${level.border}">
-            <h4 class="font-semibold mb-1">${p.name}</h4>
-            <p class="text-white/50 text-xs mb-2">${p.desc}</p>
-            <p class="text-xs mb-3">${p.difficulty}</p>
-            <button onclick="startProject('${p.name}')" class="btn-primary px-3 py-1.5 rounded text-xs w-full">
-              Iniciar Projeto
-            </button>
-          </div>
-        `).join('')}
+        ${level.items.map(p => {
+          const done = completedProjects.includes(p.dbId);
+          return `
+            <div class="card-glass rounded-xl p-5 border ${level.border}">
+              <h4 class="font-semibold mb-1">${p.name}</h4>
+              <p class="text-white/50 text-xs mb-2">${p.desc}</p>
+              <p class="text-xs mb-3">${p.difficulty}</p>
+              <button onclick="startProject(${p.dbId}, '${p.name}', this)"
+                class="btn-primary px-3 py-1.5 rounded text-xs w-full ${done ? 'opacity-50' : ''}"
+                ${done ? 'disabled' : ''}>
+                ${done ? '✅ Concluído!' : 'Iniciar Projeto'}
+              </button>
+            </div>
+          `;
+        }).join('')}
       </div>
     </div>
   `).join('');
 }
 
-function startProject(name) {
-  if (!currentUser.completedProjects.includes(name)) {
-    currentUser.completedProjects.push(name);
-    currentUser.xp += 100;
-    currentUser.level = Math.floor(currentUser.xp / 200) + 1;
-    saveUser();
-  }
-  const btn = event.target;
-  btn.textContent = '✅ Concluído!';
+async function startProject(projectId, projectName, btn) {
+  if (completedProjects.includes(projectId)) return;
+
   btn.disabled = true;
+  btn.textContent = 'Salvando...';
+
+  currentUser.xp += 100;
+  currentUser.level = Math.floor(currentUser.xp / 200) + 1;
+  completedProjects.push(projectId);
+
+  try {
+    await completeUserProject(currentAuthId, projectId);
+    await saveUser();
+  } catch (e) {
+    console.warn('Erro ao salvar projeto:', e.message);
+  }
+
+  btn.textContent = '✅ Concluído!';
   btn.classList.add('opacity-50');
   renderDashboard();
 }
 
+
+// ===== RENDER: PORTFÓLIO =====
+
 function renderPortfolio() {
+  const certNames = userCerts.map(c =>
+    `<span class="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">${c.title.replace(' - Básico','')}</span>`
+  ).join('') || '<span class="text-white/40 text-xs">Nenhuma ainda</span>';
+
+  const projNames = completedProjects.length
+    ? completedProjects.map(id => {
+        const proj = projects.flatMap(g => g.items).find(p => p.dbId === id);
+        return proj ? `<div class="bg-white/5 rounded-lg p-3 mb-2 text-sm">✅ ${proj.name}</div>` : '';
+      }).join('')
+    : '<p class="text-white/40 text-xs">Complete projetos na aba Projetos para preencher seu portfólio!</p>';
+
   document.getElementById('portfolio-content').innerHTML = `
     <div class="text-center mb-6">
       <div class="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-purple-500 mx-auto mb-3 flex items-center justify-center text-2xl font-bold">
@@ -494,21 +541,18 @@ function renderPortfolio() {
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
       <div>
         <h4 class="font-semibold text-sm text-white/60 mb-2">🛠️ Habilidades</h4>
-        <div class="flex flex-wrap gap-2">
-          ${currentUser.certs.map(c => `<span class="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">${c.replace(' - Básico','')}</span>`).join('') || '<span class="text-white/40 text-xs">Nenhuma ainda</span>'}
-        </div>
+        <div class="flex flex-wrap gap-2">${certNames}</div>
       </div>
       <div>
         <h4 class="font-semibold text-sm text-white/60 mb-2">📊 Estatísticas</h4>
-        <p class="text-xs text-white/50">${currentUser.xp} XP • ${currentUser.completedProjects.length} projetos • ${currentUser.certs.length} certificados</p>
+        <p class="text-xs text-white/50">
+          ${currentUser.xp} XP • ${completedProjects.length} projetos • ${userCerts.length} certificados
+        </p>
       </div>
     </div>
     <div>
       <h4 class="font-semibold text-sm text-white/60 mb-2">📁 Projetos</h4>
-      ${currentUser.completedProjects.length
-        ? currentUser.completedProjects.map(p => `<div class="bg-white/5 rounded-lg p-3 mb-2 text-sm">✅ ${p}</div>`).join('')
-        : '<p class="text-white/40 text-xs">Complete projetos na aba Projetos para preencher seu portfólio!</p>'
-      }
+      ${projNames}
     </div>
   `;
 }
@@ -516,17 +560,23 @@ function renderPortfolio() {
 
 // ===== INIT =====
 
-function init() {
-  const savedEmail = localStorage.getItem('pratica_current');
-  if (savedEmail) {
-    const users = JSON.parse(localStorage.getItem('pratica_users') || '{}');
-    if (users[savedEmail]) {
-      currentUser = users[savedEmail];
+async function init() {
+  try {
+    const session = await getSession();
+
+    if (session) {
+      currentAuthId = session.user.id;
+      currentUser   = await fetchProfile(session.user.id);
+      await loadUserExtras(session.user.id);
       enterApp();
-      return;
+    } else {
+      document.getElementById('login-screen').style.display = 'flex';
     }
+  } catch (e) {
+    console.warn('Erro no init:', e.message);
+    document.getElementById('login-screen').style.display = 'flex';
   }
-  document.getElementById('login-screen').classList.remove('hidden');
+
   lucide.createIcons();
 }
 
