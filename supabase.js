@@ -207,3 +207,21 @@ async function fetchAllProjects() {
   if (error) throw new Error(error.message);
   return data || [];
 }
+
+// ============================================================
+//  ADMIN — Listar todos os alunos cadastrados
+//  Só retorna TODAS as linhas se o usuário logado for admin —
+//  isso é garantido pela política RLS "admin ve todos os perfis"
+//  no banco, não por este código. Um aluno comum que chamar essa
+//  mesma função só recebe de volta o próprio perfil, porque a
+//  política "allow select own profile" continua valendo pra ele.
+// ============================================================
+async function fetchAllProfiles() {
+  const { data, error } = await db
+    .from('profiles')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data || [];
+}

@@ -213,6 +213,9 @@ function enterApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-app').classList.remove('hidden');
 
+  // Mostra a aba Admin no menu só para quem tem is_admin = true no perfil
+  document.getElementById('nav-admin-item').classList.toggle('hidden', !currentUser.is_admin);
+
   if (!currentUser.quiz_done) {
     showQuiz();
   } else {
@@ -292,7 +295,8 @@ function switchTab(tab) {
     evolucao:  renderCareers,
     estudos:   renderSubjects,
     projetos:  renderProjects,
-    portfolio: renderPortfolio
+    portfolio: renderPortfolio,
+    admin:     renderAdminPanel
   };
   if (renderers[tab]) renderers[tab]();
 }
@@ -555,6 +559,39 @@ function renderPortfolio() {
       ${projNames}
     </div>
   `;
+}
+
+
+// ===== RENDER: ADMIN =====
+// Lista todos os alunos cadastrados. A tabela vem vazia (só o
+// próprio usuário) se a chamada cair em alguém que não é admin —
+// a proteção de verdade é a política RLS lá no Supabase, isso
+// aqui só monta a tela pra quem tem acesso.
+
+async function renderAdminPanel() {
+  const tbody = document.getElementById('admin-table-body');
+  tbody.innerHTML = '<tr><td class="p-3 text-white/40" colspan="7">Carregando...</td></tr>';
+
+  try {
+    const alunos = await fetchAllProfiles();
+    document.getElementById('admin-total').textContent = alunos.length;
+
+    tbody.innerHTML = alunos.length
+      ? alunos.map(a => `
+          <tr class="border-b border-white/5">
+            <td class="p-3">${a.name}</td>
+            <td class="p-3 text-white/60">${a.email}</td>
+            <td class="p-3">${a.age ?? '-'}</td>
+            <td class="p-3">Nível ${a.level}</td>
+            <td class="p-3">${a.xp} XP</td>
+            <td class="p-3">${a.track || '-'}</td>
+            <td class="p-3">${a.quiz_done ? '✅' : '—'}</td>
+          </tr>
+        `).join('')
+      : '<tr><td class="p-3 text-white/40" colspan="7">Nenhum aluno encontrado.</td></tr>';
+  } catch (e) {
+    tbody.innerHTML = `<tr><td class="p-3 text-red-400" colspan="7">Erro ao carregar: ${e.message}</td></tr>`;
+  }
 }
 
 

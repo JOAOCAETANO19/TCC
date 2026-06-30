@@ -106,6 +106,9 @@
             <div class="nav-item" data-tab="portfolio" onclick="switchTab('portfolio')">
               <i data-lucide="briefcase" class="inline w-4 h-4 mr-2"></i>Portfólio
             </div>
+            <div class="nav-item hidden" id="nav-admin-item" data-tab="admin" onclick="switchTab('admin')">
+              <i data-lucide="shield" class="inline w-4 h-4 mr-2"></i>Admin
+            </div>
           </div>
         </nav>
 
@@ -274,6 +277,34 @@
             <div class="fade-in">
               <h2 class="text-2xl font-bold mb-6">Meu Portfólio Digital</h2>
               <div class="card-glass rounded-xl p-6 glow-purple" id="portfolio-content"></div>
+            </div>
+          </div>
+
+          <!-- ADMIN -->
+          <div class="tab-content" id="tab-admin">
+            <div class="fade-in">
+              <h2 class="text-2xl font-bold mb-2">Painel do Administrador</h2>
+              <p class="text-white/50 mb-6">Lista de todos os alunos cadastrados na plataforma.</p>
+              <div class="card-glass rounded-xl p-5 mb-6 inline-block">
+                <p class="text-white/50 text-sm mb-1">Total de alunos</p>
+                <p id="admin-total" class="text-2xl font-bold text-green-400"></p>
+              </div>
+              <div class="card-glass rounded-xl p-2 overflow-x-auto">
+                <table class="w-full text-sm border-collapse">
+                  <thead>
+                    <tr class="text-left text-white/50 border-b border-white/10">
+                      <th class="p-3 font-semibold">Nome</th>
+                      <th class="p-3 font-semibold">Email</th>
+                      <th class="p-3 font-semibold">Idade</th>
+                      <th class="p-3 font-semibold">Nível</th>
+                      <th class="p-3 font-semibold">XP</th>
+                      <th class="p-3 font-semibold">Trilha</th>
+                      <th class="p-3 font-semibold">Quiz</th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-table-body"></tbody>
+                </table>
+              </div>
             </div>
           </div>
 
