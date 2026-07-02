@@ -568,30 +568,188 @@ function renderPortfolio() {
 // a proteção de verdade é a política RLS lá no Supabase, isso
 // aqui só monta a tela pra quem tem acesso.
 
+// Escapa aspas simples e barras pra poder colocar o texto com segurança
+// dentro de um atributo onclick="..." (ex: nomes com apóstrofo).
+function escJsStr(str) {
+  return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
 async function renderAdminPanel() {
   const tbody = document.getElementById('admin-table-body');
-  tbody.innerHTML = '<tr><td class="p-3 text-white/40" colspan="7">Carregando...</td></tr>';
+  tbody.innerHTML = '<tr><td class="p-3 text-white/40" colspan="8">Carregando...</td></tr>';
 
   try {
     const alunos = await fetchAllProfiles();
     document.getElementById('admin-total').textContent = alunos.length;
 
     tbody.innerHTML = alunos.length
-      ? alunos.map(a => `
-          <tr class="border-b border-white/5">
-            <td class="p-3">${a.name}</td>
-            <td class="p-3 text-white/60">${a.email}</td>
-            <td class="p-3">${a.age ?? '-'}</td>
-            <td class="p-3">Nível ${a.level}</td>
-            <td class="p-3">${a.xp} XP</td>
-            <td class="p-3">${a.track || '-'}</td>
-            <td class="p-3">${a.quiz_done ? '✅' : '—'}</td>
-          </tr>
-        `).join('')
-      : '<tr><td class="p-3 text-white/40" colspan="7">Nenhum aluno encontrado.</td></tr>';
+      ? alunos.map(a => {
+          const nomeEsc = escJsStr(a.name);
+          const isSelf  = a.id === currentAuthId;
+
+          const acoes = isSelf
+            ? '<span class="text-white/30 text-xs">— você —</span>'
+            : `
+              <div class="flex gap-1 flex-wrap">
+                <button onclick="adminHandleResetXP('${a.id}', '${nomeEsc}')"
+                  class="text-xs px-2 py-1 rounded bg-white/10 hover:bg-white/20 transition">
+                  Resetar XP
+                </button>
+                <button onclick="adminHandleToggleAdmin('${a.id}', '${nomeEsc}', ${!!a.is_admin})"
+                  class="text-xs px-2 py-1 rounded transition ${a.is_admin ? 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/30' : 'bg-white/10 hover:bg-white/20'}">
+                  ${a.is_admin ? 'Remover admin' : 'Tornar admin'}
+                </button>
+                <button onclick="adminHandleDelete('${a.id}', '${nomeEsc}')"
+                  class="text-xs px-2 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition">
+                  Excluir
+                </button>
+              </div>
+            `;
+
+          return `
+            <tr class="border-b border-white/5">
+              <td class="p-3">
+                <button onclick="adminShowDetails('${a.id}')" class="hover:underline hover:text-green-400 transition text-left">${a.name}</button>${a.is_admin ? ' <span class="text-purple-400 text-xs">(admin)</span>' : ''}
+              </td>
+              <td class="p-3 text-white/60">${a.email}</td>
+              <td class="p-3">${a.age ?? '-'}</td>
+              <td class="p-3">Nível ${a.level}</td>
+              <td class="p-3">${a.xp} XP</td>
+              <td class="p-3">${a.track || '-'}</td>
+              <td class="p-3">${a.quiz_done ? '✅' : '—'}</td>
+              <td class="p-3">${acoes}</td>
+            </tr>
+          `;
+        }).join('')
+      : '<tr><td class="p-3 text-white/40" colspan="8">Nenhum aluno encontrado.</td></tr>';
   } catch (e) {
-    tbody.innerHTML = `<tr><td class="p-3 text-red-400" colspan="7">Erro ao carregar: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td class="p-3 text-red-400" colspan="8">Erro ao carregar: ${e.message}</td></tr>`;
   }
+}
+
+// ===== ADMIN: AÇÕES (resetar XP, tornar/remover admin, excluir) =====
+// Cada função confirma com o admin antes de agir, chama o Supabase
+// e recarrega a tabela. Erros do banco (ex: RLS bloqueando porque
+// quem chamou não é admin de verdade) aparecem num alert().
+
+async function adminHandleResetXP(id, nome) {
+  if (!confirm(`Resetar XP e nível de ${nome} para zero?`)) return;
+  try {
+    await adminResetXP(id);
+    renderAdminPanel();
+  } catch (e) {
+    alert('Erro ao resetar XP: ' + e.message);
+  }
+}
+
+async function adminHandleToggleAdmin(id, nome, isCurrentlyAdmin) {
+  const msg = isCurrentlyAdmin
+    ? `Remover privilégio de admin de ${nome}?`
+    : `Tornar ${nome} administrador? Essa pessoa passará a ver esta mesma tela de admin.`;
+  if (!confirm(msg)) return;
+  try {
+    await adminSetIsAdmin(id, !isCurrentlyAdmin);
+    renderAdminPanel();
+  } catch (e) {
+    alert('Erro ao alterar admin: ' + e.message);
+  }
+}
+
+async function adminHandleDelete(id, nome) {
+  const msg = `Excluir ${nome} permanentemente?\n\nIsso remove perfil, XP, certificados, projetos e respostas do quiz. Não pode ser desfeito.`;
+  if (!confirm(msg)) return;
+  try {
+    await adminDeleteStudent(id);
+    renderAdminPanel();
+  } catch (e) {
+    alert('Erro ao excluir aluno: ' + e.message);
+  }
+}
+
+
+// ===== ADMIN: DETALHES DE UM ALUNO (quiz, projetos, certificados) =====
+
+// "Pergunta 1" salvo no banco não tem o texto da pergunta, só o número.
+// Aqui a gente recupera o texto real usando o mesmo array quizQuestions
+// que monta o quiz — assim o admin vê a pergunta, não só "Pergunta 1".
+function quizQuestionLabel(question) {
+  const m = /Pergunta (\d+)/.exec(question || '');
+  if (m) {
+    const idx = parseInt(m[1], 10) - 1;
+    if (quizQuestions[idx]) return quizQuestions[idx].q;
+  }
+  return question;
+}
+
+async function adminShowDetails(id) {
+  const modal = document.getElementById('admin-detail-modal');
+  document.getElementById('admin-detail-name').textContent  = 'Carregando...';
+  document.getElementById('admin-detail-email').textContent = '';
+  document.getElementById('admin-detail-content').innerHTML = '';
+  modal.classList.remove('hidden');
+
+  try {
+    const [profile, quizRows, projRows, certRows] = await Promise.all([
+      fetchProfile(id),
+      fetchQuizAnswers(id),
+      fetchUserProjects(id),
+      fetchCertificates(id)
+    ]);
+    document.getElementById('admin-detail-name').textContent  = profile.name;
+    document.getElementById('admin-detail-email').textContent = profile.email;
+    renderStudentDetailModal(quizRows, projRows, certRows);
+  } catch (e) {
+    document.getElementById('admin-detail-content').innerHTML =
+      `<p class="text-red-400 text-sm">Erro ao carregar detalhes: ${e.message}</p>`;
+  }
+}
+
+function closeAdminDetailModal() {
+  document.getElementById('admin-detail-modal').classList.add('hidden');
+}
+
+function renderStudentDetailModal(quizRows, projRows, certRows) {
+  const quizHtml = quizRows.length
+    ? quizRows.map(q => `
+        <div class="bg-white/5 rounded-lg p-3 mb-2 text-sm">
+          <p class="text-white/40 text-xs mb-1">${quizQuestionLabel(q.question)}</p>
+          <p>${q.answer}</p>
+        </div>
+      `).join('')
+    : '<p class="text-white/40 text-sm">Quiz não realizado.</p>';
+
+  const projHtml = projRows.length
+    ? projRows.map(p => `
+        <div class="bg-white/5 rounded-lg p-3 mb-2 text-sm">
+          ✅ ${p.projects ? p.projects.name : ('Projeto #' + p.project_id)}
+          ${p.projects && p.projects.level ? `<span class="text-white/40 text-xs"> • ${p.projects.level}</span>` : ''}
+        </div>
+      `).join('')
+    : '<p class="text-white/40 text-sm">Nenhum projeto concluído.</p>';
+
+  const certHtml = certRows.length
+    ? certRows.map(c => `
+        <div class="bg-white/5 rounded-lg p-3 mb-2 text-sm">
+          🏆 ${c.title}
+          ${c.issued_at ? `<span class="text-white/40 text-xs"> • ${new Date(c.issued_at).toLocaleDateString('pt-BR')}</span>` : ''}
+        </div>
+      `).join('')
+    : '<p class="text-white/40 text-sm">Nenhum certificado ainda.</p>';
+
+  document.getElementById('admin-detail-content').innerHTML = `
+    <div class="mb-6">
+      <h3 class="font-bold text-purple-400 mb-2">📝 Respostas do Quiz</h3>
+      ${quizHtml}
+    </div>
+    <div class="mb-6">
+      <h3 class="font-bold text-yellow-400 mb-2">💻 Projetos Concluídos</h3>
+      ${projHtml}
+    </div>
+    <div>
+      <h3 class="font-bold text-green-400 mb-2">🏆 Certificados</h3>
+      ${certHtml}
+    </div>
+  `;
 }
 
 

@@ -116,6 +116,20 @@ async function saveQuizAnswers(userId, answers) {
 }
 
 // ============================================================
+//  QUIZ — Buscar respostas de um usuário (usado no painel de admin)
+// ============================================================
+async function fetchQuizAnswers(userId) {
+  const { data, error } = await db
+    .from('quiz_answers')
+    .select('*')
+    .eq('user_id', userId)
+    .order('question');
+
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+// ============================================================
 //  PROGRESSO — Matérias estudadas / exercícios concluídos
 // ============================================================
 async function upsertSubjectProgress(userId, subjectId, updates) {
@@ -224,4 +238,49 @@ async function fetchAllProfiles() {
 
   if (error) throw new Error(error.message);
   return data || [];
+}
+
+// ============================================================
+//  ADMIN — Resetar XP/nível de um aluno para zero
+//  Só funciona de verdade se quem chamar for admin — garantido
+//  pela política RLS "admin atualiza qualquer perfil" no banco.
+// ============================================================
+async function adminResetXP(targetId) {
+  const { error } = await db
+    .from('profiles')
+    .update({ xp: 0, level: 1 })
+    .eq('id', targetId);
+
+  if (error) throw new Error(error.message);
+}
+
+// ============================================================
+//  ADMIN — Tornar ou remover admin de um aluno
+//  Dupla proteção no banco: a política RLS já exige que quem
+//  chama seja admin, e o trigger trg_protect_is_admin reverte
+//  a mudança se, por algum motivo, quem chamou não for admin.
+// ============================================================
+async function adminSetIsAdmin(targetId, value) {
+  const { error } = await db
+    .from('profiles')
+    .update({ is_admin: value })
+    .eq('id', targetId);
+
+  if (error) throw new Error(error.message);
+}
+
+// ============================================================
+//  ADMIN — Excluir aluno (perfil + tudo que ele gerou no sistema)
+//  Chama a função admin_delete_student no banco (SECURITY DEFINER),
+//  que confere de novo se quem chamou é admin antes de excluir.
+//
+//  ⚠️ Isso remove o aluno do app (perfil, XP, projetos, certificados,
+//  respostas do quiz), mas NÃO remove a conta de login dele no
+//  Supabase Auth — isso exige a Admin API (chave service_role, que
+//  nunca deve ir para o frontend). Se quiser apagar o login também,
+//  faça manualmente em Supabase → Authentication → Users.
+// ============================================================
+async function adminDeleteStudent(targetId) {
+  const { error } = await db.rpc('admin_delete_student', { target_id: targetId });
+  if (error) throw new Error(error.message);
 }

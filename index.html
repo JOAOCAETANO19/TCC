@@ -284,7 +284,7 @@
           <div class="tab-content" id="tab-admin">
             <div class="fade-in">
               <h2 class="text-2xl font-bold mb-2">Painel do Administrador</h2>
-              <p class="text-white/50 mb-6">Lista de todos os alunos cadastrados na plataforma.</p>
+              <p class="text-white/50 mb-6">Lista de todos os alunos cadastrados na plataforma. Clique no nome para ver detalhes.</p>
               <div class="card-glass rounded-xl p-5 mb-6 inline-block">
                 <p class="text-white/50 text-sm mb-1">Total de alunos</p>
                 <p id="admin-total" class="text-2xl font-bold text-green-400"></p>
@@ -300,6 +300,7 @@
                       <th class="p-3 font-semibold">XP</th>
                       <th class="p-3 font-semibold">Trilha</th>
                       <th class="p-3 font-semibold">Quiz</th>
+                      <th class="p-3 font-semibold">Ações</th>
                     </tr>
                   </thead>
                   <tbody id="admin-table-body"></tbody>
@@ -318,6 +319,20 @@
         <h2 class="text-xl font-bold mb-2 text-center">🚀 Vamos personalizar sua jornada!</h2>
         <p class="text-white/50 text-sm text-center mb-6">Responda 3 perguntas rápidas para montar sua trilha.</p>
         <div id="quiz-steps"></div>
+      </div>
+    </div>
+
+    <!-- ADMIN: DETALHES DO ALUNO -->
+    <div id="admin-detail-modal" class="modal-overlay hidden">
+      <div class="card-glass rounded-2xl p-8 w-full max-w-2xl mx-4 fade-in" style="max-height:85vh; overflow-y:auto;">
+        <div class="flex items-start justify-between mb-6">
+          <div>
+            <h2 id="admin-detail-name" class="text-xl font-bold"></h2>
+            <p id="admin-detail-email" class="text-white/50 text-sm"></p>
+          </div>
+          <button onclick="closeAdminDetailModal()" class="text-white/40 hover:text-white transition text-2xl leading-none">&times;</button>
+        </div>
+        <div id="admin-detail-content"></div>
       </div>
     </div>
 
