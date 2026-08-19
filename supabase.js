@@ -42,12 +42,12 @@ async function supabaseRegister(email, password, name, age) {
   //    mas fazemos aqui para garantir os campos extras)
   const { error: profileError } = await db
     .from('profiles')
-    .insert({
+    .upsert({
       id:    user.id,
       name:  name,
       age:   parseInt(age),
       email: email
-    });
+    }, { onConflict: 'id' });
 
   if (profileError) throw new Error(profileError.message);
   return user;
