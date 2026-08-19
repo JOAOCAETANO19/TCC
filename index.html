@@ -71,12 +71,18 @@
     <div id="main-app" class="hidden h-full flex flex-col">
 
       <!-- TOP NAV -->
-      <header class="flex items-center justify-between px-6 py-4 border-b border-white/5">
-        <h1 class="text-xl font-bold">
-          <span class="text-green-400 font-mono">&lt;</span>Pratica.dev<span class="text-green-400 font-mono">/&gt;</span>
-          <span class="text-purple-400 text-sm">2.0</span>
-        </h1>
-        <div class="flex items-center gap-4">
+      <header class="app-header flex items-center justify-between px-6 py-4 border-b border-white/5">
+        <div class="flex items-center gap-3">
+          <button type="button" id="menu-toggle" class="menu-toggle" onclick="toggleMobileMenu()"
+                  aria-label="Abrir menu de navegação" aria-controls="app-sidebar" aria-expanded="false">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+          </button>
+          <h1 class="text-xl font-bold">
+            <span class="text-green-400 font-mono">&lt;</span>Pratica.dev<span class="text-green-400 font-mono">/&gt;</span>
+            <span class="text-purple-400 text-sm">2.0</span>
+          </h1>
+        </div>
+        <div class="header-meta flex items-center gap-4">
           <span id="nav-user" class="text-sm text-white/60"></span>
           <span id="nav-level" class="level-badge"></span>
           <span id="nav-xp" class="xp-badge"></span>
@@ -84,10 +90,13 @@
         </div>
       </header>
 
-      <div class="flex flex-1 overflow-hidden">
+      <div class="app-body flex flex-1 overflow-hidden">
+
+        <!-- BACKDROP DO MENU MOBILE -->
+        <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="closeMobileMenu()" hidden></div>
 
         <!-- SIDEBAR -->
-        <nav class="w-56 p-4 border-r border-white/5 overflow-y-auto flex-shrink-0">
+        <nav id="app-sidebar" class="app-sidebar w-56 p-4 border-r border-white/5 overflow-y-auto flex-shrink-0">
           <div class="space-y-1">
             <div class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard')">
               <i data-lucide="layout-dashboard" class="inline w-4 h-4 mr-2"></i>Dashboard
@@ -366,6 +375,25 @@
 
     <!-- TOASTS (substitui o alert() nativo) -->
     <div id="toast-container" class="fixed bottom-6 left-1/2 z-50 flex flex-col gap-2" style="transform:translateX(-50%);"></div>
+
+    <!-- BRIEFING DO PROJETO -->
+    <div id="briefing-modal" class="modal-overlay hidden" onclick="if (event.target === this) closeBriefing()">
+      <div class="briefing-panel card-glass fade-in">
+        <div class="briefing-header">
+          <div>
+            <p class="briefing-eyebrow">Briefing do projeto</p>
+            <h3 id="briefing-title" class="briefing-title"></h3>
+            <p id="briefing-meta" class="briefing-meta"></p>
+          </div>
+          <button type="button" onclick="closeBriefing()" class="text-white/50 hover:text-white text-3xl leading-none px-2" aria-label="Fechar briefing">&times;</button>
+        </div>
+        <div id="briefing-body" class="briefing-body"></div>
+        <div class="briefing-footer">
+          <button type="button" onclick="closeBriefing()" class="btn-secondary px-4 py-2 rounded-lg text-sm">Fechar</button>
+          <button type="button" id="briefing-start-btn" class="btn-primary px-4 py-2 rounded-lg text-sm font-semibold">Concluir Projeto</button>
+        </div>
+      </div>
+    </div>
 
     <!-- CERTIFICADO VISUAL -->
     <div id="certificate-modal" class="modal-overlay hidden" onclick="if (event.target === this) closeCertificate()">

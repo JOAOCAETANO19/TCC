@@ -7,10 +7,19 @@ Plataforma educacional gamificada para estudantes de desenvolvimento de sistemas
 - **Repositório (Frontend + integração Backend):** [github.com/JOAOCAETANO19/TCC](https://github.com/JOAOCAETANO19/TCC)
 - **Sistema publicado no GitHub Pages:** [joaocaetano19.github.io/TCC](https://joaocaetano19.github.io/TCC/)
 - **Modelo do certificado visual:** na tela de login, use **Ver modelo do certificado visual** (não grava dados no banco)
+- **Briefing dos projetos:** aba **Projetos** → botão **Ver briefing** em qualquer card
+- **Menu mobile:** abra o sistema em uma tela de até 768px e use o botão de menu no topo
 - **Scripts do banco de dados:** [`database/schema.sql`](database/schema.sql)
 - **Documentação técnica:** [`docs/documentacao-tecnica.md`](docs/documentacao-tecnica.md)
 
 > A aplicação é uma SPA estática. O backend é consumido pelo cliente por meio do Supabase; por isso, não há um servidor Node separado neste repositório.
+
+## Recursos da interface
+
+- **Certificado visual:** diploma renderizado em canvas, com download em PNG e impressão em PDF;
+- **Briefing de projetos:** cada um dos 9 projetos práticos abre um briefing no formato usado no mercado, com contexto do cliente, tecnologias sugeridas, requisitos funcionais, entregáveis e critérios de aceite;
+- **Menu mobile:** em telas de até 768px a barra lateral vira uma gaveta acionada pelo botão de menu, com fundo escurecido, fechamento pelo `Esc`, por clique fora e ao escolher uma aba;
+- **Portfólio digital:** reúne XP, projetos concluídos e certificados do aluno.
 
 ## Tecnologias
 
@@ -60,8 +69,8 @@ O script é idempotente para uma instalação nova e inclui tabelas, dados inici
 
 ```text
 index.html       interface e telas da aplicação
-style.css        estilos complementares e diploma visual
-script.js        estado, renderização, certificado visual e regras de interação
+style.css        estilos complementares, diploma visual, menu mobile e briefing
+script.js        estado, renderização, certificado visual, briefing e regras de interação
 supabase.js      cliente Supabase e chamadas ao backend
  database/
    schema.sql     esquema, políticas e funções PostgreSQL
