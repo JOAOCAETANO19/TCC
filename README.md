@@ -6,6 +6,7 @@ Plataforma educacional gamificada para estudantes de desenvolvimento de sistemas
 
 - **Repositório (Frontend + integração Backend):** [github.com/JOAOCAETANO19/TCC](https://github.com/JOAOCAETANO19/TCC)
 - **Sistema publicado no GitHub Pages:** [joaocaetano19.github.io/TCC](https://joaocaetano19.github.io/TCC/)
+- **Modelo do certificado visual:** na tela de login, use **Ver modelo do certificado visual** (não grava dados no banco)
 - **Scripts do banco de dados:** [`database/schema.sql`](database/schema.sql)
 - **Documentação técnica:** [`docs/documentacao-tecnica.md`](docs/documentacao-tecnica.md)
 
@@ -59,8 +60,8 @@ O script é idempotente para uma instalação nova e inclui tabelas, dados inici
 
 ```text
 index.html       interface e telas da aplicação
-style.css        estilos complementares
-script.js        estado, renderização e regras de interação do frontend
+style.css        estilos complementares e diploma visual
+script.js        estado, renderização, certificado visual e regras de interação
 supabase.js      cliente Supabase e chamadas ao backend
  database/
    schema.sql     esquema, políticas e funções PostgreSQL

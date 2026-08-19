@@ -6,7 +6,7 @@
   <title>Pratica.dev 2.0</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Great+Vibes&family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="h-full" style="background:#0f0f23; color:white; margin:0;">
@@ -60,6 +60,10 @@
           <button id="btn-register" onclick="handleRegister()" class="btn-primary w-full py-3 rounded-lg text-lg mb-3">Cadastrar</button>
           <button onclick="showLogin()" class="btn-secondary w-full py-3 rounded-lg">Voltar ao Login</button>
         </div>
+
+        <button type="button" onclick="openDemoCertificate()" class="w-full text-white/40 hover:text-green-400 text-xs mt-6 transition">
+          Ver modelo do certificado visual
+        </button>
       </div>
     </div>
 
@@ -90,6 +94,9 @@
             </div>
             <div class="nav-item" data-tab="perfil" onclick="switchTab('perfil')">
               <i data-lucide="user" class="inline w-4 h-4 mr-2"></i>Perfil
+            </div>
+            <div class="nav-item" data-tab="certificados" onclick="switchTab('certificados')">
+              <i data-lucide="award" class="inline w-4 h-4 mr-2"></i>Certificados
             </div>
             <div class="nav-item" data-tab="evolucao" onclick="switchTab('evolucao')">
               <i data-lucide="trending-up" class="inline w-4 h-4 mr-2"></i>Evolução
@@ -181,12 +188,22 @@
               </div>
               <div class="card-glass rounded-xl p-6 mb-6">
                 <h3 class="font-bold mb-3">Certificados</h3>
-                <div id="prof-certs" class="space-y-2"></div>
+                <p class="text-white/40 text-xs mb-3">Clique em um certificado para abrir o diploma visual, imprimir ou baixar em PNG.</p>
+                <div id="prof-certs" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
               </div>
               <div class="card-glass rounded-xl p-6">
                 <h3 class="font-bold mb-3">Projetos Concluídos</h3>
                 <div id="prof-projects" class="space-y-2"></div>
               </div>
+            </div>
+          </div>
+
+          <!-- CERTIFICADOS VISUAIS -->
+          <div class="tab-content" id="tab-certificados">
+            <div class="fade-in">
+              <h2 class="text-2xl font-bold mb-2">Meus Certificados</h2>
+              <p class="text-white/50 mb-6">Cada exercício concluído gera um diploma visual da Pratica.dev 2.0, pronto para imprimir ou baixar.</p>
+              <div id="certs-gallery" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
             </div>
           </div>
 
@@ -349,6 +366,28 @@
 
     <!-- TOASTS (substitui o alert() nativo) -->
     <div id="toast-container" class="fixed bottom-6 left-1/2 z-50 flex flex-col gap-2" style="transform:translateX(-50%);"></div>
+
+    <!-- CERTIFICADO VISUAL -->
+    <div id="certificate-modal" class="modal-overlay hidden" onclick="if (event.target === this) closeCertificate()">
+      <div class="cert-modal-panel fade-in">
+        <div class="cert-toolbar">
+          <div>
+            <p class="cert-toolbar-title">Certificado visual</p>
+            <p class="cert-toolbar-hint">Imprima em paisagem ou baixe o PNG para o portfólio.</p>
+          </div>
+          <div class="cert-toolbar-actions">
+            <button type="button" onclick="downloadCertificate()" class="btn-primary px-4 py-2 rounded-lg text-sm">Baixar PNG</button>
+            <button type="button" onclick="printCertificate()" class="btn-secondary px-4 py-2 rounded-lg text-sm">Imprimir / PDF</button>
+            <button type="button" onclick="closeCertificate()" class="text-white/50 hover:text-white text-3xl leading-none px-2" aria-label="Fechar certificado">&times;</button>
+          </div>
+        </div>
+        <div class="cert-canvas-wrap">
+          <canvas id="cert-canvas" aria-label="Certificado Pratica.dev 2.0"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div id="certificate-print-root" class="cert-print-root" aria-hidden="true"></div>
 
     <!-- SUPABASE + SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

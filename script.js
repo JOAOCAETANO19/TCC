@@ -76,6 +76,478 @@ let currentAuthId  = null;  // UUID do auth.users
 let completedProjects = []; // array de project_id já concluídos
 let userCerts      = [];    // array de { subject_id, title }
 let quizAnswers    = [];
+let lastCertModel  = null;  // certificado atualmente aberto no modal
+let adminDetailStudent = null;
+let adminDetailCerts = [];
+
+const CERT_W = 1400;
+const CERT_H = 990;
+const CERT_ACCENTS = {
+  html: '#f97316', css: '#60a5fa', js: '#facc15', sql: '#22d3ee',
+  python: '#4ade80', java: '#f87171', poo: '#c084fc', git: '#d1d5db',
+  redes: '#2dd4bf', apis: '#818cf8', banco: '#fbbf24', logica: '#f472b6'
+};
+
+
+// ===== CERTIFICADO VISUAL =====
+// O diploma é desenhado em canvas para a tela, o PNG e a impressão
+// ficarem iguais. Não substitui a tabela certificates: só apresenta
+// o que o banco já emitiu ao concluir um exercício.
+
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function certVerificationCode(userId, subjectId) {
+  const raw = String(userId || 'demo') + ':' + String(subjectId || 'mod');
+  let hash = 2166136261;
+  for (let i = 0; i < raw.length; i++) {
+    hash ^= raw.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  const hex = (hash >>> 0).toString(16).toUpperCase().padStart(8, '0').slice(0, 6);
+  const prefix = String(subjectId || 'MOD').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6) || 'MOD';
+  return 'PD-' + prefix + '-' + hex;
+}
+
+function formatCertDate(iso) {
+  const date = iso ? new Date(iso) : new Date();
+  if (Number.isNaN(date.getTime())) {
+    return new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+  return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+function buildCertViewModel(cert, student) {
+  const who = student || currentUser || {};
+  const subj = subjects.find(s => s.id === cert.subject_id);
+  return {
+    studentName: who.name || 'Aluno',
+    subjectName: subj ? subj.name : (cert.subject_id || 'Módulo'),
+    subjectId: cert.subject_id || 'modulo',
+    title: cert.title || ((subj ? subj.name : 'Módulo') + ' - Básico'),
+    issuedAt: cert.issued_at || new Date().toISOString(),
+    code: certVerificationCode(who.id || currentAuthId, cert.subject_id),
+    level: who.level || 1,
+    xp: who.xp || 0,
+    track: who.track || '',
+    isDemo: !!(student && student.id === 'demo')
+  };
+}
+
+async function ensureCertFonts() {
+  if (!document.fonts || !document.fonts.load) return;
+  await Promise.all([
+    document.fonts.load('700 64px Cinzel'),
+    document.fonts.load('600 42px Cinzel'),
+    document.fonts.load('400 22px Cinzel'),
+    document.fonts.load('400 36px "Great Vibes"'),
+    document.fonts.load('600 22px "Plus Jakarta Sans"'),
+    document.fonts.load('600 18px "JetBrains Mono"')
+  ]).catch(() => {});
+}
+
+function fitCanvasText(ctx, text, maxWidth, maxSize, minSize, fontFor) {
+  let size = maxSize;
+  ctx.font = fontFor(size);
+  while (size > minSize && ctx.measureText(text).width > maxWidth) {
+    size -= 1;
+    ctx.font = fontFor(size);
+  }
+  return size;
+}
+
+function wrapCanvasText(ctx, text, maxWidth) {
+  const words = String(text).split(/\s+/);
+  const lines = [];
+  let line = '';
+  for (const word of words) {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function roundedRectPath(ctx, x, y, w, h, r) {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + w, y, x + w, y + h, radius);
+  ctx.arcTo(x + w, y + h, x, y + h, radius);
+  ctx.arcTo(x, y + h, x, y, radius);
+  ctx.arcTo(x, y, x + w, y, radius);
+  ctx.closePath();
+}
+
+function drawCertCorner(ctx, x, y, dx, dy, color) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ctx.moveTo(x, y + dy * 34);
+  ctx.lineTo(x, y);
+  ctx.lineTo(x + dx * 34, y);
+  ctx.stroke();
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x + dx * 8, y + dy * 26);
+  ctx.lineTo(x + dx * 8, y + dy * 8);
+  ctx.lineTo(x + dx * 26, y + dy * 8);
+  ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x + dx * 14, y + dy * 22);
+  ctx.lineTo(x + dx * 22, y + dy * 14);
+  ctx.lineTo(x + dx * 14, y + dy * 6);
+  ctx.lineTo(x + dx * 6, y + dy * 14);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCertificate(canvas, model) {
+  const scale = 2;
+  canvas.width = CERT_W * scale;
+  canvas.height = CERT_H * scale;
+  canvas.style.width = '100%';
+  canvas.style.height = 'auto';
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+
+  const w = CERT_W;
+  const h = CERT_H;
+  const accent = CERT_ACCENTS[model.subjectId] || '#00ff88';
+
+  const bg = ctx.createLinearGradient(0, 0, w, h);
+  bg.addColorStop(0, '#0b1024');
+  bg.addColorStop(0.45, '#14133a');
+  bg.addColorStop(1, '#0c1b2e');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  const glow = ctx.createRadialGradient(w * 0.5, h * 0.42, 40, w * 0.5, h * 0.42, 520);
+  glow.addColorStop(0, 'rgba(139, 92, 246, 0.22)');
+  glow.addColorStop(1, 'rgba(139, 92, 246, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0, 255, 136, 0.045)';
+  ctx.lineWidth = 1;
+  for (let x = 40; x < w; x += 32) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+    ctx.stroke();
+  }
+  for (let y = 40; y < h; y += 32) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  const gold = ctx.createLinearGradient(120, 0, w - 120, 0);
+  gold.addColorStop(0, '#8a6b1f');
+  gold.addColorStop(0.5, '#f3e5ab');
+  gold.addColorStop(1, '#8a6b1f');
+
+  ctx.strokeStyle = gold;
+  ctx.lineWidth = 5;
+  roundedRectPath(ctx, 36, 36, w - 72, h - 72, 18);
+  ctx.stroke();
+  ctx.lineWidth = 1.4;
+  roundedRectPath(ctx, 50, 50, w - 100, h - 100, 14);
+  ctx.stroke();
+
+  ctx.strokeStyle = accent;
+  ctx.globalAlpha = 0.55;
+  ctx.lineWidth = 1;
+  roundedRectPath(ctx, 64, 64, w - 128, h - 128, 10);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  drawCertCorner(ctx, 78, 78, 1, 1, '#d4af37');
+  drawCertCorner(ctx, w - 78, 78, -1, 1, '#d4af37');
+  drawCertCorner(ctx, 78, h - 78, 1, -1, '#d4af37');
+  drawCertCorner(ctx, w - 78, h - 78, -1, -1, '#d4af37');
+
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  ctx.font = '700 28px "JetBrains Mono", monospace';
+  ctx.fillStyle = '#4ade80';
+  ctx.fillText('<Pratica.dev/>', w / 2 - 28, 118);
+  ctx.font = '700 22px "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = '#c4b5fd';
+  ctx.fillText('2.0', w / 2 + 132, 118);
+
+  ctx.strokeStyle = gold;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(w / 2 - 170, 148);
+  ctx.lineTo(w / 2 + 170, 148);
+  ctx.stroke();
+
+  ctx.font = '700 46px Cinzel, "Times New Roman", serif';
+  ctx.fillStyle = gold;
+  ctx.letterSpacing = '6px';
+  ctx.fillText('CERTIFICADO DE CONCLUSÃO', w / 2, 198);
+  ctx.letterSpacing = '0px';
+
+  ctx.font = '500 18px "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.62)';
+  ctx.fillText('Curso Técnico em Desenvolvimento de Sistemas', w / 2, 242);
+
+  ctx.font = '500 20px "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = 'rgba(243, 229, 171, 0.85)';
+  ctx.fillText('Certificamos que', w / 2, 300);
+
+  const nameSize = fitCanvasText(
+    ctx,
+    model.studentName,
+    980,
+    58,
+    28,
+    size => '700 ' + size + 'px Cinzel, "Times New Roman", serif'
+  );
+  ctx.font = '700 ' + nameSize + 'px Cinzel, "Times New Roman", serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(model.studentName, w / 2, 358);
+
+  ctx.strokeStyle = gold;
+  ctx.lineWidth = 1.2;
+  ctx.beginPath();
+  ctx.moveTo(w / 2 - 260, 392);
+  ctx.lineTo(w / 2 + 260, 392);
+  ctx.stroke();
+
+  ctx.font = '500 20px "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.fillText('concluiu com aproveitamento o módulo', w / 2, 430);
+
+  const subjectSize = fitCanvasText(
+    ctx,
+    model.subjectName,
+    900,
+    48,
+    26,
+    size => '700 ' + size + 'px Cinzel, "Times New Roman", serif'
+  );
+  ctx.font = '700 ' + subjectSize + 'px Cinzel, "Times New Roman", serif';
+  ctx.fillStyle = accent;
+  ctx.fillText(model.subjectName, w / 2, 482);
+
+  ctx.font = '600 20px "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = '#f3e5ab';
+  ctx.fillText(model.title, w / 2, 526);
+
+  ctx.font = '400 18px "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.62)';
+  const body = 'demonstrando dedicação aos estudos e domínio dos fundamentos apresentados na plataforma educacional Pratica.dev 2.0, mentor digital de carreira em tecnologia.';
+  const lines = wrapCanvasText(ctx, body, 920);
+  lines.forEach((line, i) => ctx.fillText(line, w / 2, 572 + i * 26));
+
+  if (model.isDemo) {
+    ctx.save();
+    ctx.translate(w / 2, h / 2 + 20);
+    ctx.rotate(-Math.PI / 7);
+    ctx.font = '700 92px Cinzel, serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.055)';
+    ctx.fillText('MODELO', 0, 0);
+    ctx.restore();
+  }
+
+  const sealX = w / 2;
+  const sealY = 768;
+  const sealGlow = ctx.createRadialGradient(sealX, sealY, 10, sealX, sealY, 78);
+  sealGlow.addColorStop(0, 'rgba(212, 175, 55, 0.28)');
+  sealGlow.addColorStop(1, 'rgba(212, 175, 55, 0)');
+  ctx.fillStyle = sealGlow;
+  ctx.beginPath();
+  ctx.arc(sealX, sealY, 78, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = gold;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(sealX, sealY, 56, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.arc(sealX, sealY, 46, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.strokeStyle = accent;
+  ctx.globalAlpha = 0.8;
+  ctx.beginPath();
+  ctx.arc(sealX, sealY, 38, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.font = '700 22px Cinzel, serif';
+  ctx.fillStyle = '#f3e5ab';
+  ctx.fillText('PD', sealX, sealY - 6);
+  ctx.font = '600 12px "JetBrains Mono", monospace';
+  ctx.fillStyle = accent;
+  ctx.fillText('2.0', sealX, sealY + 16);
+
+  ctx.textAlign = 'left';
+  ctx.font = '600 13px "JetBrains Mono", monospace';
+  ctx.fillStyle = 'rgba(243, 229, 171, 0.7)';
+  ctx.fillText('DATA DE EMISSÃO', 160, 730);
+  ctx.font = '600 20px "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(formatCertDate(model.issuedAt), 160, 762);
+  ctx.font = '400 15px "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillText((model.track ? model.track + ' • ' : '') + 'Nível ' + model.level + ' • ' + model.xp + ' XP', 160, 792);
+
+  ctx.textAlign = 'right';
+  ctx.strokeStyle = gold;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(w - 160, 770);
+  ctx.lineTo(w - 360, 770);
+  ctx.stroke();
+  ctx.font = '400 34px "Great Vibes", cursive';
+  ctx.fillStyle = '#f3e5ab';
+  ctx.fillText('Pratica.dev', w - 170, 752);
+  ctx.font = '500 14px "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillText('Plataforma educacional', w - 160, 796);
+
+  ctx.textAlign = 'center';
+  ctx.font = '500 14px "JetBrains Mono", monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.42)';
+  ctx.fillText('Código de verificação  ' + model.code, w / 2, 900);
+}
+
+async function openCertificate(cert, student) {
+  if (!cert) return;
+  lastCertModel = buildCertViewModel(cert, student);
+  const modal = document.getElementById('certificate-modal');
+  const canvas = document.getElementById('cert-canvas');
+  if (!modal || !canvas) return;
+  modal.classList.remove('hidden');
+  drawCertificate(canvas, lastCertModel);
+  try {
+    await ensureCertFonts();
+    if (lastCertModel) drawCertificate(canvas, lastCertModel);
+  } catch (_) { /* mantém o desenho com fontes de fallback */ }
+
+  if (!student && cert.subject_id && currentUser) {
+    history.replaceState(null, '', '#certificado=' + encodeURIComponent(cert.subject_id));
+  }
+}
+
+function closeCertificate() {
+  const modal = document.getElementById('certificate-modal');
+  if (modal) modal.classList.add('hidden');
+  lastCertModel = null;
+  if (/^#certificado=/.test(location.hash)) {
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+}
+
+function downloadCertificate() {
+  const canvas = document.getElementById('cert-canvas');
+  if (!canvas || !lastCertModel) return;
+  const slug = String(lastCertModel.subjectName || 'modulo')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+  const link = document.createElement('a');
+  link.download = 'certificado-praticadev-' + slug + '.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function printCertificate() {
+  const canvas = document.getElementById('cert-canvas');
+  const root = document.getElementById('certificate-print-root');
+  if (!canvas || !root || !lastCertModel) return;
+  const img = new Image();
+  img.alt = 'Certificado Pratica.dev 2.0';
+  const cleanup = () => {
+    root.innerHTML = '';
+    window.removeEventListener('afterprint', cleanup);
+  };
+  img.onload = () => {
+    window.addEventListener('afterprint', cleanup);
+    window.print();
+  };
+  img.src = canvas.toDataURL('image/png');
+  root.innerHTML = '';
+  root.appendChild(img);
+}
+
+function openDemoCertificate() {
+  openCertificate({
+    subject_id: 'html',
+    title: 'HTML - Básico',
+    issued_at: '2026-08-19T12:00:00.000Z'
+  }, {
+    id: 'demo',
+    name: 'Aluno Exemplo',
+    level: 3,
+    xp: 240,
+    track: 'Front-end'
+  });
+}
+
+function renderCertMiniCard(cert, index, source) {
+  const subj = subjects.find(s => s.id === cert.subject_id);
+  const icon = subj ? subj.icon : '🏆';
+  const name = subj ? subj.name : (cert.subject_id || 'Módulo');
+  const date = cert.issued_at ? new Date(cert.issued_at).toLocaleDateString('pt-BR') : '';
+  const handler = source === 'admin'
+    ? 'openCertificate(adminDetailCerts[' + index + '], adminDetailStudent)'
+    : 'openCertificate(userCerts[' + index + '])';
+  return `
+    <button type="button" onclick="${handler}" class="cert-mini w-full text-left">
+      <div class="cert-mini-inner">
+        <div class="cert-mini-seal">${icon}</div>
+        <p class="cert-mini-kicker">Pratica.dev 2.0</p>
+        <p class="cert-mini-title">${escapeHtml(name)}</p>
+        <p class="cert-mini-sub">${escapeHtml(cert.title || '')}</p>
+        <p class="cert-mini-date">${date ? 'Emitido em ' + date : 'Abrir certificado visual'}</p>
+      </div>
+    </button>`;
+}
+
+function renderCertificates() {
+  const el = document.getElementById('certs-gallery');
+  if (!el) return;
+  if (!userCerts.length) {
+    el.innerHTML = `
+      <div class="card-glass rounded-xl p-6 md:col-span-2">
+        <p class="text-white/60 mb-3">Nenhum certificado ainda. Conclua um exercício no Centro de Estudos para emitir o diploma visual.</p>
+        <button type="button" onclick="switchTab('estudos')" class="btn-primary px-4 py-2 rounded-lg text-sm">Ir para o Centro de Estudos</button>
+      </div>`;
+    return;
+  }
+  el.innerHTML = userCerts.map((cert, index) => renderCertMiniCard(cert, index, 'own')).join('');
+}
+
+function tryOpenCertFromHash() {
+  const match = /^#certificado=([a-z0-9_-]+)/i.exec(location.hash || '');
+  if (!match || !currentUser) return;
+  const cert = userCerts.find(item => item.subject_id === decodeURIComponent(match[1]));
+  if (cert) openCertificate(cert);
+}
 
 
 // ===== HELPERS UI =====
@@ -242,6 +714,7 @@ function enterApp() {
     renderDashboard();
   }
   lucide.createIcons();
+  tryOpenCertFromHash();
 }
 
 
@@ -308,13 +781,14 @@ function switchTab(tab) {
   document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
 
   const renderers = {
-    dashboard: renderDashboard,
-    perfil:    renderProfile,
-    evolucao:  renderCareers,
-    estudos:   renderSubjects,
-    projetos:  renderProjects,
-    portfolio: renderPortfolio,
-    admin:     renderAdminPanel
+    dashboard:    renderDashboard,
+    perfil:       renderProfile,
+    certificados: renderCertificates,
+    evolucao:     renderCareers,
+    estudos:      renderSubjects,
+    projetos:     renderProjects,
+    portfolio:    renderPortfolio,
+    admin:        renderAdminPanel
   };
   if (renderers[tab]) renderers[tab]();
 }
@@ -357,8 +831,8 @@ function renderProfile() {
   document.getElementById('prof-xp').textContent    = currentUser.xp + ' XP';
 
   const certsHtml = userCerts.length
-    ? userCerts.map(c => `<div class="bg-white/5 rounded-lg p-3 text-sm">🏆 ${c.title}</div>`).join('')
-    : '<p class="text-white/40 text-sm">Nenhum certificado ainda. Continue estudando!</p>';
+    ? userCerts.map((c, i) => renderCertMiniCard(c, i, 'own')).join('')
+    : '<p class="text-white/40 text-sm md:col-span-2">Nenhum certificado ainda. Continue estudando!</p>';
   document.getElementById('prof-certs').innerHTML = certsHtml;
 
   const projsHtml = completedProjects.length
@@ -457,6 +931,22 @@ function closeSubject() {
 async function completeExercise(id) {
   const subj = subjects.find(s => s.id === id);
   const certTitle = subj ? subj.name + ' - Básico' : id + ' - Básico';
+  const btn = event && event.target;
+
+  const markDone = () => {
+    if (!btn) return;
+    btn.textContent = '✅ Concluído!';
+    btn.disabled = true;
+    btn.classList.add('opacity-50');
+  };
+
+  const existing = userCerts.find(c => c.subject_id === id);
+  if (existing) {
+    markDone();
+    openCertificate(existing);
+    showToast('Certificado já emitido para este módulo.', 'success');
+    return;
+  }
 
   try {
     // +30 XP, progresso e certificado — tudo em uma função só no banco
@@ -467,14 +957,18 @@ async function completeExercise(id) {
     userCerts   = await fetchCertificates(currentAuthId);
   } catch (e) {
     console.warn('Erro ao concluir exercício:', e.message);
+    showToast('Não foi possível emitir o certificado: ' + e.message, 'error');
+    return;
   }
 
   renderDashboard();
+  markDone();
 
-  const btn = event.target;
-  btn.textContent = '✅ Concluído!';
-  btn.disabled = true;
-  btn.classList.add('opacity-50');
+  const issued = userCerts.find(c => c.subject_id === id);
+  if (issued) {
+    openCertificate(issued);
+    showToast('Certificado visual emitido! +30 XP', 'success');
+  }
 }
 
 
@@ -531,8 +1025,8 @@ async function startProject(projectId, projectName, btn) {
 // ===== RENDER: PORTFÓLIO =====
 
 function renderPortfolio() {
-  const certNames = userCerts.map(c =>
-    `<span class="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">${c.title.replace(' - Básico','')}</span>`
+  const certNames = userCerts.map((c, i) =>
+    `<button type="button" onclick="openCertificate(userCerts[${i}])" class="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded hover:bg-green-500/30 transition">${escapeHtml(c.title.replace(' - Básico',''))}</button>`
   ).join('') || '<span class="text-white/40 text-xs">Nenhuma ainda</span>';
 
   const projNames = completedProjects.length
@@ -713,6 +1207,8 @@ async function adminShowDetails(id) {
     ]);
     document.getElementById('admin-detail-name').textContent  = profile.name;
     document.getElementById('admin-detail-email').textContent = profile.email;
+    adminDetailStudent = profile;
+    adminDetailCerts = certRows;
     renderStudentDetailModal(quizRows, projRows, certRows);
   } catch (e) {
     document.getElementById('admin-detail-content').innerHTML =
@@ -744,12 +1240,7 @@ function renderStudentDetailModal(quizRows, projRows, certRows) {
     : '<p class="text-white/40 text-sm">Nenhum projeto concluído.</p>';
 
   const certHtml = certRows.length
-    ? certRows.map(c => `
-        <div class="bg-white/5 rounded-lg p-3 mb-2 text-sm">
-          🏆 ${c.title}
-          ${c.issued_at ? `<span class="text-white/40 text-xs"> • ${new Date(c.issued_at).toLocaleDateString('pt-BR')}</span>` : ''}
-        </div>
-      `).join('')
+    ? `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">${certRows.map((c, i) => renderCertMiniCard(c, i, 'admin')).join('')}</div>`
     : '<p class="text-white/40 text-sm">Nenhum certificado ainda.</p>';
 
   document.getElementById('admin-detail-content').innerHTML = `
@@ -789,6 +1280,11 @@ async function init() {
   }
 
   lucide.createIcons();
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeCertificate();
+  });
+  window.addEventListener('hashchange', tryOpenCertFromHash);
 }
 
 init();
