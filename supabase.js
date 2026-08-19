@@ -83,39 +83,6 @@ async function fetchProfile(userId) {
 }
 
 // ============================================================
-//  PERFIL — Salvar alterações (xp, level, track, goal, etc.)
-// ============================================================
-async function saveProfile(userId, updates) {
-  const { error } = await db
-    .from('profiles')
-    .update(updates)
-    .eq('id', userId);
-
-  if (error) throw new Error(error.message);
-}
-
-// ============================================================
-//  QUIZ — Salvar respostas e marcar quiz como feito
-// ============================================================
-async function saveQuizAnswers(userId, answers) {
-  // Monta array de linhas para inserção em lote
-  const rows = answers.map((answer, i) => ({
-    user_id:  userId,
-    question: `Pergunta ${i + 1}`,
-    answer:   answer
-  }));
-
-  const { error: qaError } = await db
-    .from('quiz_answers')
-    .insert(rows);
-
-  if (qaError) throw new Error(qaError.message);
-
-  // Marca quiz como feito no perfil
-  await saveProfile(userId, { quiz_done: true });
-}
-
-// ============================================================
 //  QUIZ — Buscar respostas de um usuário (usado no painel de admin)
 // ============================================================
 async function fetchQuizAnswers(userId) {
@@ -130,21 +97,39 @@ async function fetchQuizAnswers(userId) {
 }
 
 // ============================================================
-//  PROGRESSO — Matérias estudadas / exercícios concluídos
+//  XP — Estas 4 funções são os ÚNICOS jeitos de ganhar XP.
+//  Cada uma chama uma função no banco que decide sozinha quanto
+//  XP dar (o valor não vem do cliente) e recalcula o nível.
+//  Um usuário não consegue mais escrever xp/level direto na
+//  tabela profiles, nem pelo console do navegador — só por aqui.
 // ============================================================
-async function upsertSubjectProgress(userId, subjectId, updates) {
-  // upsert: cria se não existir, atualiza se já existir
-  const { error } = await db
-    .from('subject_progress')
-    .upsert({
-      user_id:    userId,
-      subject_id: subjectId,
-      ...updates
-    }, { onConflict: 'user_id,subject_id' });
-
+async function awardQuizXP(answers, track, goal) {
+  const { error } = await db.rpc('award_quiz_xp', {
+    p_answers: answers, p_track: track, p_goal: goal
+  });
   if (error) throw new Error(error.message);
 }
 
+async function awardSubjectViewXP(subjectId) {
+  const { error } = await db.rpc('award_subject_view_xp', { p_subject_id: subjectId });
+  if (error) throw new Error(error.message);
+}
+
+async function awardExerciseXP(subjectId, certTitle) {
+  const { error } = await db.rpc('award_exercise_xp', {
+    p_subject_id: subjectId, p_cert_title: certTitle
+  });
+  if (error) throw new Error(error.message);
+}
+
+async function awardProjectXP(projectId) {
+  const { error } = await db.rpc('award_project_xp', { p_project_id: projectId });
+  if (error) throw new Error(error.message);
+}
+
+// ============================================================
+//  PROGRESSO — Matérias estudadas (leitura)
+// ============================================================
 async function fetchSubjectProgress(userId) {
   const { data, error } = await db
     .from('subject_progress')
@@ -156,17 +141,8 @@ async function fetchSubjectProgress(userId) {
 }
 
 // ============================================================
-//  PROJETOS — Marcar projeto como concluído
+//  PROJETOS — Listar projetos concluídos por um aluno (leitura)
 // ============================================================
-async function completeUserProject(userId, projectId) {
-  const { error } = await db
-    .from('user_projects')
-    .upsert({ user_id: userId, project_id: projectId },
-             { onConflict: 'user_id,project_id' });
-
-  if (error) throw new Error(error.message);
-}
-
 async function fetchUserProjects(userId) {
   const { data, error } = await db
     .from('user_projects')
@@ -189,24 +165,6 @@ async function fetchCertificates(userId) {
 
   if (error) throw new Error(error.message);
   return data || [];
-}
-
-async function issueCertificate(userId, subjectId, title) {
-  // Evita duplicar certificado da mesma matéria
-  const { data: existing } = await db
-    .from('certificates')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('subject_id', subjectId)
-    .maybeSingle();
-
-  if (existing) return; // já tem
-
-  const { error } = await db
-    .from('certificates')
-    .insert({ user_id: userId, subject_id: subjectId, title });
-
-  if (error) throw new Error(error.message);
 }
 
 // ============================================================
@@ -246,11 +204,7 @@ async function fetchAllProfiles() {
 //  pela política RLS "admin atualiza qualquer perfil" no banco.
 // ============================================================
 async function adminResetXP(targetId) {
-  const { error } = await db
-    .from('profiles')
-    .update({ xp: 0, level: 1 })
-    .eq('id', targetId);
-
+  const { error } = await db.rpc('admin_reset_xp', { target_id: targetId });
   if (error) throw new Error(error.message);
 }
 

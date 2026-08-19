@@ -193,20 +193,6 @@ async function loadUserExtras(userId) {
 }
 
 
-// ===== SALVAR PERFIL =====
-
-async function saveUser() {
-  if (!currentAuthId || !currentUser) return;
-  await saveProfile(currentAuthId, {
-    xp:        currentUser.xp,
-    level:     currentUser.level,
-    track:     currentUser.track,
-    goal:      currentUser.goal,
-    quiz_done: currentUser.quiz_done
-  });
-}
-
-
 // ===== APP ENTRY =====
 
 function enterApp() {
@@ -262,16 +248,14 @@ function answerQuiz(step, idx, answer) {
 }
 
 async function finishQuiz() {
-  currentUser.quiz_done = true;
-  currentUser.track     = quizAnswers[1] || 'Full Stack';
-  currentUser.goal      = quizAnswers[2] || 'Primeiro emprego';
-  currentUser.xp        = (currentUser.xp || 0) + 50;
-  currentUser.level     = Math.floor(currentUser.xp / 200) + 1;
+  const track = quizAnswers[1] || 'Full Stack';
+  const goal  = quizAnswers[2] || 'Primeiro emprego';
 
   try {
-    // Salva respostas e atualiza perfil no banco
-    await saveQuizAnswers(currentAuthId, quizAnswers);
-    await saveUser();
+    // XP e nível são calculados no banco (função award_quiz_xp), não aqui.
+    // O cliente só manda as respostas e a trilha/objetivo escolhidos.
+    await awardQuizXP(quizAnswers, track, goal);
+    currentUser = await fetchProfile(currentAuthId);
   } catch (e) {
     console.warn('Erro ao salvar quiz:', e.message);
   }
@@ -419,13 +403,11 @@ async function openSubject(id) {
     </div>
   `;
 
-  // +10 XP por abrir o conteúdo, salva progresso no banco
-  currentUser.xp += 10;
-  currentUser.level = Math.floor(currentUser.xp / 200) + 1;
-
+  // +10 XP por abrir o conteúdo — calculado e salvo no banco (award_subject_view_xp),
+  // não somado aqui no cliente.
   try {
-    await saveUser();
-    await upsertSubjectProgress(currentAuthId, id, { viewed_count: 1, xp_earned: 10 });
+    await awardSubjectViewXP(id);
+    currentUser = await fetchProfile(currentAuthId);
   } catch (e) {
     console.warn('Erro ao salvar progresso:', e.message);
   }
@@ -439,23 +421,16 @@ function closeSubject() {
 }
 
 async function completeExercise(id) {
-  currentUser.xp += 30;
-  currentUser.level = Math.floor(currentUser.xp / 200) + 1;
-
   const subj = subjects.find(s => s.id === id);
   const certTitle = subj ? subj.name + ' - Básico' : id + ' - Básico';
 
   try {
-    await saveUser();
-    await upsertSubjectProgress(currentAuthId, id, {
-      completed:    true,
-      xp_earned:    40,
-      completed_at: new Date().toISOString()
-    });
-    await issueCertificate(currentAuthId, id, certTitle);
-
-    // Atualiza lista local
-    userCerts = await fetchCertificates(currentAuthId);
+    // +30 XP, progresso e certificado — tudo em uma função só no banco
+    // (award_exercise_xp), que também impede repetir o mesmo exercício
+    // pra farmar XP de novo.
+    await awardExerciseXP(id, certTitle);
+    currentUser = await fetchProfile(currentAuthId);
+    userCerts   = await fetchCertificates(currentAuthId);
   } catch (e) {
     console.warn('Erro ao concluir exercício:', e.message);
   }
@@ -502,13 +477,13 @@ async function startProject(projectId, projectName, btn) {
   btn.disabled = true;
   btn.textContent = 'Salvando...';
 
-  currentUser.xp += 100;
-  currentUser.level = Math.floor(currentUser.xp / 200) + 1;
   completedProjects.push(projectId);
 
   try {
-    await completeUserProject(currentAuthId, projectId);
-    await saveUser();
+    // +100 XP calculado e salvo no banco (award_project_xp), que também
+    // impede marcar o mesmo projeto duas vezes pra ganhar XP repetido.
+    await awardProjectXP(projectId);
+    currentUser = await fetchProfile(currentAuthId);
   } catch (e) {
     console.warn('Erro ao salvar projeto:', e.message);
   }
