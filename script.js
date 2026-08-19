@@ -105,6 +105,40 @@ function showLogin() {
 }
 
 
+// ===== UI GENÉRICA: CONFIRMAÇÃO E TOAST =====
+// Substituem confirm()/alert() nativos do navegador por um modal e
+// notificações no mesmo visual do resto do site.
+
+let _confirmResolve = null;
+
+function themedConfirm(message, danger = false) {
+  document.getElementById('confirm-message').textContent = message;
+  const okBtn = document.getElementById('confirm-ok-btn');
+  okBtn.className = 'flex-1 py-2.5 rounded-lg text-sm font-semibold transition ' +
+    (danger ? 'bg-red-500 hover:bg-red-600 text-white' : 'btn-primary');
+  document.getElementById('confirm-modal').classList.remove('hidden');
+  return new Promise(resolve => { _confirmResolve = resolve; });
+}
+
+function resolveConfirm(value) {
+  document.getElementById('confirm-modal').classList.add('hidden');
+  if (_confirmResolve) { _confirmResolve(value); _confirmResolve = null; }
+}
+
+function showToast(message, type = 'error') {
+  const colors = type === 'success'
+    ? 'bg-green-500/15 border-green-500/40 text-green-300'
+    : 'bg-red-500/15 border-red-500/40 text-red-300';
+  const toast = document.createElement('div');
+  toast.className = `card-glass border ${colors} rounded-lg px-4 py-3 text-sm shadow-lg transition-opacity duration-300`;
+  toast.style.opacity = '1';
+  toast.textContent = message;
+  document.getElementById('toast-container').appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; }, 3200);
+  setTimeout(() => { toast.remove(); }, 3600);
+}
+
+
 // ===== AUTH — LOGIN =====
 
 async function handleLogin() {
@@ -603,17 +637,20 @@ async function renderAdminPanel() {
 }
 
 // ===== ADMIN: AÇÕES (resetar XP, tornar/remover admin, excluir) =====
-// Cada função confirma com o admin antes de agir, chama o Supabase
-// e recarrega a tabela. Erros do banco (ex: RLS bloqueando porque
-// quem chamou não é admin de verdade) aparecem num alert().
+// Cada função confirma com o admin antes de agir (modal no tema do site,
+// não o confirm() cinza do navegador), chama o Supabase e recarrega a
+// tabela. Erros do banco (ex: RLS bloqueando porque quem chamou não é
+// admin de verdade) aparecem num toast, não num alert().
 
 async function adminHandleResetXP(id, nome) {
-  if (!confirm(`Resetar XP e nível de ${nome} para zero?`)) return;
+  const ok = await themedConfirm(`Resetar XP e nível de ${nome} para zero?`);
+  if (!ok) return;
   try {
     await adminResetXP(id);
     renderAdminPanel();
+    showToast(`XP de ${nome} foi resetado.`, 'success');
   } catch (e) {
-    alert('Erro ao resetar XP: ' + e.message);
+    showToast('Erro ao resetar XP: ' + e.message, 'error');
   }
 }
 
@@ -621,23 +658,27 @@ async function adminHandleToggleAdmin(id, nome, isCurrentlyAdmin) {
   const msg = isCurrentlyAdmin
     ? `Remover privilégio de admin de ${nome}?`
     : `Tornar ${nome} administrador? Essa pessoa passará a ver esta mesma tela de admin.`;
-  if (!confirm(msg)) return;
+  const ok = await themedConfirm(msg);
+  if (!ok) return;
   try {
     await adminSetIsAdmin(id, !isCurrentlyAdmin);
     renderAdminPanel();
+    showToast(isCurrentlyAdmin ? `${nome} não é mais admin.` : `${nome} agora é admin.`, 'success');
   } catch (e) {
-    alert('Erro ao alterar admin: ' + e.message);
+    showToast('Erro ao alterar admin: ' + e.message, 'error');
   }
 }
 
 async function adminHandleDelete(id, nome) {
   const msg = `Excluir ${nome} permanentemente?\n\nIsso remove perfil, XP, certificados, projetos e respostas do quiz. Não pode ser desfeito.`;
-  if (!confirm(msg)) return;
+  const ok = await themedConfirm(msg, true); // true = estilo de perigo (vermelho)
+  if (!ok) return;
   try {
     await adminDeleteStudent(id);
     renderAdminPanel();
+    showToast(`${nome} foi excluído.`, 'success');
   } catch (e) {
-    alert('Erro ao excluir aluno: ' + e.message);
+    showToast('Erro ao excluir aluno: ' + e.message, 'error');
   }
 }
 

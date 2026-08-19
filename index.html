@@ -336,6 +336,20 @@
       </div>
     </div>
 
+    <!-- CONFIRMAÇÃO GENÉRICA (substitui o confirm() nativo) -->
+    <div id="confirm-modal" class="modal-overlay hidden">
+      <div class="card-glass rounded-2xl p-6 w-full max-w-sm mx-4 fade-in">
+        <p id="confirm-message" class="text-white/90 mb-6 leading-relaxed" style="white-space:pre-line"></p>
+        <div class="flex gap-3">
+          <button onclick="resolveConfirm(false)" class="btn-secondary flex-1 py-2.5 rounded-lg text-sm">Cancelar</button>
+          <button id="confirm-ok-btn" onclick="resolveConfirm(true)" class="btn-primary flex-1 py-2.5 rounded-lg text-sm font-semibold">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOASTS (substitui o alert() nativo) -->
+    <div id="toast-container" class="fixed bottom-6 left-1/2 z-50 flex flex-col gap-2" style="transform:translateX(-50%);"></div>
+
     <!-- SUPABASE + SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js"></script>
