@@ -22,9 +22,9 @@ Navegador
 
 ### Componentes do frontend
 
-- `index.html`: marcação das telas de login, dashboard, estudos, projetos, portfólio e administração.
-- `style.css`: tema visual e componentes que não são cobertos pelo Tailwind.
-- `script.js`: estado da sessão, eventos, renderização e chamadas de negócio.
+- `index.html`: marcação das telas de login, dashboard, estudos, certificados, projetos, portfólio e administração.
+- `style.css`: tema visual, diploma e componentes que não são cobertos pelo Tailwind.
+- `script.js`: estado da sessão, eventos, renderização, certificado visual e chamadas de negócio.
 - `supabase.js`: inicialização do cliente Supabase e funções de acesso ao backend.
 
 Não há dependências locais nem transpiler. Os scripts são carregados na ordem: biblioteca Supabase, `supabase.js` e `script.js`.
@@ -71,6 +71,10 @@ XP nunca é calculado pelo JavaScript. As ações chamam funções PostgreSQL:
 - `award_project_xp`: registra o projeto e usa a recompensa do catálogo.
 
 Cada função usa uma chave única para impedir que a mesma atividade seja repetida para farmar XP. O nível é recalculado no servidor pela função `recalculate_level`.
+
+### Certificado visual
+
+O registro em `certificates` continua sendo a fonte da verdade. O frontend apenas desenha um diploma em canvas a partir desses dados: nome do aluno, módulo, data, trilha, nível, XP e um código de verificação determinístico. O diploma pode ser aberto no perfil, na aba Certificados, no portfólio, no painel administrativo e automaticamente após concluir um exercício. Há ações de baixar PNG e imprimir/salvar PDF. A tela de login oferece um modelo identificado como MODELO para avaliação, sem gravar nada no banco.
 
 ### Administração
 
