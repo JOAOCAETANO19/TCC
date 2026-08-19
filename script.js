@@ -70,6 +70,211 @@ const projects = [
 ];
 
 
+// ===== BRIEFING DOS PROJETOS =====
+// Cada projeto tem um briefing no formato usado no mercado: contexto do
+// cliente, requisitos funcionais, entregáveis e critérios de aceite.
+// A chave é o dbId do projeto.
+const projectBriefings = {
+  1: {
+    contexto: "Uma escola de reforço quer uma calculadora simples no site para os alunos conferirem contas rapidamente durante os exercícios.",
+    tempo: "2 a 4 horas",
+    tecnologias: ["HTML", "CSS", "JavaScript"],
+    requisitos: [
+      "Operações de soma, subtração, multiplicação e divisão",
+      "Botão de limpar (C) e de apagar o último dígito",
+      "Exibir a operação em andamento e o resultado no visor",
+      "Tratar divisão por zero sem quebrar a interface"
+    ],
+    entregaveis: [
+      "Página funcional publicada (GitHub Pages ou similar)",
+      "Repositório com README explicando como rodar",
+      "Print ou GIF da calculadora em uso"
+    ],
+    criterios: [
+      "Todas as operações retornam o valor correto",
+      "Nenhum erro no console do navegador",
+      "Layout utilizável no celular"
+    ]
+  },
+  2: {
+    contexto: "Um profissional autônomo precisa organizar as tarefas do dia em uma lista rápida, sem depender de aplicativos pagos.",
+    tempo: "3 a 5 horas",
+    tecnologias: ["HTML", "CSS", "JavaScript", "localStorage"],
+    requisitos: [
+      "Adicionar tarefa com texto digitado pelo usuário",
+      "Marcar e desmarcar tarefa como concluída",
+      "Remover tarefa da lista",
+      "Salvar as tarefas no localStorage para não perder ao recarregar",
+      "Mostrar contador de tarefas pendentes"
+    ],
+    entregaveis: [
+      "Aplicação publicada e funcional",
+      "Código no GitHub com commits organizados",
+      "README com as funcionalidades listadas"
+    ],
+    criterios: [
+      "As tarefas continuam salvas após atualizar a página",
+      "Não é possível adicionar tarefa vazia",
+      "Interface responsiva"
+    ]
+  },
+  3: {
+    contexto: "Um estúdio de podcast quer um relógio na tela do estúdio mostrando hora atual e um cronômetro para controlar o tempo de gravação.",
+    tempo: "2 a 4 horas",
+    tecnologias: ["HTML", "CSS", "JavaScript", "setInterval"],
+    requisitos: [
+      "Exibir hora, minuto e segundo atualizando em tempo real",
+      "Mostrar a data por extenso em português",
+      "Cronômetro com iniciar, pausar e zerar",
+      "Alternar entre formato 12h e 24h"
+    ],
+    entregaveis: [
+      "Página publicada com o relógio rodando",
+      "Repositório versionado no GitHub"
+    ],
+    criterios: [
+      "O relógio não atrasa nem duplica o intervalo ao pausar",
+      "O cronômetro conta corretamente após pausar e retomar",
+      "Legível a distância (fonte grande e contraste alto)"
+    ]
+  },
+  4: {
+    contexto: "Uma loja online quer acompanhar vendas, visitas e produtos mais vendidos em um painel único, em vez de abrir várias planilhas.",
+    tempo: "8 a 12 horas",
+    tecnologias: ["HTML", "CSS", "JavaScript", "Chart.js", "API REST"],
+    requisitos: [
+      "Cards de indicadores (total de vendas, ticket médio, visitas)",
+      "Pelo menos dois gráficos diferentes (linha e barra ou pizza)",
+      "Filtro por período que atualiza os gráficos",
+      "Carregar dados de uma API ou arquivo JSON",
+      "Estado de carregamento e mensagem para lista vazia"
+    ],
+    entregaveis: [
+      "Dashboard publicado e navegável",
+      "Código no GitHub com estrutura de pastas organizada",
+      "README com print do painel e origem dos dados"
+    ],
+    criterios: [
+      "Os gráficos refletem o filtro selecionado",
+      "O painel funciona em tela de notebook e de celular",
+      "Nenhum dado fixo escrito direto no HTML"
+    ]
+  },
+  5: {
+    contexto: "Uma clínica precisa de uma área restrita onde apenas usuários autenticados vejam a agenda de pacientes.",
+    tempo: "8 a 12 horas",
+    tecnologias: ["JavaScript", "Supabase ou Firebase Auth", "Rotas protegidas"],
+    requisitos: [
+      "Tela de cadastro e tela de login com validação dos campos",
+      "Mensagens de erro claras para senha ou e-mail inválidos",
+      "Sessão persistente ao recarregar a página",
+      "Página interna acessível apenas com usuário logado",
+      "Botão de logout que limpa a sessão"
+    ],
+    entregaveis: [
+      "Aplicação publicada com fluxo completo de login",
+      "Repositório com instruções de configuração do provedor de autenticação",
+      "Usuário de teste documentado no README"
+    ],
+    criterios: [
+      "Acessar a rota interna deslogado redireciona para o login",
+      "Senha nunca aparece no console ou na URL",
+      "Erros de autenticação não quebram a tela"
+    ]
+  },
+  6: {
+    contexto: "Um professor quer aplicar quizzes rápidos em sala e mostrar o ranking da turma no telão.",
+    tempo: "6 a 10 horas",
+    tecnologias: ["HTML", "CSS", "JavaScript"],
+    requisitos: [
+      "Banco com no mínimo 10 perguntas de múltipla escolha",
+      "Timer por pergunta que avança automaticamente ao zerar",
+      "Pontuação calculada ao final com número de acertos",
+      "Ranking com os melhores resultados salvos localmente",
+      "Botão para refazer o quiz embaralhando as perguntas"
+    ],
+    entregaveis: [
+      "Quiz publicado e jogável do início ao fim",
+      "Repositório no GitHub",
+      "README explicando como adicionar novas perguntas"
+    ],
+    criterios: [
+      "Não é possível responder a mesma pergunta duas vezes",
+      "O timer para quando o quiz termina",
+      "O ranking ordena corretamente por pontuação"
+    ]
+  },
+  7: {
+    contexto: "Um pequeno comércio de roupas quer vender pela internet com catálogo, carrinho e finalização de pedido.",
+    tempo: "20 a 30 horas",
+    tecnologias: ["JavaScript", "Framework de UI", "API REST", "Banco de dados"],
+    requisitos: [
+      "Catálogo de produtos com imagem, preço e descrição",
+      "Filtro por categoria e busca por nome",
+      "Carrinho com alterar quantidade e remover item",
+      "Cálculo de subtotal, frete e total",
+      "Tela de checkout com validação dos dados de entrega",
+      "Persistência do carrinho entre sessões"
+    ],
+    entregaveis: [
+      "Loja publicada e navegável",
+      "Repositório com README e instruções de instalação",
+      "Documentação das rotas ou do modelo de dados usado"
+    ],
+    criterios: [
+      "O total do carrinho sempre bate com os itens listados",
+      "O checkout não aceita dados obrigatórios em branco",
+      "A loja é usável no celular"
+    ]
+  },
+  8: {
+    contexto: "Uma comunidade de estudantes quer um espaço próprio para publicar dúvidas, comentar e acompanhar outros membros.",
+    tempo: "25 a 40 horas",
+    tecnologias: ["JavaScript", "Framework de UI", "Autenticação", "Banco de dados"],
+    requisitos: [
+      "Cadastro e login de usuários",
+      "Perfil com foto, biografia e lista de publicações",
+      "Feed com posts em ordem cronológica",
+      "Curtir e comentar publicações",
+      "Seguir e deixar de seguir outros perfis",
+      "Feed filtrado apenas com quem o usuário segue"
+    ],
+    entregaveis: [
+      "Aplicação publicada com fluxo completo",
+      "Repositório organizado no GitHub",
+      "Modelo de dados documentado (tabelas e relações)"
+    ],
+    criterios: [
+      "Um usuário só edita ou apaga os próprios posts",
+      "Contadores de curtidas e comentários batem com o banco",
+      "O feed carrega sem travar com muitos posts"
+    ]
+  },
+  9: {
+    contexto: "Uma equipe remota precisa de um chat interno simples para conversar em tempo real durante os plantões.",
+    tempo: "20 a 30 horas",
+    tecnologias: ["JavaScript", "WebSocket ou Supabase Realtime", "Banco de dados"],
+    requisitos: [
+      "Envio e recebimento de mensagens em tempo real",
+      "Identificação do autor e horário de cada mensagem",
+      "Histórico carregado ao entrar na sala",
+      "Indicador de usuários online",
+      "Aviso de digitando quando alguém está escrevendo"
+    ],
+    entregaveis: [
+      "Chat publicado e testado com dois navegadores abertos",
+      "Repositório com README explicando o servidor de tempo real",
+      "Vídeo curto ou GIF da conversa acontecendo"
+    ],
+    criterios: [
+      "A mensagem aparece para os dois lados sem recarregar a página",
+      "O histórico permanece após sair e voltar",
+      "Mensagem vazia não é enviada"
+    ]
+  }
+};
+
+
 // ===== STATE =====
 let currentUser    = null;  // dados do perfil (tabela profiles)
 let currentAuthId  = null;  // UUID do auth.users
@@ -772,6 +977,47 @@ async function finishQuiz() {
 }
 
 
+// ===== MENU MOBILE =====
+// A sidebar vira uma gaveta em telas até 768px. Em telas maiores o CSS
+// mantém o menu fixo, então estas funções não têm efeito visual.
+
+function isMobileLayout() {
+  return window.matchMedia('(max-width: 768px)').matches;
+}
+
+function setMobileMenu(open) {
+  const sidebar  = document.getElementById('app-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  const toggle   = document.getElementById('menu-toggle');
+  if (!sidebar || !backdrop) return;
+
+  sidebar.classList.toggle('open', open);
+  backdrop.classList.toggle('open', open);
+  backdrop.hidden = !open;
+  if (toggle) toggle.setAttribute('aria-expanded', String(open));
+  // Trava o scroll do fundo enquanto a gaveta está aberta
+  document.body.style.overflow = open && isMobileLayout() ? 'hidden' : '';
+}
+
+function toggleMobileMenu() {
+  const sidebar = document.getElementById('app-sidebar');
+  setMobileMenu(!(sidebar && sidebar.classList.contains('open')));
+}
+
+function closeMobileMenu() {
+  setMobileMenu(false);
+}
+
+// Fecha a gaveta ao apertar Esc e ao voltar para o layout desktop
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeMobileMenu();
+});
+
+window.addEventListener('resize', () => {
+  if (!isMobileLayout()) closeMobileMenu();
+});
+
+
 // ===== TABS =====
 
 function switchTab(tab) {
@@ -779,6 +1025,9 @@ function switchTab(tab) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
   document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+
+  // No mobile, escolher uma aba fecha o menu automaticamente
+  closeMobileMenu();
 
   const renderers = {
     dashboard:    renderDashboard,
@@ -986,10 +1235,14 @@ function renderProjects() {
               <h4 class="font-semibold mb-1">${p.name}</h4>
               <p class="text-white/50 text-xs mb-2">${p.desc}</p>
               <p class="text-xs mb-3">${p.difficulty}</p>
+              <button onclick="openBriefing(${p.dbId})"
+                class="btn-secondary px-3 py-1.5 rounded text-xs w-full mb-2">
+                Ver briefing
+              </button>
               <button onclick="startProject(${p.dbId}, '${p.name}', this)"
                 class="btn-primary px-3 py-1.5 rounded text-xs w-full ${done ? 'opacity-50' : ''}"
                 ${done ? 'disabled' : ''}>
-                ${done ? '✅ Concluído!' : 'Iniciar Projeto'}
+                ${done ? '✅ Concluído!' : 'Concluir Projeto'}
               </button>
             </div>
           `;
@@ -997,6 +1250,80 @@ function renderProjects() {
       </div>
     </div>
   `).join('');
+}
+
+// ===== BRIEFING: ABRIR / FECHAR =====
+
+function findProjectById(projectId) {
+  for (const level of projects) {
+    const found = level.items.find(p => p.dbId === projectId);
+    if (found) return { ...found, level: level.level };
+  }
+  return null;
+}
+
+function openBriefing(projectId) {
+  const project  = findProjectById(projectId);
+  const briefing = projectBriefings[projectId];
+  if (!project || !briefing) {
+    showToast('Briefing indisponível para este projeto.', 'error');
+    return;
+  }
+
+  const done = completedProjects.includes(projectId);
+
+  document.getElementById('briefing-title').textContent = project.name;
+  document.getElementById('briefing-meta').textContent =
+    `${project.level} • ${project.difficulty} • Estimativa: ${briefing.tempo}`;
+
+  const list = items => `<ul>${items.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`;
+
+  document.getElementById('briefing-body').innerHTML = `
+    <div class="briefing-section">
+      <h4>Contexto do cliente</h4>
+      <p>${escapeHtml(briefing.contexto)}</p>
+    </div>
+    <div class="briefing-section">
+      <h4>Tecnologias sugeridas</h4>
+      <div class="briefing-tags">
+        ${briefing.tecnologias.map(t => `<span class="briefing-tag">${escapeHtml(t)}</span>`).join('')}
+      </div>
+    </div>
+    <div class="briefing-section">
+      <h4>Requisitos funcionais</h4>
+      ${list(briefing.requisitos)}
+    </div>
+    <div class="briefing-section">
+      <h4>Entregáveis</h4>
+      ${list(briefing.entregaveis)}
+    </div>
+    <div class="briefing-section">
+      <h4>Critérios de aceite</h4>
+      ${list(briefing.criterios)}
+    </div>
+  `;
+
+  // O botão do rodapé conclui o projeto e fecha o briefing
+  const startBtn = document.getElementById('briefing-start-btn');
+  startBtn.disabled = done;
+  startBtn.classList.toggle('opacity-50', done);
+  startBtn.textContent = done ? '✅ Concluído!' : 'Concluir Projeto';
+  startBtn.onclick = done ? null : async () => {
+    closeBriefing();
+    const cardBtn = document.querySelector(`#projects-grid button[onclick*="startProject(${projectId},"]`);
+    if (cardBtn) {
+      await startProject(projectId, project.name, cardBtn);
+    } else {
+      await startProject(projectId, project.name, startBtn);
+      renderProjects();
+    }
+  };
+
+  document.getElementById('briefing-modal').classList.remove('hidden');
+}
+
+function closeBriefing() {
+  document.getElementById('briefing-modal').classList.add('hidden');
 }
 
 async function startProject(projectId, projectName, btn) {
