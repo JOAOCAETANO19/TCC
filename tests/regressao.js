@@ -38,8 +38,14 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     awardProjectXP: async () => {}, awardQuizXP: async () => {}, awardSubjectViewXP: async () => {}, awardExerciseXP: async () => {},
     adminResetXP: async () => {}, adminSetIsAdmin: async () => {}, adminDeleteStudent: async () => {},
     fetchPublicProfile: async () => null, fetchPublicProjects: async () => [], fetchPublicCertificates: async () => [],
-    setPortfolioPublic: async () => {}
+    setPortfolioPublic: async () => {},
+    uploadAvatar: async () => 'u1/avatar.jpg', removeAvatar: async () => {}, fetchAvatarSignedUrl: async () => null
   });
+  // jsdom não implementa URLs de objeto; os testes do avatar usam esta versão fake.
+  try {
+    Object.defineProperty(window.URL, 'createObjectURL', { value: () => 'blob:preview/avatar.png', configurable: true });
+    Object.defineProperty(window.URL, 'revokeObjectURL', { value: () => {}, configurable: true });
+  } catch (_) { /* se não permitir, o código testado segue com try/catch interno */ }
   window.eval(script + `\nwindow.__testHooks = {
     setUser(v) { currentUser = v; },
     setAuth(v) { currentAuthId = v; },
@@ -224,8 +230,8 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   // ============================================================
   // PORTFÓLIO PÚBLICO — código (supabase.js, schema.sql, HTML)
   // ============================================================
-  check(supabaseSource.includes("select('id, name, track, goal, level, xp, portfolio_public')"),
-    'leitura pública seleciona só as colunas autorizadas');
+  check(supabaseSource.includes("select('id, name, track, goal, level, xp, portfolio_public, avatar_url')"),
+    'leitura pública seleciona só as colunas autorizadas (incluindo avatar_url)');
   check(supabaseSource.includes('fetchPublicProfile') && supabaseSource.includes('fetchPublicProjects') && supabaseSource.includes('fetchPublicCertificates'),
     'cliente tem as funções de leitura pública');
   check(supabaseSource.includes('setPortfolioPublic'), 'cliente tem função para publicar/tornar privado');
@@ -243,7 +249,132 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   check(script.includes('isPublicPortfolioHash()') && script.includes('openPublicView()'), 'init roteia a rota pública sem sessão');
   check(script.includes('portfolio_public'), 'script.js usa a coluna portfolio_public');
 
-  check(passed === 65, 'suíte contém 65 verificações de regressão');
+  // ============================================================
+  // FOTO DE PERFIL (AVATAR) — estrutura da aba Perfil
+  // ============================================================
+  check(html.includes('id="avatar-file-input"'), 'existe o seletor de arquivo da foto');
+  check(/id="avatar-file-input"[^>]*accept="image\/jpeg,image\/png"/.test(html), 'seletor aceita apenas JPG e PNG');
+  check(html.includes('Alterar foto') && html.includes('Remover foto'), 'Perfil tem botões de alterar e remover a foto');
+  check(html.includes('id="avatar-preview"') && html.includes('id="avatar-preview-img"') && html.includes('Salvar foto'), 'existe prévia da foto com botão de salvar');
+  check(html.includes('id="nav-avatar"'), 'foto aparece no topo (visível no dashboard)');
+  check(css.includes('.avatar-foto') && css.includes('.avatar-circle'), 'estilos redondos do avatar existem no CSS');
+
+  // ============================================================
+  // FOTO DE PERFIL (AVATAR) — fluxo completo na aba Perfil
+  // ============================================================
+  const avatarProfile = { id: 'u1', name: 'Ana', age: 17, goal: 'Estágio', track: 'Front-end', level: 1, xp: 0, quiz_done: true, is_admin: false, portfolio_public: false, avatar_url: null };
+  window.fetchProfile = async () => ({ ...avatarProfile });
+  window.fetchAvatarSignedUrl = async () => null;
+  window.__testHooks.setUser({ ...avatarProfile });
+  window.__testHooks.setAuth('u1');
+  window.__testHooks.setCompleted([]); window.__testHooks.setCerts([]);
+  window.renderProfile();
+  const profAvatar = () => window.document.getElementById('prof-avatar');
+  check(!profAvatar().querySelector('img') && profAvatar().textContent.trim() === 'A', 'sem foto, Perfil usa a bolinha com a inicial');
+  check(window.document.getElementById('btn-avatar-remove').classList.contains('hidden'), 'botão Remover foto fica oculto sem foto');
+
+  // Validação de tipo: GIF é recusado antes de qualquer prévia ou upload
+  await window.handleAvatarFileChange({ target: { files: [{ name: 'foto.gif', type: 'image/gif', size: 1024 }], value: '' } });
+  check(window.document.getElementById('toast-container').textContent.includes('JPG ou PNG'), 'tipo inválido é rejeitado com aviso em português');
+  check(window.document.getElementById('avatar-preview').classList.contains('hidden'), 'arquivo de tipo inválido não abre prévia');
+
+  // Validação de tamanho: acima de 2 MB é recusado
+  await window.handleAvatarFileChange({ target: { files: [{ name: 'grande.jpg', type: 'image/jpeg', size: 3 * 1024 * 1024 }], value: '' } });
+  check(window.document.getElementById('toast-container').textContent.includes('no máximo 2 MB'), 'foto acima de 2 MB é rejeitada');
+  check(window.document.getElementById('avatar-preview').classList.contains('hidden'), 'arquivo muito grande não abre prévia');
+
+  // Arquivo válido (PNG, 10 KB): prévia ANTES de salvar, sem enviar nada
+  const uploads = [];
+  window.uploadAvatar = async (userId, file, prev) => { uploads.push({ userId, name: file.name, prev }); avatarProfile.avatar_url = 'u1/avatar.png'; return 'u1/avatar.png'; };
+  let signCalls = 0;
+  window.fetchAvatarSignedUrl = async (path) => { signCalls++; return 'https://signed.example/' + path + '?token=abc'; };
+  await window.handleAvatarFileChange({ target: { files: [{ name: 'minha.png', type: 'image/png', size: 10 * 1024 }], value: '' } });
+  check(!window.document.getElementById('avatar-preview').classList.contains('hidden'), 'PNG válido abre a prévia antes de salvar');
+  check(window.document.getElementById('avatar-preview-img').getAttribute('src').startsWith('blob:preview'), 'prévia usa URL temporária gerada do arquivo local');
+  check(uploads.length === 0, 'a prévia ainda não enviou nada ao Storage');
+
+  // Confirmar: envia, grava avatar_url e exibe via URL assinada
+  await window.saveAvatar();
+  check(uploads.length === 1 && uploads[0].userId === 'u1' && uploads[0].name === 'minha.png', 'salvar envia o arquivo ao bucket na pasta do usuário');
+  check(profAvatar().querySelector('img') && profAvatar().querySelector('img').src.includes('signed.example/u1/avatar.png'), 'após salvar, a foto aparece via URL assinada');
+  check(!window.document.getElementById('btn-avatar-remove').classList.contains('hidden'), 'botão Remover foto aparece quando há foto');
+  check(window.document.getElementById('avatar-preview').classList.contains('hidden'), 'prévia fecha depois de salvar');
+  check(window.document.getElementById('toast-container').textContent.includes('Foto de perfil atualizada'), 'salvar a foto mostra toast de sucesso');
+  check(window.document.getElementById('nav-avatar').querySelector('img') && window.document.getElementById('nav-avatar').querySelector('img').src.includes('signed.example'), 'foto também aparece no topo (dashboard)');
+
+  // Remoção com confirmação: apaga o arquivo e volta ao fallback
+  const removals = [];
+  window.removeAvatar = async (userId, path) => { removals.push({ userId, path }); avatarProfile.avatar_url = null; };
+  const removalPromise = window.removeProfileAvatar();
+  await tick();
+  check(!window.document.getElementById('confirm-modal').classList.contains('hidden'), 'remover a foto pede confirmação no modal');
+  window.resolveConfirm(true);
+  await removalPromise; await tick();
+  check(removals.length === 1 && removals[0].userId === 'u1' && removals[0].path === 'u1/avatar.png', 'remover apaga o arquivo correto do Storage');
+  check(!profAvatar().querySelector('img') && profAvatar().textContent.trim() === 'A', 'após remover, Perfil volta à bolinha com a inicial');
+  check(window.document.getElementById('btn-avatar-remove').classList.contains('hidden'), 'botão Remover foto some junto com a foto');
+
+  // ============================================================
+  // FOTO DE PERFIL (AVATAR) — visão pública #publico/<id>
+  // ============================================================
+  let publicSignCalls = 0;
+  window.fetchAvatarSignedUrl = async (path) => { publicSignCalls++; return 'https://signed.example/' + path + '?token=pub'; };
+  window.fetchPublicProfile = async () => ({
+    id: 'u-pub', name: 'Nome Público', track: 'Front-end', goal: 'Estágio em 6 meses',
+    level: 3, xp: 250, portfolio_public: true, avatar_url: 'u-pub/avatar.jpg',
+    email: 'secreto@exemplo.com', age: 99, is_admin: true // nunca devem aparecer
+  });
+  window.location.hash = '#publico/u-pub';
+  await tick(); await tick(); await tick();
+  const pubAvatarImg = () => publicContent().querySelector('img');
+  check(publicSignCalls > 0 && pubAvatarImg() && pubAvatarImg().src.includes('u-pub/avatar.jpg'), 'visão pública exibe a foto via URL assinada');
+  check(pubAvatarImg().alt === 'Foto de perfil de Nome Público', 'foto pública tem texto alternativo com o nome do aluno');
+
+  // Sem avatar_url: nenhuma URL assinada é pedida e a inicial permanece
+  publicSignCalls = 0;
+  window.fetchPublicProfile = async () => ({
+    id: 'u-sem', name: 'Sem Foto', track: 'Back-end', goal: null, level: 2, xp: 120, portfolio_public: true
+  });
+  window.location.hash = '#publico/u-sem';
+  await tick(); await tick(); await tick();
+  check(publicSignCalls === 0, 'perfil público sem foto não pede URL assinada');
+  check(!publicContent().querySelector('img'), 'visão pública sem foto mantém a bolinha com a inicial');
+
+  // URL assinada maliciosa não injeta atributos executáveis
+  window.fetchAvatarSignedUrl = async () => 'x" onerror="window.__xssAvatar=1';
+  window.fetchPublicProfile = async () => ({
+    id: 'u-x', name: 'Avatar Malicioso', track: null, goal: null, level: 1, xp: 0, portfolio_public: true, avatar_url: 'u-x/a.png'
+  });
+  window.location.hash = '#publico/u-x';
+  await tick(); await tick(); await tick();
+  check(!publicContent().querySelector('img[onerror]'), 'URL de avatar maliciosa não injeta atributos na foto');
+
+  // Falha ao assinar a URL: o portfólio segue íntegro com o fallback
+  window.fetchAvatarSignedUrl = async () => { throw new Error('Storage down'); };
+  window.location.hash = '#publico/u-x';
+  await tick(); await tick(); await tick();
+  check(publicContent().textContent.includes('Avatar Malicioso'), 'sem URL assinada, o restante da visão pública continua funcionando');
+
+  window.leavePublicView();
+  await tick(); await tick();
+
+  // ============================================================
+  // FOTO DE PERFIL (AVATAR) — código (supabase.js, schema.sql, script.js)
+  // ============================================================
+  check(supabaseSource.includes("db.storage.from('avatars')"), 'cliente usa o bucket avatars do Storage');
+  check(supabaseSource.includes('createSignedUrl'), 'foto é exibida por URL assinada (bucket privado)');
+  check(supabaseSource.includes('uploadAvatar') && supabaseSource.includes('removeAvatar'), 'cliente tem upload e remoção da foto');
+  check(supabaseSource.includes("update({ avatar_url: path })") && supabaseSource.includes("update({ avatar_url: null })"), 'cliente grava e limpa avatar_url no perfil');
+  check(script.includes('2 * 1024 * 1024') && script.includes("'image/jpeg', 'image/png'"), 'cliente valida tamanho (2 MB) e tipo (JPG/PNG)');
+  check(schema.includes('avatar_url text'), 'schema.sql tem a coluna avatar_url');
+  check(schema.includes("values ('avatars', 'avatars', false, 2097152, '{image/jpeg,image/png}')"), 'bucket avatars é privado, limitado a 2 MB e a JPG/PNG');
+  check(schema.includes('grant select (avatar_url) on public.profiles to anon'), 'anon recebe só a coluna avatar_url, sem abrir email/idade');
+  check(schema.includes('avatars_owner_insert') && schema.includes('avatars_owner_update') && schema.includes('avatars_owner_delete'), 'dono tem políticas de upload, update e delete');
+  check(schema.includes('avatars_public_read') && schema.includes('avatars_owner_read'), 'existem políticas de leitura anônima e autenticada');
+  check(/avatars_public_read[\s\S]*portfolio_public = true/.test(schema), 'leitura anônima do Storage consulta portfolio_public');
+  check(schema.includes("(storage.foldername(name))[1] = auth.uid()::text"), 'escrita no Storage exige a pasta do próprio usuário');
+
+  check(passed === 108, 'suíte contém 108 verificações de regressão');
   console.log(`\n${passed} verificações passaram.`);
   window.close();
 })().catch(error => {

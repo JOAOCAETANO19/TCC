@@ -17,7 +17,8 @@ Navegador
              ├── Auth (auth.users)
              ├── PostgreSQL (public.*)
              ├── RLS (autorização por usuário/admin)
-             └── RPC PostgreSQL (regras de XP atômicas)
+             ├── RPC PostgreSQL (regras de XP atômicas)
+             └── Storage (bucket privado "avatars", com políticas próprias)
 ```
 
 ### Componentes do frontend
@@ -33,12 +34,14 @@ Não há dependências locais nem transpiler. Os scripts são carregados na orde
 
 | Tabela | Finalidade | Chave/relacionamentos |
 |---|---|---|
-| `profiles` | dados acadêmicos, XP, papel administrativo e visibilidade do portfólio (`portfolio_public`) | `id` referencia `auth.users` |
+| `profiles` | dados acadêmicos, XP, papel administrativo, visibilidade do portfólio (`portfolio_public`) e caminho da foto (`avatar_url`) | `id` referencia `auth.users` |
 | `quiz_answers` | três respostas do nivelamento | `user_id` → `profiles`; único por pergunta |
 | `projects` | catálogo dos nove projetos | `id` é a chave do catálogo |
 | `subject_progress` | matérias visualizadas | chave composta `user_id + subject_id` |
 | `user_projects` | projetos concluídos | `user_id + project_id` |
 | `certificates` | exercícios concluídos e certificados emitidos | único por usuário e matéria |
+
+Fora das tabelas, o Supabase Storage tem o bucket privado `avatars`, que guarda as fotos de perfil em `avatars/<id do usuário>/avatar.jpg|png`; `profiles.avatar_url` registra o caminho do arquivo de cada aluno.
 
 O diagrama lógico é:
 
@@ -92,12 +95,24 @@ A rota `#publico/<id>` abre uma visão pública que **não exige login**: o fron
 
 As políticas `profiles_public_read`, `user_projects_public_read` e `certificates_public_read` liberam a leitura anônima apenas de quem tem `portfolio_public = true`. Perfil inexistente e perfil privado aparecem como a mesma mensagem ("não existe ou está privado"), evitando vazar quais identificadores existem no banco. O bloco incremental aplicado no Supabase está documentado no final de `database/schema.sql`.
 
+### Foto de perfil (avatar)
+
+1. Na aba Perfil, **Alterar foto** abre o seletor de arquivos; o frontend aceita apenas JPG/PNG de até 2 MB e bloqueia o restante antes de qualquer envio.
+2. Um arquivo válido abre uma **prévia** (URL temporária `blob:` gerada localmente) com botões de salvar ou cancelar — nada é enviado sem confirmação.
+3. Ao salvar, `uploadAvatar` envia o arquivo para o bucket privado `avatars` no caminho `<id do usuário>/avatar.jpg|png` e grava esse caminho em `profiles.avatar_url`. **Remover foto** apaga o arquivo do Storage e limpa a coluna (com confirmação no modal do tema).
+4. Toda exibição usa **URL assinada** (`createSignedUrl`, validade de 1h), renovada no boot, ao salvar/remover e ao carregar a visão pública. Se a assinatura falhar ou não houver foto, a interface cai no fallback da bolinha com a inicial — no topo (dashboard), na aba Perfil, na aba Portfólio e na rota `#publico/<id>`.
+5. A privacidade é a mesma do portfólio: o bucket é privado (`public = false`, sem URL pública) e as políticas do Storage consultam `profiles.portfolio_public` — o papel `anon` só consegue assinar a URL da foto de quem publicou o portfólio; perfil privado nunca expõe a foto. O dono faz upload/update/delete apenas na própria pasta, conferido pelo primeiro segmento do caminho (`storage.foldername(name))[1] = auth.uid()`).
+
+O bloco incremental correspondente (coluna `avatar_url`, grant da coluna ao `anon`, criação do bucket com limite de 2 MB e MIME restrito, e as cinco políticas de `storage.objects`) está no final de `database/schema.sql`.
+
 ## 5. Segurança
 
 - RLS está habilitado em todas as tabelas públicas.
 - Um aluno só lê seu perfil, suas respostas, progresso, projetos e certificados.
 - Catálogo de projetos pode ser lido publicamente.
 - A leitura anônima do portfólio público libera só as linhas de quem publicou e só as colunas autorizadas — `email`, `age` e `is_admin` não são concedidas ao papel anon.
+- O bucket `avatars` é privado: nenhuma foto tem URL pública e as políticas de `storage.objects` liberam a leitura anônima somente de fotos cujo dono publicou o portfólio (mesma regra de `portfolio_public`); a escrita é restrita à pasta do próprio usuário.
+- O upload de avatar é validado duas vezes: tipo e tamanho no cliente e limite de 2 MB/MIME (JPG/PNG) na configuração do bucket. URLs assinadas nunca são concatenadas no HTML sem escape, e a expiração ou falha delas degrada para o avatar de inicial sem quebrar as telas.
 - Alterações de XP, nível e papel administrativo são protegidas por trigger/RPC.
 - Funções privilegiadas revalidam `auth.uid()` e `is_admin` no banco.
 - A chave `service_role` não deve ser usada no frontend.

@@ -252,7 +252,7 @@ async function adminDeleteStudent(targetId) {
 async function fetchPublicProfile(userId) {
   const { data, error } = await db
     .from('profiles')
-    .select('id, name, track, goal, level, xp, portfolio_public')
+    .select('id, name, track, goal, level, xp, portfolio_public, avatar_url')
     .eq('id', userId)
     .eq('portfolio_public', true)
     .maybeSingle();
@@ -297,4 +297,72 @@ async function setPortfolioPublic(userId, value) {
     .eq('id', userId);
 
   if (error) throw new Error(error.message);
+}
+
+// ============================================================
+//  FOTO DE PERFIL (AVATAR) — Supabase Storage
+//  O bucket "avatars" é PRIVADO (public = false): nenhuma
+//  imagem tem URL pública. Toda exibição usa URL assinada, e as
+//  políticas do Storage só deixam assinar quando:
+//    • o arquivo está na pasta do próprio usuário, ou
+//    • o dono da pasta publicou o portfólio (portfolio_public).
+//  Ou seja: perfil privado = foto inacessível para anônimos,
+//  mesmo conhecendo o caminho exato do arquivo.
+// ============================================================
+
+// Faz upload (ou substitui) a foto e grava o caminho no perfil.
+// Tipo/tamanho já foram validados no cliente; o bucket também
+// limita a 2 MB e a image/jpeg|image/png (defesa em profundidade).
+async function uploadAvatar(userId, file, previousPath) {
+  const ext = file.type === 'image/png' ? 'png' : 'jpg';
+  const path = userId + '/avatar.' + ext;
+
+  const { error } = await db.storage
+    .from('avatars')
+    .upload(path, file, { upsert: true, contentType: file.type, cacheControl: '3600' });
+
+  if (error) throw new Error(error.message);
+
+  // Se a extensão mudou (jpg ↔ png), remove o arquivo antigo.
+  if (previousPath && previousPath !== path) {
+    try {
+      await db.storage.from('avatars').remove([previousPath]);
+    } catch (_) { /* arquivo anterior não é crítico */ }
+  }
+
+  const { error: profileError } = await db
+    .from('profiles')
+    .update({ avatar_url: path })
+    .eq('id', userId);
+
+  if (profileError) throw new Error(profileError.message);
+  return path;
+}
+
+// Remove o arquivo do Storage e limpa a coluna avatar_url.
+async function removeAvatar(userId, path) {
+  if (path) {
+    const { error } = await db.storage.from('avatars').remove([path]);
+    if (error) throw new Error(error.message);
+  }
+
+  const { error: profileError } = await db
+    .from('profiles')
+    .update({ avatar_url: null })
+    .eq('id', userId);
+
+  if (profileError) throw new Error(profileError.message);
+}
+
+// Gera URL assinada (válida por 1h) para exibir a foto.
+// Funciona com ou sem login, mas o Storage só autoriza dentro
+// das regras de privacidade descritas acima.
+async function fetchAvatarSignedUrl(path) {
+  if (!path) return null;
+  const { data, error } = await db.storage
+    .from('avatars')
+    .createSignedUrl(path, 3600);
+
+  if (error) throw new Error(error.message);
+  return (data && data.signedUrl) || null;
 }
