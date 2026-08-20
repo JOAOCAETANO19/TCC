@@ -829,8 +829,10 @@ async function handleLogin() {
     const user = await supabaseLogin(email, pass);
     currentAuthId = user.id;
     currentUser   = await fetchProfile(user.id);
-    await loadUserExtras(user.id);
+    completedProjects = [];
+    userCerts = [];
     enterApp();
+    loadUserExtrasSafe(user.id);
   } catch (err) {
     showError('login-error', traduzirErroAuth(err.message));
   } finally {
@@ -848,7 +850,11 @@ async function handleRegister() {
   const pass  = document.getElementById('reg-password').value;
 
   if (!name || !age || !email || !pass) { showError('reg-error', 'Preencha todos os campos.'); return; }
-  if (pass.length < 6)                  { showError('reg-error', 'A senha precisa ter pelo menos 6 caracteres.'); return; }
+  if (name.length < 2 || name.length > 120) { showError('reg-error', 'O nome deve ter entre 2 e 120 caracteres.'); return; }
+  const parsedAge = Number(age);
+  if (!Number.isInteger(parsedAge) || parsedAge < 10 || parsedAge > 120) { showError('reg-error', 'A idade deve ser um número entre 10 e 120 anos.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('reg-error', 'Informe um email válido.'); return; }
+  if (pass.length < 6) { showError('reg-error', 'A senha precisa ter pelo menos 6 caracteres.'); return; }
 
   setLoading('btn-register', true, 'Cadastrar');
 
@@ -882,12 +888,14 @@ async function handleLogout() {
 
 // ===== TRADUÇÃO DE ERROS DO SUPABASE =====
 
-function traduzirErroAuth(msg) {
+function traduzirErroAuth(msg = '') {
   if (msg.includes('Invalid login'))        return 'Email ou senha incorretos.';
   if (msg.includes('already registered'))   return 'Este email já está cadastrado.';
   if (msg.includes('valid email'))          return 'Informe um email válido.';
   if (msg.includes('Password should be'))   return 'A senha precisa ter pelo menos 6 caracteres.';
-  if (msg.includes('Network'))              return 'Erro de conexão. Verifique sua internet.';
+  if (/profiles_(age|name)_check|violates check constraint/i.test(msg))
+    return 'Os dados do cadastro são inválidos. Confira se o nome tem entre 2 e 120 caracteres e se a idade está entre 10 e 120 anos.';
+  if (/Network|Failed to fetch|fetch failed/i.test(msg)) return 'Erro de conexão. Verifique sua internet.';
   return msg;
 }
 
@@ -903,10 +911,22 @@ async function loadUserExtras(userId) {
   userCerts         = certs;
 }
 
+// Projetos e certificados não devem impedir a entrada no app.
+async function loadUserExtrasSafe(userId) {
+  try {
+    await loadUserExtras(userId);
+    renderDashboard();
+  } catch (e) {
+    console.warn('Carga secundária indisponível:', e.message);
+    showToast('Seu perfil abriu, mas projetos e certificados não puderam ser carregados. Tente novamente mais tarde.', 'error');
+  }
+}
+
 
 // ===== APP ENTRY =====
 
 function enterApp() {
+  document.getElementById('boot-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('main-app').classList.remove('hidden');
 
@@ -1332,20 +1352,21 @@ async function startProject(projectId, projectName, btn) {
   btn.disabled = true;
   btn.textContent = 'Salvando...';
 
-  completedProjects.push(projectId);
-
   try {
-    // +100 XP calculado e salvo no banco (award_project_xp), que também
-    // impede marcar o mesmo projeto duas vezes pra ganhar XP repetido.
+    // Só atualiza o estado local depois de o banco confirmar a transação.
     await awardProjectXP(projectId);
     currentUser = await fetchProfile(currentAuthId);
+    completedProjects.push(projectId);
+    btn.textContent = '✅ Concluído!';
+    btn.classList.add('opacity-50');
+    renderDashboard();
   } catch (e) {
     console.warn('Erro ao salvar projeto:', e.message);
+    btn.disabled = false;
+    btn.textContent = 'Tentar novamente';
+    btn.classList.remove('opacity-50');
+    showToast('Não foi possível salvar o projeto. Verifique sua conexão e tente novamente.', 'error');
   }
-
-  btn.textContent = '✅ Concluído!';
-  btn.classList.add('opacity-50');
-  renderDashboard();
 }
 
 
@@ -1359,18 +1380,18 @@ function renderPortfolio() {
   const projNames = completedProjects.length
     ? completedProjects.map(id => {
         const proj = projects.flatMap(g => g.items).find(p => p.dbId === id);
-        return proj ? `<div class="bg-white/5 rounded-lg p-3 mb-2 text-sm">✅ ${proj.name}</div>` : '';
+        return proj ? `<div class="bg-white/5 rounded-lg p-3 mb-2 text-sm">✅ ${escapeHtml(proj.name)}</div>` : '';
       }).join('')
     : '<p class="text-white/40 text-xs">Complete projetos na aba Projetos para preencher seu portfólio!</p>';
 
   document.getElementById('portfolio-content').innerHTML = `
     <div class="text-center mb-6">
       <div class="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-purple-500 mx-auto mb-3 flex items-center justify-center text-2xl font-bold">
-        ${currentUser.name.charAt(0)}
+        ${escapeHtml(currentUser.name.charAt(0))}
       </div>
-      <h3 class="text-xl font-bold">${currentUser.name}</h3>
+      <h3 class="text-xl font-bold">${escapeHtml(currentUser.name)}</h3>
       <p class="text-white/50">Estudante de Desenvolvimento de Sistemas</p>
-      <p class="text-green-400 text-sm">${currentUser.track || 'Explorando'} • Nível ${currentUser.level}</p>
+      <p class="text-green-400 text-sm">${escapeHtml(currentUser.track || 'Explorando')} • Nível ${escapeHtml(currentUser.level)}</p>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
       <div>
@@ -1414,22 +1435,23 @@ async function renderAdminPanel() {
 
     tbody.innerHTML = alunos.length
       ? alunos.map(a => {
-          const nomeEsc = escJsStr(a.name);
+          // encodeURIComponent mantém o nome fora da sintaxe do HTML/JS inline.
+          const nomeArg = encodeURIComponent(a.name);
           const isSelf  = a.id === currentAuthId;
 
           const acoes = isSelf
             ? '<span class="text-white/30 text-xs">— você —</span>'
             : `
               <div class="flex gap-1 flex-wrap">
-                <button onclick="adminHandleResetXP('${a.id}', '${nomeEsc}')"
+                <button onclick="adminHandleResetXP('${a.id}', decodeURIComponent('${nomeArg}'))"
                   class="text-xs px-2 py-1 rounded bg-white/10 hover:bg-white/20 transition">
                   Resetar XP
                 </button>
-                <button onclick="adminHandleToggleAdmin('${a.id}', '${nomeEsc}', ${!!a.is_admin})"
+                <button onclick="adminHandleToggleAdmin('${a.id}', decodeURIComponent('${nomeArg}'), ${!!a.is_admin})"
                   class="text-xs px-2 py-1 rounded transition ${a.is_admin ? 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/30' : 'bg-white/10 hover:bg-white/20'}">
                   ${a.is_admin ? 'Remover admin' : 'Tornar admin'}
                 </button>
-                <button onclick="adminHandleDelete('${a.id}', '${nomeEsc}')"
+                <button onclick="adminHandleDelete('${a.id}', decodeURIComponent('${nomeArg}'))"
                   class="text-xs px-2 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition">
                   Excluir
                 </button>
@@ -1439,13 +1461,13 @@ async function renderAdminPanel() {
           return `
             <tr class="border-b border-white/5">
               <td class="p-3">
-                <button onclick="adminShowDetails('${a.id}')" class="hover:underline hover:text-green-400 transition text-left">${a.name}</button>${a.is_admin ? ' <span class="text-purple-400 text-xs">(admin)</span>' : ''}
+                <button onclick="adminShowDetails('${a.id}')" class="hover:underline hover:text-green-400 transition text-left">${escapeHtml(a.name)}</button>${a.is_admin ? ' <span class="text-purple-400 text-xs">(admin)</span>' : ''}
               </td>
-              <td class="p-3 text-white/60">${a.email}</td>
+              <td class="p-3 text-white/60">${escapeHtml(a.email)}</td>
               <td class="p-3">${a.age ?? '-'}</td>
               <td class="p-3">Nível ${a.level}</td>
               <td class="p-3">${a.xp} XP</td>
-              <td class="p-3">${a.track || '-'}</td>
+              <td class="p-3">${escapeHtml(a.track || '-')}</td>
               <td class="p-3">${a.quiz_done ? '✅' : '—'}</td>
               <td class="p-3">${acoes}</td>
             </tr>
@@ -1453,7 +1475,7 @@ async function renderAdminPanel() {
         }).join('')
       : '<tr><td class="p-3 text-white/40" colspan="8">Nenhum aluno encontrado.</td></tr>';
   } catch (e) {
-    tbody.innerHTML = `<tr><td class="p-3 text-red-400" colspan="8">Erro ao carregar: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td class="p-3 text-red-400" colspan="8">Erro ao carregar: ${escapeHtml(e.message)}</td></tr>`;
   }
 }
 
@@ -1539,7 +1561,7 @@ async function adminShowDetails(id) {
     renderStudentDetailModal(quizRows, projRows, certRows);
   } catch (e) {
     document.getElementById('admin-detail-content').innerHTML =
-      `<p class="text-red-400 text-sm">Erro ao carregar detalhes: ${e.message}</p>`;
+      `<p class="text-red-400 text-sm">Erro ao carregar detalhes: ${escapeHtml(e.message)}</p>`;
   }
 }
 
@@ -1551,8 +1573,8 @@ function renderStudentDetailModal(quizRows, projRows, certRows) {
   const quizHtml = quizRows.length
     ? quizRows.map(q => `
         <div class="bg-white/5 rounded-lg p-3 mb-2 text-sm">
-          <p class="text-white/40 text-xs mb-1">${quizQuestionLabel(q.question)}</p>
-          <p>${q.answer}</p>
+          <p class="text-white/40 text-xs mb-1">${escapeHtml(quizQuestionLabel(q.question))}</p>
+          <p>${escapeHtml(q.answer)}</p>
         </div>
       `).join('')
     : '<p class="text-white/40 text-sm">Quiz não realizado.</p>';
@@ -1560,8 +1582,8 @@ function renderStudentDetailModal(quizRows, projRows, certRows) {
   const projHtml = projRows.length
     ? projRows.map(p => `
         <div class="bg-white/5 rounded-lg p-3 mb-2 text-sm">
-          ✅ ${p.projects ? p.projects.name : ('Projeto #' + p.project_id)}
-          ${p.projects && p.projects.level ? `<span class="text-white/40 text-xs"> • ${p.projects.level}</span>` : ''}
+          ✅ ${escapeHtml(p.projects ? p.projects.name : ('Projeto #' + p.project_id))}
+          ${p.projects && p.projects.level ? `<span class="text-white/40 text-xs"> • ${escapeHtml(p.projects.level)}</span>` : ''}
         </div>
       `).join('')
     : '<p class="text-white/40 text-sm">Nenhum projeto concluído.</p>';
@@ -1590,28 +1612,46 @@ function renderStudentDetailModal(quizRows, projRows, certRows) {
 // ===== INIT =====
 
 async function init() {
+  const boot = document.getElementById('boot-screen');
+  const message = document.getElementById('boot-message');
+  const retry = document.getElementById('boot-retry');
+  boot.style.display = 'flex';
+  message.textContent = 'Verificando sua sessão...';
+  retry.classList.add('hidden');
+  document.getElementById('login-screen').style.display = 'none';
+
+  const slowWarning = setTimeout(() => {
+    message.textContent = 'A conexão está demorando mais que o normal. Ainda estamos tentando...';
+  }, 4000);
+
   try {
     const session = await getSession();
+    clearTimeout(slowWarning);
 
     if (session) {
       currentAuthId = session.user.id;
-      currentUser   = await fetchProfile(session.user.id);
-      await loadUserExtras(session.user.id);
+      currentUser = await fetchProfile(session.user.id);
+      completedProjects = [];
+      userCerts = [];
       enterApp();
+      loadUserExtrasSafe(session.user.id);
     } else {
+      boot.style.display = 'none';
       document.getElementById('login-screen').style.display = 'flex';
     }
   } catch (e) {
+    clearTimeout(slowWarning);
     console.warn('Erro no init:', e.message);
-    document.getElementById('login-screen').style.display = 'flex';
+    message.textContent = 'Não foi possível verificar sua sessão: ' + traduzirErroAuth(e.message);
+    retry.classList.remove('hidden');
   }
 
   lucide.createIcons();
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') closeCertificate();
-  });
-  window.addEventListener('hashchange', tryOpenCertFromHash);
 }
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') closeCertificate();
+});
+window.addEventListener('hashchange', tryOpenCertFromHash);
 
 init();
