@@ -367,7 +367,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   check(supabaseSource.includes("update({ avatar_url: path })") && supabaseSource.includes("update({ avatar_url: null })"), 'cliente grava e limpa avatar_url no perfil');
   check(script.includes('2 * 1024 * 1024') && script.includes("'image/jpeg', 'image/png'"), 'cliente valida tamanho (2 MB) e tipo (JPG/PNG)');
   check(schema.includes('avatar_url text'), 'schema.sql tem a coluna avatar_url');
-  check(schema.includes("values ('avatars', 'avatars', false, 2097152, '{image/jpeg,image/png}')"), 'bucket avatars é privado, limitado a 2 MB e a JPG/PNG');
+  check(schema.includes("values ('avatars', 'avatars', false)") && schema.includes('file_size_limit = 2097152') && schema.includes("allowed_mimetypes = '{image/jpeg,image/png}'"), 'bucket avatars é privado; limites de 2 MB e JPG/PNG aplicados quando a coluna existir');
   check(schema.includes('grant select (avatar_url) on public.profiles to anon'), 'anon recebe só a coluna avatar_url, sem abrir email/idade');
   check(schema.includes('avatars_owner_insert') && schema.includes('avatars_owner_update') && schema.includes('avatars_owner_delete'), 'dono tem políticas de upload, update e delete');
   check(schema.includes('avatars_public_read') && schema.includes('avatars_owner_read'), 'existem políticas de leitura anônima e autenticada');

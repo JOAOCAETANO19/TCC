@@ -290,15 +290,31 @@ alter table public.profiles add column if not exists avatar_url text;
 -- (grant por coluna, sem abrir email/age/is_admin).
 grant select (avatar_url) on public.profiles to anon;
 
--- Bucket privado: máximo de 2 MB por arquivo e somente JPG/PNG.
--- O frontend valida tipo e tamanho antes do upload; estas
--- restrições do bucket são a segunda linha de defesa.
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mimetypes)
-values ('avatars', 'avatars', false, 2097152, '{image/jpeg,image/png}')
-on conflict (id) do update
-set public = false,
-    file_size_limit = excluded.file_size_limit,
-    allowed_mimetypes = excluded.allowed_mimetypes;
+-- Bucket privado (public = false). Os limites de 2 MB e de
+-- allowed_mimetypes (JPG/PNG) são aplicados SOMENTE quando as
+-- colunas correspondentes existirem em storage.buckets — nem
+-- todas as versões do Supabase Storage as possuem. A privacidade
+-- de fato vem das policies (RLS), não dessas colunas.
+-- O frontend valida tipo e tamanho antes do upload como primeira
+-- linha de defesa.
+do $$
+begin
+  insert into storage.buckets (id, name, public)
+  values ('avatars', 'avatars', false)
+  on conflict (id) do update set public = false;
+
+  if exists (select 1 from information_schema.columns
+             where table_schema = 'storage' and table_name = 'buckets'
+               and column_name = 'file_size_limit') then
+    update storage.buckets set file_size_limit = 2097152 where id = 'avatars';
+  end if;
+
+  if exists (select 1 from information_schema.columns
+             where table_schema = 'storage' and table_name = 'buckets'
+               and column_name = 'allowed_mimetypes') then
+    update storage.buckets set allowed_mimetypes = '{image/jpeg,image/png}' where id = 'avatars';
+  end if;
+end $$;
 
 -- O dono faz upload da própria foto (pasta com o seu id).
 drop policy if exists avatars_owner_insert on storage.objects;
