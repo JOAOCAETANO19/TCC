@@ -239,3 +239,62 @@ async function adminDeleteStudent(targetId) {
   const { error } = await db.rpc('admin_delete_student', { target_id: targetId });
   if (error) throw new Error(error.message);
 }
+
+// ============================================================
+//  PORTFÓLIO PÚBLICO — leitura anônima (funciona SEM login)
+//  A chave anon + as políticas RLS "leitura anônima" liberam só o
+//  que o aluno marcou como público. Aqui o select é explícito:
+//  NUNCA pedimos email, age nem is_admin nesta tela — mesmo que o
+//  banco liberasse, o frontend não solicita nem renderiza essas
+//  colunas. (Coluna portfolio_public = true exige a linha publicada.)
+// ============================================================
+
+async function fetchPublicProfile(userId) {
+  const { data, error } = await db
+    .from('profiles')
+    .select('id, name, track, goal, level, xp, portfolio_public')
+    .eq('id', userId)
+    .eq('portfolio_public', true)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  // Sem linha = perfil inexistente ou privado (a policy anon esconde os dois)
+  if (!data || data.portfolio_public !== true) return null;
+  return data;
+}
+
+async function fetchPublicProjects(userId) {
+  const { data, error } = await db
+    .from('user_projects')
+    .select('project_id, projects(name, level, description)')
+    .eq('user_id', userId);
+
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+async function fetchPublicCertificates(userId) {
+  const { data, error } = await db
+    .from('certificates')
+    .select('subject_id, title, issued_at')
+    .eq('user_id', userId)
+    .order('issued_at', { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+// ============================================================
+//  PORTFÓLIO — visibilidade (aluno logado, aba Portfólio)
+//  Só o dono do perfil consegue mudar portfolio_public (RLS:
+//  profiles_update exige id = auth.uid(), e o trigger
+//  trg_protect_profile_fields não mexe nessa coluna).
+// ============================================================
+async function setPortfolioPublic(userId, value) {
+  const { error } = await db
+    .from('profiles')
+    .update({ portfolio_public: !!value })
+    .eq('id', userId);
+
+  if (error) throw new Error(error.message);
+}

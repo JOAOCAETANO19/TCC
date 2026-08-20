@@ -33,7 +33,7 @@ Não há dependências locais nem transpiler. Os scripts são carregados na orde
 
 | Tabela | Finalidade | Chave/relacionamentos |
 |---|---|---|
-| `profiles` | dados acadêmicos, XP e papel administrativo | `id` referencia `auth.users` |
+| `profiles` | dados acadêmicos, XP, papel administrativo e visibilidade do portfólio (`portfolio_public`) | `id` referencia `auth.users` |
 | `quiz_answers` | três respostas do nivelamento | `user_id` → `profiles`; único por pergunta |
 | `projects` | catálogo dos nove projetos | `id` é a chave do catálogo |
 | `subject_progress` | matérias visualizadas | chave composta `user_id + subject_id` |
@@ -80,11 +80,24 @@ O registro em `certificates` continua sendo a fonte da verdade. O frontend apena
 
 `is_admin` controla a exibição do painel no cliente, mas não é a proteção real. As políticas RLS e as funções `admin_reset_xp` e `admin_delete_student` verificam o papel no banco. A lista de alunos permite consulta administrativa; detalhes combinam perfil, respostas, projetos e certificados.
 
+### Portfólio público
+
+Cada aluno pode publicar ou tornar privado o portfólio na aba Portfólio, alternando a coluna `profiles.portfolio_public` (só o dono do perfil consegue, via RLS). Publicado, a aba mostra o link no formato `https://joaocaetano19.github.io/TCC/#publico/<id>` com um botão de copiar.
+
+A rota `#publico/<id>` abre uma visão pública que **não exige login**: o frontend usa a chave anon para ler apenas:
+
+- `profiles` — somente as colunas `id, name, track, goal, level, xp, portfolio_public` (grant por coluna para o papel anon; `email`, `age` e `is_admin` não são concedidos nem solicitados);
+- `user_projects` — projetos concluídos, com nome/nível/descrição vindos do catálogo `projects`;
+- `certificates` — `subject_id, title, issued_at` para montar as habilidades e os diplomas visuais.
+
+As políticas `profiles_public_read`, `user_projects_public_read` e `certificates_public_read` liberam a leitura anônima apenas de quem tem `portfolio_public = true`. Perfil inexistente e perfil privado aparecem como a mesma mensagem ("não existe ou está privado"), evitando vazar quais identificadores existem no banco. O bloco incremental aplicado no Supabase está documentado no final de `database/schema.sql`.
+
 ## 5. Segurança
 
 - RLS está habilitado em todas as tabelas públicas.
 - Um aluno só lê seu perfil, suas respostas, progresso, projetos e certificados.
 - Catálogo de projetos pode ser lido publicamente.
+- A leitura anônima do portfólio público libera só as linhas de quem publicou e só as colunas autorizadas — `email`, `age` e `is_admin` não são concedidas ao papel anon.
 - Alterações de XP, nível e papel administrativo são protegidas por trigger/RPC.
 - Funções privilegiadas revalidam `auth.uid()` e `is_admin` no banco.
 - A chave `service_role` não deve ser usada no frontend.

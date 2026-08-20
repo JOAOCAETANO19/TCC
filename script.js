@@ -284,6 +284,8 @@ let quizAnswers    = [];
 let lastCertModel  = null;  // certificado atualmente aberto no modal
 let adminDetailStudent = null;
 let adminDetailCerts = [];
+let publicProfile  = null;  // perfil carregado na visão pública (sem login)
+let publicCerts    = [];    // certificados carregados na visão pública
 
 const CERT_W = 1400;
 const CERT_H = 990;
@@ -720,7 +722,9 @@ function renderCertMiniCard(cert, index, source) {
   const date = cert.issued_at ? new Date(cert.issued_at).toLocaleDateString('pt-BR') : '';
   const handler = source === 'admin'
     ? 'openCertificate(adminDetailCerts[' + index + '], adminDetailStudent)'
-    : 'openCertificate(userCerts[' + index + '])';
+    : source === 'public'
+      ? 'openCertificate(publicCerts[' + index + '], publicProfile)'
+      : 'openCertificate(userCerts[' + index + '])';
   return `
     <button type="button" onclick="${handler}" class="cert-mini w-full text-left">
       <div class="cert-mini-inner">
@@ -1372,7 +1376,17 @@ async function startProject(projectId, projectName, btn) {
 
 // ===== RENDER: PORTFÓLIO =====
 
+// Link público no formato: https://.../TCC/#publico/<id>
+// A rota #publico/<id> abre a visão pública SEM exigir login.
+function portfolioPublicUrl() {
+  const id = currentAuthId || (currentUser && currentUser.id) || '';
+  return location.origin + location.pathname + '#publico/' + encodeURIComponent(id);
+}
+
 function renderPortfolio() {
+  const isPublic = !!currentUser.portfolio_public;
+  const publicUrl = portfolioPublicUrl();
+
   const certNames = userCerts.map((c, i) =>
     `<button type="button" onclick="openCertificate(userCerts[${i}])" class="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded hover:bg-green-500/30 transition">${escapeHtml(c.title.replace(' - Básico',''))}</button>`
   ).join('') || '<span class="text-white/40 text-xs">Nenhuma ainda</span>';
@@ -1385,6 +1399,25 @@ function renderPortfolio() {
     : '<p class="text-white/40 text-xs">Complete projetos na aba Projetos para preencher seu portfólio!</p>';
 
   document.getElementById('portfolio-content').innerHTML = `
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 p-4 rounded-xl bg-white/5 border ${isPublic ? 'border-green-500/30' : 'border-white/10'}">
+      <div class="min-w-0">
+        <p class="font-semibold text-sm">${isPublic ? '🟢 Portfólio público' : '🔴 Portfólio privado'}</p>
+        <p class="text-xs text-white/50 mt-1">${isPublic
+          ? 'Qualquer pessoa com o link consegue ver seu portfólio, mesmo sem login.'
+          : 'Só você consegue ver. Publique para gerar o link de compartilhamento.'}</p>
+        ${isPublic ? `<p class="text-xs text-green-400/80 mt-1 font-mono break-all">${escapeHtml(publicUrl)}</p>` : ''}
+      </div>
+      <div class="flex gap-2 flex-wrap">
+        <button id="btn-portfolio-toggle" type="button" onclick="togglePortfolioVisibility()"
+          class="${isPublic ? 'btn-secondary' : 'btn-primary'} px-4 py-2 rounded-lg text-sm font-semibold">
+          ${isPublic ? 'Tornar privado' : 'Publicar portfólio'}
+        </button>
+        <button id="btn-copy-portfolio-link" type="button" onclick="copyPortfolioLink()"
+          class="btn-secondary px-4 py-2 rounded-lg text-sm">
+          📋 Copiar link público
+        </button>
+      </div>
+    </div>
     <div class="text-center mb-6">
       <div class="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-purple-500 mx-auto mb-3 flex items-center justify-center text-2xl font-bold">
         ${escapeHtml(currentUser.name.charAt(0))}
@@ -1408,6 +1441,205 @@ function renderPortfolio() {
     <div>
       <h4 class="font-semibold text-sm text-white/60 mb-2">📁 Projetos</h4>
       ${projNames}
+    </div>
+  `;
+}
+
+// Publica ou torna privado o portfólio (coluna profiles.portfolio_public).
+async function togglePortfolioVisibility() {
+  const btn = document.getElementById('btn-portfolio-toggle');
+  if (!btn) return;
+  const next = !currentUser.portfolio_public;
+  btn.disabled = true;
+  btn.textContent = 'Salvando...';
+
+  try {
+    await setPortfolioPublic(currentAuthId, next);
+    currentUser = await fetchProfile(currentAuthId);
+    renderPortfolio();
+    showToast(next ? 'Portfólio publicado! Compartilhe o link público.' : 'Portfólio agora está privado.', 'success');
+  } catch (e) {
+    console.warn('Erro ao alterar visibilidade:', e.message);
+    btn.disabled = false;
+    btn.textContent = currentUser.portfolio_public ? 'Tornar privado' : 'Publicar portfólio';
+    showToast('Não foi possível alterar a visibilidade: ' + traduzirErroAuth(e.message), 'error');
+  }
+}
+
+// Copia o link público (#publico/<id>) para a área de transferência.
+async function copyPortfolioLink() {
+  const url = portfolioPublicUrl();
+  let ok = false;
+
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(url);
+      ok = true;
+    }
+  } catch (_) { /* tenta o fallback abaixo */ }
+
+  if (!ok) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      ok = document.execCommand('copy');
+      ta.remove();
+    } catch (_) { ok = false; }
+  }
+
+  showToast(ok ? 'Link público copiado!' : 'Não foi possível copiar o link automaticamente: ' + url, ok ? 'success' : 'error');
+}
+
+
+// ===== VISÃO PÚBLICA DO PORTFÓLIO (sem login) =====
+// A rota #publico/<id> renderiza perfil, projetos e certificados
+// usando a chave anon e as políticas de leitura anônima. Não exige
+// sessão, e nunca busca/renderiza email, idade ou is_admin.
+
+function isPublicPortfolioHash() {
+  return /^#publico\//i.test(location.hash || '');
+}
+
+function publicPortfolioIdFromHash() {
+  const match = /^#publico\/([\w-]+)/i.exec(location.hash || '');
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function openPublicView() {
+  document.getElementById('boot-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-app').classList.add('hidden');
+  document.getElementById('public-view').style.display = 'block';
+  renderPublicPortfolio(publicPortfolioIdFromHash());
+}
+
+function closePublicView() {
+  const view = document.getElementById('public-view');
+  if (view) view.style.display = 'none';
+  publicProfile = null;
+  publicCerts = [];
+}
+
+// Sai da visão pública e volta ao fluxo normal (login ou sessão).
+function leavePublicView() {
+  closePublicView();
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  init();
+}
+
+async function renderPublicPortfolio(userId) {
+  const container = document.getElementById('public-portfolio');
+  if (!container) return;
+
+  if (!userId) {
+    container.innerHTML = `
+      <div class="card-glass rounded-2xl p-10 text-center">
+        <p class="text-5xl mb-4">🔗</p>
+        <h2 class="text-xl font-bold mb-2">Link inválido</h2>
+        <p class="text-white/60 text-sm mb-6">Este link de portfólio não tem um identificador válido.</p>
+        <button type="button" onclick="leavePublicView()" class="btn-primary px-5 py-2.5 rounded-lg text-sm font-semibold">Entrar no Pratica.dev</button>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="card-glass rounded-2xl p-10 text-center">
+      <div class="boot-spinner mx-auto mb-4" aria-hidden="true"></div>
+      <p class="text-white/60">Carregando portfólio público...</p>
+    </div>`;
+
+  try {
+    // Só os dados liberados pela política anon: perfil publicado,
+    // projetos do catálogo e certificados. Nada de email/idade/admin.
+    const [profile, projRows, certs] = await Promise.all([
+      fetchPublicProfile(userId),
+      fetchPublicProjects(userId),
+      fetchPublicCertificates(userId)
+    ]);
+
+    if (!profile) {
+      container.innerHTML = `
+        <div class="card-glass rounded-2xl p-10 text-center">
+          <p class="text-5xl mb-4">🔒</p>
+          <h2 class="text-xl font-bold mb-2">Portfólio indisponível</h2>
+          <p class="text-white/60 text-sm mb-6">Este portfólio não existe ou está privado. Se for seu, publique-o na aba Portfólio do Pratica.dev.</p>
+          <button type="button" onclick="leavePublicView()" class="btn-primary px-5 py-2.5 rounded-lg text-sm font-semibold">Entrar no Pratica.dev</button>
+        </div>`;
+      return;
+    }
+
+    publicProfile = profile;
+    publicCerts = certs;
+    container.innerHTML = renderPublicPortfolioHTML(profile, projRows, certs);
+  } catch (e) {
+    console.warn('Erro ao carregar portfólio público:', e.message);
+    container.innerHTML = `
+      <div class="card-glass rounded-2xl p-10 text-center">
+        <p class="text-5xl mb-4">⚠️</p>
+        <h2 class="text-xl font-bold mb-2">Não foi possível carregar</h2>
+        <p class="text-white/60 text-sm mb-6">${escapeHtml(traduzirErroAuth(e.message))}</p>
+        <button type="button" onclick="leavePublicView()" class="btn-primary px-5 py-2.5 rounded-lg text-sm font-semibold">Voltar</button>
+      </div>`;
+  }
+}
+
+// Monta o HTML da visão pública. Só usa campos autorizados do perfil:
+// name, track, goal, level e xp — nunca email, age ou is_admin.
+function renderPublicPortfolioHTML(profile, projRows, certs) {
+  const skills = certs.map(c => {
+    const subj = subjects.find(s => s.id === c.subject_id);
+    return subj ? subj.name : (c.subject_id || 'Módulo');
+  });
+
+  const projs = projRows.map(r => r.projects || { name: 'Projeto #' + r.project_id, level: '', description: '' });
+
+  const projHtml = projs.length
+    ? projs.map(p => `
+        <div class="bg-white/5 rounded-lg p-4 mb-3 text-sm border border-white/5">
+          <p class="font-semibold">✅ ${escapeHtml(p.name)}</p>
+          ${p.level ? `<p class="text-white/40 text-xs mt-1">${escapeHtml(p.level)}</p>` : ''}
+          ${p.description ? `<p class="text-white/50 text-xs mt-1">${escapeHtml(p.description)}</p>` : ''}
+        </div>`).join('')
+    : '<p class="text-white/40 text-sm">Nenhum projeto concluído ainda.</p>';
+
+  const certHtml = certs.length
+    ? `<div class="grid grid-cols-1 md:grid-cols-2 gap-3">${certs.map((c, i) => renderCertMiniCard(c, i, 'public')).join('')}</div>`
+    : '<p class="text-white/40 text-sm">Nenhum certificado ainda.</p>';
+
+  return `
+    <div class="text-center mb-8">
+      <div class="w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-purple-500 mx-auto mb-4 flex items-center justify-center text-3xl font-bold">
+        ${escapeHtml((profile.name || '?').charAt(0))}
+      </div>
+      <h2 class="text-2xl font-bold">${escapeHtml(profile.name || 'Aluno')}</h2>
+      <p class="text-white/50">Estudante de Desenvolvimento de Sistemas</p>
+      <p class="text-green-400 text-sm mt-1">${escapeHtml(profile.track || 'Explorando')} • Nível ${escapeHtml(profile.level)} • ${escapeHtml(profile.xp)} XP</p>
+      ${profile.goal ? `<p class="text-white/60 text-sm mt-2">🎯 ${escapeHtml(profile.goal)}</p>` : ''}
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+      <div class="card-glass rounded-xl p-5">
+        <h3 class="font-semibold text-sm text-white/60 mb-2">🛠️ Habilidades</h3>
+        ${skills.length
+          ? `<div class="flex flex-wrap gap-2">${skills.map(s => `<span class="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">${escapeHtml(s)}</span>`).join('')}</div>`
+          : '<p class="text-white/40 text-xs">Nenhuma habilidade registrada ainda.</p>'}
+      </div>
+      <div class="card-glass rounded-xl p-5">
+        <h3 class="font-semibold text-sm text-white/60 mb-2">📊 Estatísticas</h3>
+        <p class="text-xs text-white/50">${escapeHtml(profile.xp)} XP • ${projs.length} projetos • ${certs.length} certificados</p>
+      </div>
+    </div>
+    <div class="card-glass rounded-xl p-6 mb-6">
+      <h3 class="font-semibold text-sm text-white/60 mb-3">📁 Projetos</h3>
+      ${projHtml}
+    </div>
+    <div class="card-glass rounded-xl p-6">
+      <h3 class="font-semibold text-sm text-white/60 mb-3">🏆 Certificados</h3>
+      ${certHtml}
     </div>
   `;
 }
@@ -1615,6 +1847,13 @@ async function init() {
   const boot = document.getElementById('boot-screen');
   const message = document.getElementById('boot-message');
   const retry = document.getElementById('boot-retry');
+
+  // Rota pública #publico/<id>: abre o portfólio SEM verificar sessão.
+  if (isPublicPortfolioHash()) {
+    openPublicView();
+    return;
+  }
+
   boot.style.display = 'flex';
   message.textContent = 'Verificando sua sessão...';
   retry.classList.add('hidden');
@@ -1652,6 +1891,13 @@ async function init() {
 document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') closeCertificate();
 });
-window.addEventListener('hashchange', tryOpenCertFromHash);
+window.addEventListener('hashchange', () => {
+  if (isPublicPortfolioHash()) {
+    openPublicView();
+  } else {
+    closePublicView();
+    tryOpenCertFromHash();
+  }
+});
 
 init();

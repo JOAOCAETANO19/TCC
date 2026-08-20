@@ -36,7 +36,9 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     fetchUserProjects: async () => [], fetchCertificates: async () => [], fetchSubjectProgress: async () => [],
     fetchAllProfiles: async () => [], fetchQuizAnswers: async () => [],
     awardProjectXP: async () => {}, awardQuizXP: async () => {}, awardSubjectViewXP: async () => {}, awardExerciseXP: async () => {},
-    adminResetXP: async () => {}, adminSetIsAdmin: async () => {}, adminDeleteStudent: async () => {}
+    adminResetXP: async () => {}, adminSetIsAdmin: async () => {}, adminDeleteStudent: async () => {},
+    fetchPublicProfile: async () => null, fetchPublicProjects: async () => [], fetchPublicCertificates: async () => [],
+    setPortfolioPublic: async () => {}
   });
   window.eval(script + `\nwindow.__testHooks = {
     setUser(v) { currentUser = v; },
@@ -124,7 +126,124 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   check(supabaseSource.includes('if (error) throw new Error(error.message)'), 'getSession propaga falha de rede');
   check(fs.existsSync(path.join(root, 'favicon.svg')) && fs.existsSync(path.join(root, 'favicon.ico')) && fs.existsSync(path.join(root, 'apple-touch-icon.png')), 'todos os arquivos de ícone existem');
 
-  check(passed === 34, 'suíte contém 35 verificações de regressão');
+  // ============================================================
+  // PORTFÓLIO PÚBLICO — controles da aba Portfólio
+  // ============================================================
+  let visibilityCalls = [];
+  const visProfile = { id: 'u1', name: 'Ana', level: 1, xp: 0, quiz_done: true, is_admin: false, portfolio_public: false };
+  window.setPortfolioPublic = async (userId, value) => { visibilityCalls.push({ userId, value }); visProfile.portfolio_public = value; };
+  window.fetchProfile = async () => visProfile;
+  window.__testHooks.setUser(visProfile);
+  window.__testHooks.setAuth('u1');
+  window.__testHooks.setCompleted([]); window.__testHooks.setCerts([]);
+  window.renderPortfolio();
+  let portfolioContent = window.document.getElementById('portfolio-content');
+  check(portfolioContent.textContent.includes('Publicar portfólio'), 'aba Portfólio mostra controle para publicar');
+  await window.togglePortfolioVisibility();
+  check(visibilityCalls.length === 1 && visibilityCalls[0].userId === 'u1' && visibilityCalls[0].value === true,
+    'publicar chama setPortfolioPublic com usuário e valor corretos');
+  check(window.document.getElementById('btn-portfolio-toggle').textContent.includes('Tornar privado'),
+    'após publicar, o controle vira "Tornar privado"');
+  check(portfolioContent.textContent.includes('🟢 Portfólio público'), 'status público é exibido na aba');
+  check(portfolioContent.textContent.includes('#publico/u1'), 'link público aparece na aba');
+
+  // Copiar link público (navigator.clipboard stubado)
+  let copiedUrl = null;
+  try {
+    Object.defineProperty(window.navigator, 'clipboard', {
+      value: { writeText: async (text) => { copiedUrl = text; } },
+      configurable: true
+    });
+  } catch (_) { /* jsdom pode não permitir; o fallback execCommand cobre */ }
+  await window.copyPortfolioLink();
+  check(copiedUrl === 'https://joaocaetano19.github.io/TCC/#publico/u1', 'copiar link gera a URL #publico/<id> correta');
+  check(window.document.getElementById('toast-container').textContent.includes('Link público copiado'), 'copiar link mostra toast de sucesso');
+
+  // ============================================================
+  // PORTFÓLIO PÚBLICO — visão sem login (#publico/<id>)
+  // ============================================================
+  const publicView = () => window.document.getElementById('public-view');
+  const publicContent = () => window.document.getElementById('public-portfolio');
+
+  window.fetchPublicProfile = async () => ({
+    id: 'u-pub', name: 'Nome Público', track: 'Front-end', goal: 'Estágio em 6 meses',
+    level: 3, xp: 250, portfolio_public: true,
+    email: 'secreto@exemplo.com', age: 99, is_admin: true // nunca devem aparecer na tela
+  });
+  window.fetchPublicProjects = async () => [
+    { project_id: 1, projects: { name: 'Calculadora', level: 'Iniciante', description: 'Calculadora funcional' } }
+  ];
+  window.fetchPublicCertificates = async () => [
+    { subject_id: 'html', title: 'HTML - Básico', issued_at: '2026-08-01T00:00:00.000Z' }
+  ];
+
+  window.location.hash = '#publico/u-pub';
+  await tick(); await tick();
+  check(window.isPublicPortfolioHash(), 'hash #publico/ é reconhecido como rota pública');
+  await window.init();
+  await tick(); await tick();
+  check(publicView().style.display === 'block', 'rota #publico/ abre a visão pública sem login');
+  check(publicContent().textContent.includes('Nome Público'), 'nome do perfil público é exibido');
+  check(publicContent().textContent.includes('Calculadora'), 'projetos públicos são exibidos');
+  check(publicContent().textContent.includes('HTML'), 'certificados públicos são exibidos');
+  const pubText = publicContent().textContent;
+  check(!pubText.includes('secreto@exemplo.com') && !pubText.includes('99 anos') && !pubText.toLowerCase().includes('admin'),
+    'email, idade e is_admin não são expostos na visão pública');
+
+  // Perfil inexistente ou privado → mensagem apropriada
+  window.fetchPublicProfile = async () => null;
+  window.location.hash = '#publico/nao-existe';
+  await tick(); await tick();
+  check(publicContent().textContent.includes('não existe ou está privado'), 'perfil inexistente/privado mostra mensagem apropriada');
+
+  // Falha de rede → estado de erro
+  window.fetchPublicProfile = async () => { throw new Error('Network'); };
+  window.location.hash = '#publico/erro';
+  await tick(); await tick();
+  check(publicContent().textContent.includes('Não foi possível carregar'), 'falha de rede na visão pública mostra erro');
+
+  // Link sem identificador → mensagem de link inválido
+  window.location.hash = '#publico/';
+  await tick(); await tick();
+  check(publicContent().textContent.includes('Link inválido'), 'rota pública sem id mostra link inválido');
+
+  // XSS na visão pública
+  const payloadPublic = '<img src=x onerror="window.__xss=1">';
+  window.fetchPublicProfile = async () => ({ id: 'u-x', name: payloadPublic, track: payloadPublic, goal: payloadPublic, level: payloadPublic, xp: 0, portfolio_public: true });
+  window.location.hash = '#publico/xss';
+  await tick(); await tick();
+  check(!publicContent().querySelector('img'), 'visão pública escapa nome malicioso (sem elemento img)');
+  check(publicContent().textContent.includes('<img src=x'), 'visão pública exibe nome malicioso como texto');
+
+  // Voltar → fluxo normal (login/sessão)
+  window.leavePublicView();
+  await tick(); await tick();
+  check(publicView().style.display === 'none', 'voltar da visão pública fecha a tela');
+  check(window.document.getElementById('login-screen').style.display === 'flex', 'voltar da visão pública cai no fluxo de login/sessão');
+
+  // ============================================================
+  // PORTFÓLIO PÚBLICO — código (supabase.js, schema.sql, HTML)
+  // ============================================================
+  check(supabaseSource.includes("select('id, name, track, goal, level, xp, portfolio_public')"),
+    'leitura pública seleciona só as colunas autorizadas');
+  check(supabaseSource.includes('fetchPublicProfile') && supabaseSource.includes('fetchPublicProjects') && supabaseSource.includes('fetchPublicCertificates'),
+    'cliente tem as funções de leitura pública');
+  check(supabaseSource.includes('setPortfolioPublic'), 'cliente tem função para publicar/tornar privado');
+  const publicSection = supabaseSource.slice(supabaseSource.indexOf('PORTFÓLIO PÚBLICO'), supabaseSource.indexOf('setPortfolioPublic'));
+  check(!publicSection.includes("select('*')"), 'leitura pública nunca usa select(*)');
+
+  const schema = fs.readFileSync(path.join(root, 'database/schema.sql'), 'utf8');
+  check(schema.includes('portfolio_public boolean not null default false'), 'schema.sql tem a coluna portfolio_public');
+  check(schema.includes('profiles_public_read') && schema.includes('user_projects_public_read') && schema.includes('certificates_public_read'),
+    'schema.sql tem as três políticas de leitura anônima');
+  check(schema.includes('for select to anon'), 'políticas de leitura valem para o papel anon');
+  check(schema.includes('grant select (id, name, track, goal, level, xp, portfolio_public) on public.profiles to anon'),
+    'grant por coluna não libera email/idade/is_admin ao anon');
+  check(html.includes('id="public-view"') && html.includes('id="public-portfolio"'), 'existe a tela pública sem login no HTML');
+  check(script.includes('isPublicPortfolioHash()') && script.includes('openPublicView()'), 'init roteia a rota pública sem sessão');
+  check(script.includes('portfolio_public'), 'script.js usa a coluna portfolio_public');
+
+  check(passed === 65, 'suíte contém 65 verificações de regressão');
   console.log(`\n${passed} verificações passaram.`);
   window.close();
 })().catch(error => {
