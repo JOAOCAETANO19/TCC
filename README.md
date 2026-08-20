@@ -10,6 +10,7 @@ Plataforma educacional gamificada para estudantes de desenvolvimento de sistemas
 - **Briefing dos projetos:** aba **Projetos** → botão **Ver briefing** em qualquer card
 - **Menu mobile:** abra o sistema em uma tela de até 768px e use o botão de menu no topo
 - **Portfólio público:** na aba **Portfólio**, use **Publicar portfólio** e compartilhe o link `https://joaocaetano19.github.io/TCC/#publico/<id>` — ele abre a visão pública do portfólio sem exigir login
+- **Foto de perfil:** na aba **Perfil**, use **Alterar foto** (JPG ou PNG, até 2 MB), confira a prévia e salve; a foto aparece no topo, no portfólio e na visão pública — visitantes anônimos só a veem se o portfólio estiver público
 - **Scripts do banco de dados:** [`database/schema.sql`](database/schema.sql)
 - **Documentação técnica:** [`docs/documentacao-tecnica.md`](docs/documentacao-tecnica.md)
 
@@ -21,7 +22,8 @@ Plataforma educacional gamificada para estudantes de desenvolvimento de sistemas
 - **Briefing de projetos:** cada um dos 9 projetos práticos abre um briefing no formato usado no mercado, com contexto do cliente, tecnologias sugeridas, requisitos funcionais, entregáveis e critérios de aceite;
 - **Menu mobile:** em telas de até 768px a barra lateral vira uma gaveta acionada pelo botão de menu, com fundo escurecido, fechamento pelo `Esc`, por clique fora e ao escolher uma aba;
 - **Portfólio digital:** reúne XP, projetos concluídos e certificados do aluno;
-- **Portfólio público:** o aluno publica ou torna privado o portfólio na aba Portfólio e copia o link `#publico/<id>`, que abre uma visão pública sem login com apenas os dados autorizados.
+- **Portfólio público:** o aluno publica ou torna privado o portfólio na aba Portfólio e copia o link `#publico/<id>`, que abre uma visão pública sem login com apenas os dados autorizados;
+- **Foto de perfil (avatar):** upload com validação de formato (JPG/PNG) e tamanho (máx. 2 MB), prévia antes de salvar e opção de remover; armazenada em bucket privado do Supabase Storage, exibida por URL assinada e protegida pelas mesmas regras de privacidade do portfólio — sem foto, a bolinha com a inicial do nome continua em uso.
 
 ## Tecnologias
 
@@ -65,7 +67,10 @@ set is_admin = true
 where email = 'administrador@exemplo.com';
 ```
 
-O script é idempotente para uma instalação nova e inclui tabelas, dados iniciais, índices, RLS, triggers e funções RPC utilizadas pela aplicação. Instalações existentes precisam apenas do bloco **PORTFÓLIO PÚBLICO (incremental)** no final do arquivo (coluna `portfolio_public` + políticas de leitura anônima + grants por coluna).
+O script é idempotente para uma instalação nova e inclui tabelas, dados iniciais, índices, RLS, triggers, funções RPC e o bucket de Storage utilizados pela aplicação. Instalações existentes precisam apenas dos blocos incrementais no final do arquivo:
+
+- **PORTFÓLIO PÚBLICO (incremental):** coluna `portfolio_public` + políticas de leitura anônima + grants por coluna;
+- **FOTO DE PERFIL (AVATAR) NO STORAGE (incremental):** coluna `avatar_url` + criação do bucket privado `avatars` + políticas do Storage (dono escreve; anon lê só fotos de portfólios publicados).
 
 ## Estrutura
 

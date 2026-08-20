@@ -286,6 +286,9 @@ let adminDetailStudent = null;
 let adminDetailCerts = [];
 let publicProfile  = null;  // perfil carregado na visão pública (sem login)
 let publicCerts    = [];    // certificados carregados na visão pública
+let currentAvatarUrl = null;        // URL assinada da foto do usuário logado
+let pendingAvatarFile = null;       // arquivo escolhido aguardando confirmação na prévia
+let pendingAvatarObjectUrl = null;  // URL temporária (blob:) da prévia
 
 const CERT_W = 1400;
 const CERT_H = 990;
@@ -885,6 +888,8 @@ async function handleLogout() {
   currentAuthId     = null;
   completedProjects = [];
   userCerts         = [];
+  currentAvatarUrl  = null;
+  cancelAvatarPreview();
   document.getElementById('main-app').classList.add('hidden');
   document.getElementById('login-screen').style.display = 'flex';
 }
@@ -942,6 +947,8 @@ function enterApp() {
   } else {
     renderDashboard();
   }
+  // A foto carrega em paralelo e nunca trava a entrada no app.
+  refreshCurrentAvatarSafe();
   lucide.createIcons();
   tryOpenCertFromHash();
 }
@@ -1071,6 +1078,7 @@ function switchTab(tab) {
 
 function renderDashboard() {
   if (!currentUser) return;
+  renderAvatarInto('nav-avatar', currentAvatarUrl, currentUser.name);
   document.getElementById('nav-user').textContent  = currentUser.name;
   document.getElementById('nav-level').textContent = 'Nível ' + currentUser.level;
   document.getElementById('nav-xp').textContent    = currentUser.xp + ' XP';
@@ -1097,6 +1105,10 @@ function renderDashboard() {
 // ===== RENDER: PERFIL =====
 
 function renderProfile() {
+  renderAvatarInto('prof-avatar', currentAvatarUrl, currentUser.name);
+  const removeAvatarBtn = document.getElementById('btn-avatar-remove');
+  if (removeAvatarBtn) removeAvatarBtn.classList.toggle('hidden', !currentUser.avatar_url);
+
   document.getElementById('prof-name').textContent  = currentUser.name;
   document.getElementById('prof-age').textContent   = currentUser.age + ' anos';
   document.getElementById('prof-goal').textContent  = currentUser.goal  || 'Não definido';
@@ -1115,6 +1127,155 @@ function renderProfile() {
       }).join('')
     : '<p class="text-white/40 text-sm">Nenhum projeto concluído. Vá para a aba Projetos!</p>';
   document.getElementById('prof-projects').innerHTML = projsHtml;
+}
+
+
+// ===== FOTO DE PERFIL (AVATAR) =====
+// A foto fica no bucket privado "avatars" do Supabase Storage e
+// aparece no topo (dashboard), na aba Perfil, na aba Portfólio e
+// na visão pública #publico/<id>. Sem foto (ou se a URL assinada
+// não puder ser gerada), a bolinha com a inicial do nome continua
+// sendo exibida como fallback.
+
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024; // 2 MB
+const AVATAR_MIME_TYPES = ['image/jpeg', 'image/png'];
+
+// Conteúdo do círculo: <img> se houver foto, a inicial se não.
+// Tanto a URL quanto a inicial passam por escapeHtml — a URL
+// assinada vem da rede e nunca é concatenada "crua" no HTML.
+function avatarInnerHtml(url, name) {
+  const who = String(name || '').trim() || '?';
+  if (url) {
+    return `<img src="${escapeHtml(url)}" alt="Foto de perfil de ${escapeHtml(who)}" class="avatar-foto">`;
+  }
+  return escapeHtml(who.charAt(0).toUpperCase());
+}
+
+function renderAvatarInto(elementId, url, name) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  el.innerHTML = avatarInnerHtml(url, name);
+}
+
+// Recria a URL assinada da foto do usuário logado. Se falhar
+// (rede, permissão), segue a navegação com a bolinha da inicial.
+async function refreshCurrentAvatarUrl() {
+  currentAvatarUrl = null;
+  if (currentUser && currentUser.avatar_url) {
+    try {
+      currentAvatarUrl = await fetchAvatarSignedUrl(currentUser.avatar_url);
+    } catch (e) {
+      console.warn('Não foi possível carregar a foto de perfil:', e.message);
+    }
+  }
+}
+
+// Versão "segura" para o boot/login: nunca bloqueia a entrada no
+// app por causa da foto; quando a URL chega, re-renderiza as telas.
+function refreshCurrentAvatarSafe() {
+  (async () => {
+    await refreshCurrentAvatarUrl();
+    if (!currentUser) return;
+    renderDashboard();
+    renderProfile();
+    renderPortfolio();
+  })().catch(e => console.warn('Foto de perfil indisponível:', e.message));
+}
+
+function pickAvatarFile() {
+  const input = document.getElementById('avatar-file-input');
+  if (input) input.click();
+}
+
+// Valida tipo e tamanho ANTES da prévia — arquivo inválido nem
+// aparece na tela e nunca chega a ser enviado.
+function handleAvatarFileChange(event) {
+  const input = event && event.target;
+  const file = input && input.files && input.files[0];
+  if (!file) return;
+
+  if (!AVATAR_MIME_TYPES.includes(file.type)) {
+    showToast('Formato inválido: envie uma imagem JPG ou PNG.', 'error');
+    if (input && 'value' in input) input.value = '';
+    return;
+  }
+  if (file.size > AVATAR_MAX_BYTES) {
+    showToast('A imagem deve ter no máximo 2 MB.', 'error');
+    if (input && 'value' in input) input.value = '';
+    return;
+  }
+
+  pendingAvatarFile = file;
+  if (pendingAvatarObjectUrl) {
+    try { URL.revokeObjectURL(pendingAvatarObjectUrl); } catch (_) { /* noop */ }
+    pendingAvatarObjectUrl = null;
+  }
+  try {
+    pendingAvatarObjectUrl = URL.createObjectURL(file);
+  } catch (_) {
+    pendingAvatarObjectUrl = null;
+  }
+
+  const previewImg = document.getElementById('avatar-preview-img');
+  if (previewImg) previewImg.src = pendingAvatarObjectUrl || '';
+  document.getElementById('avatar-preview').classList.remove('hidden');
+  if (input && 'value' in input) input.value = ''; // permite reescolher o mesmo arquivo
+}
+
+function cancelAvatarPreview() {
+  pendingAvatarFile = null;
+  if (pendingAvatarObjectUrl) {
+    try { URL.revokeObjectURL(pendingAvatarObjectUrl); } catch (_) { /* noop */ }
+    pendingAvatarObjectUrl = null;
+  }
+  const preview = document.getElementById('avatar-preview');
+  if (preview) preview.classList.add('hidden');
+}
+
+// Confirma a prévia: sobe o arquivo, atualiza o perfil e a tela.
+async function saveAvatar() {
+  if (!pendingAvatarFile || !currentAuthId || !currentUser) return;
+  const btn = document.getElementById('btn-avatar-save');
+  if (btn) { btn.disabled = true; btn.textContent = 'Aguarde...'; }
+
+  try {
+    await uploadAvatar(currentAuthId, pendingAvatarFile, currentUser.avatar_url);
+    currentUser = await fetchProfile(currentAuthId);
+    await refreshCurrentAvatarUrl();
+    cancelAvatarPreview();
+    renderProfile();
+    renderDashboard();
+    showToast('Foto de perfil atualizada!', 'success');
+  } catch (e) {
+    console.warn('Erro ao salvar avatar:', e.message);
+    showToast('Não foi possível salvar a foto: ' + traduzirErroAuth(e.message), 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Salvar foto'; }
+  }
+}
+
+// Remove a foto (confirmação no modal do tema) e volta ao fallback.
+async function removeProfileAvatar() {
+  if (!currentAuthId || !currentUser || !currentUser.avatar_url) return;
+  const ok = await themedConfirm('Remover sua foto de perfil?\nA bolinha com a sua inicial volta a aparecer.');
+  if (!ok) return;
+
+  const btn = document.getElementById('btn-avatar-remove');
+  if (btn) btn.disabled = true;
+
+  try {
+    await removeAvatar(currentAuthId, currentUser.avatar_url);
+    currentUser = await fetchProfile(currentAuthId);
+    currentAvatarUrl = null;
+    renderProfile();
+    renderDashboard();
+    showToast('Foto de perfil removida.', 'success');
+  } catch (e) {
+    console.warn('Erro ao remover avatar:', e.message);
+    showToast('Não foi possível remover a foto: ' + traduzirErroAuth(e.message), 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 
@@ -1419,8 +1580,8 @@ function renderPortfolio() {
       </div>
     </div>
     <div class="text-center mb-6">
-      <div class="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-purple-500 mx-auto mb-3 flex items-center justify-center text-2xl font-bold">
-        ${escapeHtml(currentUser.name.charAt(0))}
+      <div class="avatar-circle w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-purple-500 mx-auto mb-3 flex items-center justify-center text-2xl font-bold">
+        ${avatarInnerHtml(currentAvatarUrl, currentUser.name)}
       </div>
       <h3 class="text-xl font-bold">${escapeHtml(currentUser.name)}</h3>
       <p class="text-white/50">Estudante de Desenvolvimento de Sistemas</p>
@@ -1575,7 +1736,19 @@ async function renderPublicPortfolio(userId) {
 
     publicProfile = profile;
     publicCerts = certs;
-    container.innerHTML = renderPublicPortfolioHTML(profile, projRows, certs);
+
+    // Foto de perfil: só existe se o aluno subiu uma, e a URL
+    // assinada só sai se a policy do Storage autorizar (perfil
+    // público). Sem foto ou sem permissão → bolinha com a inicial.
+    let avatarUrl = null;
+    if (profile.avatar_url) {
+      try {
+        avatarUrl = await fetchAvatarSignedUrl(profile.avatar_url);
+      } catch (signErr) {
+        console.warn('Foto pública indisponível:', signErr.message);
+      }
+    }
+    container.innerHTML = renderPublicPortfolioHTML(profile, projRows, certs, avatarUrl);
   } catch (e) {
     console.warn('Erro ao carregar portfólio público:', e.message);
     container.innerHTML = `
@@ -1589,8 +1762,9 @@ async function renderPublicPortfolio(userId) {
 }
 
 // Monta o HTML da visão pública. Só usa campos autorizados do perfil:
-// name, track, goal, level e xp — nunca email, age ou is_admin.
-function renderPublicPortfolioHTML(profile, projRows, certs) {
+// name, track, goal, level, xp e avatar (foto) — nunca email, age ou
+// is_admin.
+function renderPublicPortfolioHTML(profile, projRows, certs, avatarUrl) {
   const skills = certs.map(c => {
     const subj = subjects.find(s => s.id === c.subject_id);
     return subj ? subj.name : (c.subject_id || 'Módulo');
@@ -1613,8 +1787,8 @@ function renderPublicPortfolioHTML(profile, projRows, certs) {
 
   return `
     <div class="text-center mb-8">
-      <div class="w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-purple-500 mx-auto mb-4 flex items-center justify-center text-3xl font-bold">
-        ${escapeHtml((profile.name || '?').charAt(0))}
+      <div class="avatar-circle w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-purple-500 mx-auto mb-4 flex items-center justify-center text-3xl font-bold">
+        ${avatarInnerHtml(avatarUrl, profile.name)}
       </div>
       <h2 class="text-2xl font-bold">${escapeHtml(profile.name || 'Aluno')}</h2>
       <p class="text-white/50">Estudante de Desenvolvimento de Sistemas</p>

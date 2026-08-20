@@ -440,6 +440,37 @@ input:focus-visible {
   background: linear-gradient(to bottom, #00ff88, #8b5cf6);
 }
 
+/* ===== FOTO DE PERFIL (AVATAR) ===== */
+/* Círculo com a foto ou, sem foto, a bolinha com a inicial. */
+.avatar-circle {
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #34d399 0%, #8b5cf6 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  overflow: hidden; /* corta a foto no formato redondo */
+}
+
+.avatar-foto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 9999px;
+}
+
+/* Tamanho usado no topo do app (dashboard) */
+.avatar-sm {
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+  display: inline-flex;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
 /* ===== CERTIFICADO VISUAL ===== */
 .cert-modal-panel {
   width: min(960px, calc(100vw - 1.5rem));

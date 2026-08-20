@@ -16,6 +16,7 @@ create table if not exists public.profiles (
   quiz_done boolean not null default false,
   is_admin boolean not null default false,
   portfolio_public boolean not null default false,
+  avatar_url text,
   created_at timestamptz not null default now()
 );
 
@@ -257,3 +258,85 @@ create policy certificates_public_read on public.certificates
 -- O papel anon só enxerga as colunas necessárias ao portfólio público.
 grant select (id, name, track, goal, level, xp, portfolio_public) on public.profiles to anon;
 grant select on public.user_projects, public.certificates to anon;
+
+-- ============================================================
+-- FOTO DE PERFIL (AVATAR) NO STORAGE (incremental)
+-- ------------------------------------------------------------
+-- Registrado em 2026-08-20 no mesmo padrão dos blocos
+-- anteriores. Em instalações EXISTENTES execute apenas este
+-- bloco no SQL Editor; em instalações novas (script inteiro) a
+-- coluna avatar_url já está no CREATE TABLE acima e todo o
+-- restante é idempotente.
+--
+-- Convenção de caminho dos arquivos:
+--   avatars/<id do usuário>/avatar.jpg  (ou avatar.png)
+-- O primeiro segmento do caminho identifica o dono — é isso que
+-- as políticas usam para autorizar.
+--
+-- Privacidade: a foto segue EXATAMENTE a regra do portfólio
+-- público. O bucket "avatars" é PRIVADO (public = false), ou
+-- seja, nenhuma imagem é servida por URL pública: toda exibição
+-- passa por URL assinada, e criar essa URL exige permissão de
+-- leitura no storage.objects. A política de leitura consulta
+-- profiles.portfolio_public — visitante anônimo (papel anon) só
+-- vê a foto de quem publicou o portfólio. Perfil privado = foto
+-- inacessível para anônimos, mesmo com o caminho exato do
+-- arquivo em mãos.
+-- ============================================================
+
+alter table public.profiles add column if not exists avatar_url text;
+
+-- O papel anon também precisa ler avatar_url nos perfis públicos
+-- (grant por coluna, sem abrir email/age/is_admin).
+grant select (avatar_url) on public.profiles to anon;
+
+-- Bucket privado: máximo de 2 MB por arquivo e somente JPG/PNG.
+-- O frontend valida tipo e tamanho antes do upload; estas
+-- restrições do bucket são a segunda linha de defesa.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mimetypes)
+values ('avatars', 'avatars', false, 2097152, '{image/jpeg,image/png}')
+on conflict (id) do update
+set public = false,
+    file_size_limit = excluded.file_size_limit,
+    allowed_mimetypes = excluded.allowed_mimetypes;
+
+-- O dono faz upload da própria foto (pasta com o seu id).
+drop policy if exists avatars_owner_insert on storage.objects;
+create policy avatars_owner_insert on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- O dono substitui a própria foto.
+drop policy if exists avatars_owner_update on storage.objects;
+create policy avatars_owner_update on storage.objects
+  for update to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text)
+  with check (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- O dono remove a própria foto.
+drop policy if exists avatars_owner_delete on storage.objects;
+create policy avatars_owner_delete on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'avatars' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- Leitura autenticada: a própria foto, sempre; fotos de outros
+-- perfis somente se o portfólio deles estiver público.
+drop policy if exists avatars_owner_read on storage.objects;
+create policy avatars_owner_read on storage.objects
+  for select to authenticated
+  using (
+    bucket_id = 'avatars'
+    and (
+      (storage.foldername(name))[1] = auth.uid()::text
+      or (storage.foldername(name))[1] in (select id::text from public.profiles where portfolio_public = true)
+    )
+  );
+
+-- Leitura anônima: apenas fotos de quem publicou o portfólio.
+drop policy if exists avatars_public_read on storage.objects;
+create policy avatars_public_read on storage.objects
+  for select to anon
+  using (
+    bucket_id = 'avatars'
+    and (storage.foldername(name))[1] in (select id::text from public.profiles where portfolio_public = true)
+  );
