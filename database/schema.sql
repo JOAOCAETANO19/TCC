@@ -215,12 +215,19 @@ create policy profiles_insert on public.profiles for insert with check (id=auth.
 drop policy if exists profiles_update on public.profiles;
 create policy profiles_update on public.profiles for update using (id=auth.uid() or public.current_is_admin()) with check (id=auth.uid() or public.current_is_admin());
 
+drop policy if exists quiz_select on public.quiz_answers;
 create policy quiz_select on public.quiz_answers for select using (user_id=auth.uid() or public.current_is_admin());
+drop policy if exists quiz_insert on public.quiz_answers;
 create policy quiz_insert on public.quiz_answers for insert with check (user_id=auth.uid());
+drop policy if exists quiz_update on public.quiz_answers;
 create policy quiz_update on public.quiz_answers for update using (user_id=auth.uid());
+drop policy if exists projects_select on public.projects;
 create policy projects_select on public.projects for select using (true);
+drop policy if exists progress_select on public.subject_progress;
 create policy progress_select on public.subject_progress for select using (user_id=auth.uid() or public.current_is_admin());
+drop policy if exists projects_user_select on public.user_projects;
 create policy projects_user_select on public.user_projects for select using (user_id=auth.uid() or public.current_is_admin());
+drop policy if exists certificates_select on public.certificates;
 create policy certificates_select on public.certificates for select using (user_id=auth.uid() or public.current_is_admin());
 -- award_exercise_xp insere o certificado do próprio aluno. Sem esta
 -- política (e sem o grant de INSERT abaixo) o RLS barra a escrita e o

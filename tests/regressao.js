@@ -394,7 +394,16 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     && /grant select, insert on public\.certificates to authenticated/.test(schema),
     'certificados têm política e grant de INSERT para o próprio aluno');
 
-  check(passed === 113, 'suíte contém 114 verificações de regressão');
+  // Reexecutar o schema.sql num banco já existente não pode abortar:
+  // toda create policy precisa de um drop policy if exists da mesma
+  // política imediatamente antes (mesmo nome, mesma tabela).
+  const allPolicies = [...schema.matchAll(/create policy\s+(\w+)\s+on\s+(public|storage)\.(\w+)/g)];
+  check(allPolicies.every((m) => {
+    const before = schema.slice(0, m.index);
+    return new RegExp(`drop policy if exists\\s+${m[1]}\\s+on\\s+${m[2]}\\.${m[3]};\\s*$`).test(before);
+  }), 'toda create policy tem drop policy if exists correspondente logo antes');
+
+  check(passed === 114, 'suíte contém 115 verificações de regressão');
   console.log(`\n${passed} verificações passaram.`);
   window.close();
 })().catch(error => {
