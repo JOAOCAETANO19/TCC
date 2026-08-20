@@ -374,7 +374,27 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   check(/avatars_public_read[\s\S]*portfolio_public = true/.test(schema), 'leitura anônima do Storage consulta portfolio_public');
   check(schema.includes("(storage.foldername(name))[1] = auth.uid()::text"), 'escrita no Storage exige a pasta do próprio usuário');
 
-  check(passed === 108, 'suíte contém 108 verificações de regressão');
+  // ============================================================
+  // XP NO SERVIDOR — trigger, SECURITY DEFINER e RLS dos certificados
+  // ============================================================
+  // O trigger revertia (new.xp := old.xp) o XP concedido pelas RPCs,
+  // porque elas rodavam como o próprio aluno. As quatro funções passaram
+  // a SECURITY DEFINER e o trigger libera esse caso.
+  check(/current_user = 'postgres'[\s\S]*?return new;/.test(schema),
+    'trigger protect_profile_fields libera as funções SECURITY DEFINER (postgres)');
+  check(/create or replace function public\.protect_profile_fields[\s\S]*?new\.xp := old\.xp/.test(schema),
+    'trigger continua revertendo XP/nível para o cliente comum');
+  check(['award_quiz_xp', 'award_subject_view_xp', 'award_exercise_xp', 'award_project_xp'].every(fn =>
+    new RegExp(`create or replace function public\\.${fn}\\([\\s\\S]*?language plpgsql security definer set search_path = public`).test(schema)),
+    'as 4 funções de XP são security definer com search_path fixo');
+  check(['admin_reset_xp', 'admin_delete_student'].every(fn =>
+    new RegExp(`create or replace function public\\.${fn}\\([\\s\\S]*?security invoker`).test(schema)),
+    'funções de admin seguem security invoker (autorizadas por current_is_admin)');
+  check(/create policy certificates_insert on public\.certificates for insert with check \(user_id=auth\.uid\(\)\)/.test(schema)
+    && /grant select, insert on public\.certificates to authenticated/.test(schema),
+    'certificados têm política e grant de INSERT para o próprio aluno');
+
+  check(passed === 113, 'suíte contém 114 verificações de regressão');
   console.log(`\n${passed} verificações passaram.`);
   window.close();
 })().catch(error => {

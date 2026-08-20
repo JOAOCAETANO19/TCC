@@ -102,9 +102,18 @@ returns integer language sql immutable as $$
 $$;
 
 -- Impede que o cliente altere XP/nível diretamente.
+-- As funções de premiação abaixo são SECURITY DEFINER e, por isso,
+-- rodam como o dono do schema (postgres). Esse caso é liberado aqui:
+-- sem essa exceção o trigger reverteria (new.xp := old.xp) todo XP
+-- concedido pelo servidor, e o UPDATE terminaria em silêncio, sem
+-- erro e sem efeito. O cliente (papel authenticated) continua
+-- bloqueado — ele nunca é 'postgres'.
 create or replace function public.protect_profile_fields()
 returns trigger language plpgsql as $$
 begin
+  if current_user = 'postgres' then
+    return new;
+  end if;
   if not (select coalesce(is_admin, false) from public.profiles where id = auth.uid()) then
     new.xp := old.xp;
     new.level := old.level;
@@ -125,7 +134,7 @@ $$;
 
 -- Todas as ações abaixo são atômicas e calculam a recompensa no servidor.
 create or replace function public.award_quiz_xp(p_answers jsonb, p_track text, p_goal text)
-returns void language plpgsql security invoker as $$
+returns void language plpgsql security definer set search_path = public as $$
 declare uid uuid := auth.uid();
 begin
   if uid is null then raise exception 'Não autenticado'; end if;
@@ -139,7 +148,7 @@ end;
 $$;
 
 create or replace function public.award_subject_view_xp(p_subject_id text)
-returns void language plpgsql security invoker as $$
+returns void language plpgsql security definer set search_path = public as $$
 declare uid uuid := auth.uid();
 begin
   if uid is null then raise exception 'Não autenticado'; end if;
@@ -151,7 +160,7 @@ end;
 $$;
 
 create or replace function public.award_exercise_xp(p_subject_id text, p_cert_title text)
-returns void language plpgsql security invoker as $$
+returns void language plpgsql security definer set search_path = public as $$
 declare uid uuid := auth.uid();
 begin
   if uid is null then raise exception 'Não autenticado'; end if;
@@ -164,7 +173,7 @@ end;
 $$;
 
 create or replace function public.award_project_xp(p_project_id integer)
-returns void language plpgsql security invoker as $$
+returns void language plpgsql security definer set search_path = public as $$
 declare uid uuid := auth.uid(); reward integer;
 begin
   if uid is null then raise exception 'Não autenticado'; end if;
@@ -213,12 +222,18 @@ create policy projects_select on public.projects for select using (true);
 create policy progress_select on public.subject_progress for select using (user_id=auth.uid() or public.current_is_admin());
 create policy projects_user_select on public.user_projects for select using (user_id=auth.uid() or public.current_is_admin());
 create policy certificates_select on public.certificates for select using (user_id=auth.uid() or public.current_is_admin());
+-- award_exercise_xp insere o certificado do próprio aluno. Sem esta
+-- política (e sem o grant de INSERT abaixo) o RLS barra a escrita e o
+-- exercício nunca emite certificado nem concede os 30 XP.
+drop policy if exists certificates_insert on public.certificates;
+create policy certificates_insert on public.certificates for insert with check (user_id=auth.uid());
 
 -- RPCs são expostos ao cliente, mas a autorização ocorre dentro das funções.
 grant usage on schema public to anon, authenticated;
 grant select on public.projects to anon, authenticated;
 grant select, insert, update on public.profiles, public.quiz_answers to authenticated;
-grant select on public.subject_progress, public.user_projects, public.certificates to authenticated;
+grant select on public.subject_progress, public.user_projects to authenticated;
+grant select, insert on public.certificates to authenticated;
 grant execute on all functions in schema public to authenticated;
 
 -- ============================================================
@@ -356,3 +371,43 @@ create policy avatars_public_read on storage.objects
     bucket_id = 'avatars'
     and (storage.foldername(name))[1] in (select id::text from public.profiles where portfolio_public = true)
   );
+
+-- ============================================================
+-- CORREÇÃO DO XP NO SERVIDOR (incremental)
+-- ------------------------------------------------------------
+-- Registrado em 2026-08-20. Sintoma: o aluno concluía quiz,
+-- matéria, exercício ou projeto e o XP continuava em 0 — sem
+-- nenhuma mensagem de erro na tela.
+--
+-- Causa: as funções award_* rodavam como SECURITY INVOKER, ou
+-- seja, com o papel do próprio aluno. O trigger
+-- trg_protect_profile_fields (que existe para impedir que o
+-- cliente edite XP à mão) então executava new.xp := old.xp e
+-- descartava a premiação. O UPDATE era bem-sucedido, mas não
+-- alterava nada — falha silenciosa. Além disso, o INSERT de
+-- award_exercise_xp era barrado pelo RLS de certificates, que
+-- só tinha política de SELECT.
+--
+-- Correção (já refletida nos blocos acima deste arquivo):
+--   1. protect_profile_fields libera current_user = 'postgres',
+--      que é como as funções SECURITY DEFINER se identificam;
+--   2. as 4 funções award_* viraram SECURITY DEFINER com
+--      search_path fixo em public (evita sequestro de search_path);
+--   3. certificates ganhou a política certificates_insert e o
+--      grant de INSERT para o papel authenticated.
+--
+-- As funções admin_* seguem SECURITY INVOKER de propósito: elas
+-- se autorizam por current_is_admin() e o trigger já abre exceção
+-- para administradores.
+--
+-- Em instalações NOVAS não há nada a fazer: rodar este arquivo
+-- inteiro já aplica tudo. Em instalações EXISTENTES, reexecute o
+-- script completo (todos os comandos são idempotentes) ou apenas
+-- os blocos citados acima.
+--
+-- Garantias preservadas (verificadas em PostgreSQL real):
+--   - o papel anon não consegue chamar as funções de XP;
+--   - um aluno não concede XP nem emite certificado para outro;
+--   - UPDATE direto em profiles.xp continua sem efeito;
+--   - repetir exercício/projeto não duplica XP.
+-- ============================================================
