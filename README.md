@@ -9,6 +9,7 @@ Plataforma educacional gamificada para estudantes de desenvolvimento de sistemas
 - **Modelo do certificado visual:** na tela de login, use **Ver modelo do certificado visual** (não grava dados no banco)
 - **Briefing dos projetos:** aba **Projetos** → botão **Ver briefing** em qualquer card
 - **Menu mobile:** abra o sistema em uma tela de até 768px e use o botão de menu no topo
+- **Portfólio público:** na aba **Portfólio**, use **Publicar portfólio** e compartilhe o link `https://joaocaetano19.github.io/TCC/#publico/<id>` — ele abre a visão pública do portfólio sem exigir login
 - **Scripts do banco de dados:** [`database/schema.sql`](database/schema.sql)
 - **Documentação técnica:** [`docs/documentacao-tecnica.md`](docs/documentacao-tecnica.md)
 
@@ -19,7 +20,8 @@ Plataforma educacional gamificada para estudantes de desenvolvimento de sistemas
 - **Certificado visual:** diploma renderizado em canvas, com download em PNG e impressão em PDF;
 - **Briefing de projetos:** cada um dos 9 projetos práticos abre um briefing no formato usado no mercado, com contexto do cliente, tecnologias sugeridas, requisitos funcionais, entregáveis e critérios de aceite;
 - **Menu mobile:** em telas de até 768px a barra lateral vira uma gaveta acionada pelo botão de menu, com fundo escurecido, fechamento pelo `Esc`, por clique fora e ao escolher uma aba;
-- **Portfólio digital:** reúne XP, projetos concluídos e certificados do aluno.
+- **Portfólio digital:** reúne XP, projetos concluídos e certificados do aluno;
+- **Portfólio público:** o aluno publica ou torna privado o portfólio na aba Portfólio e copia o link `#publico/<id>`, que abre uma visão pública sem login com apenas os dados autorizados.
 
 ## Tecnologias
 
@@ -63,7 +65,7 @@ set is_admin = true
 where email = 'administrador@exemplo.com';
 ```
 
-O script é idempotente para uma instalação nova e inclui tabelas, dados iniciais, índices, RLS, triggers e funções RPC utilizadas pela aplicação.
+O script é idempotente para uma instalação nova e inclui tabelas, dados iniciais, índices, RLS, triggers e funções RPC utilizadas pela aplicação. Instalações existentes precisam apenas do bloco **PORTFÓLIO PÚBLICO (incremental)** no final do arquivo (coluna `portfolio_public` + políticas de leitura anônima + grants por coluna).
 
 ## Estrutura
 

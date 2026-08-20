@@ -15,6 +15,7 @@ create table if not exists public.profiles (
   goal text,
   quiz_done boolean not null default false,
   is_admin boolean not null default false,
+  portfolio_public boolean not null default false,
   created_at timestamptz not null default now()
 );
 
@@ -218,3 +219,41 @@ grant select on public.projects to anon, authenticated;
 grant select, insert, update on public.profiles, public.quiz_answers to authenticated;
 grant select on public.subject_progress, public.user_projects, public.certificates to authenticated;
 grant execute on all functions in schema public to authenticated;
+
+-- ============================================================
+-- PORTFÓLIO PÚBLICO (incremental — já aplicado no Supabase)
+-- ------------------------------------------------------------
+-- Aplicado em 2026-08-20. Em instalações EXISTENTES basta
+-- executar este bloco no SQL Editor; em instalações novas ele é
+-- redundante (a coluna já está no CREATE TABLE acima) e seguro.
+--
+-- Regra: quem tem portfolio_public = true pode ter o perfil, os
+-- projetos concluídos e os certificados lidos SEM login (papel
+-- anon). As colunas sensíveis (email, age, is_admin) NÃO são
+-- concedidas ao papel anon — o grant é por coluna, então nem o
+-- cliente nem um atacante com a chave anon conseguem lê-las.
+-- ============================================================
+
+alter table public.profiles add column if not exists portfolio_public boolean not null default false;
+
+-- Leitura anônima de perfis publicados (só as linhas públicas).
+drop policy if exists profiles_public_read on public.profiles;
+create policy profiles_public_read on public.profiles
+  for select to anon
+  using (portfolio_public = true);
+
+-- Leitura anônima de projetos concluídos de quem publicou o portfólio.
+drop policy if exists user_projects_public_read on public.user_projects;
+create policy user_projects_public_read on public.user_projects
+  for select to anon
+  using (user_id in (select id from public.profiles where portfolio_public = true));
+
+-- Leitura anônima de certificados de quem publicou o portfólio.
+drop policy if exists certificates_public_read on public.certificates;
+create policy certificates_public_read on public.certificates
+  for select to anon
+  using (user_id in (select id from public.profiles where portfolio_public = true));
+
+-- O papel anon só enxerga as colunas necessárias ao portfólio público.
+grant select (id, name, track, goal, level, xp, portfolio_public) on public.profiles to anon;
+grant select on public.user_projects, public.certificates to anon;

@@ -359,6 +359,21 @@
       </div>
     </div>
 
+    <!-- PORTFÓLIO PÚBLICO (funciona sem login: #publico/<id>) -->
+    <div id="public-view" role="main" style="display:none;">
+      <div class="max-w-3xl mx-auto px-6 py-10">
+        <div class="text-center mb-8">
+          <button type="button" onclick="event.preventDefault(); leavePublicView()"
+                  class="text-white/40 hover:text-green-400 transition text-sm"
+                  aria-label="Voltar para o Pratica.dev">
+            ← Voltar ao Pratica.dev
+          </button>
+        </div>
+        <div id="public-portfolio"></div>
+        <p class="text-center text-white/25 text-xs mt-10">Portfólio público • Pratica.dev 2.0</p>
+      </div>
+    </div>
+
     <!-- QUIZ MODAL -->
     <div id="quiz-modal" class="modal-overlay hidden">
       <div class="card-glass rounded-2xl p-8 w-full max-w-lg mx-4 fade-in">
