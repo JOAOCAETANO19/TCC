@@ -4,6 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Pratica.dev 2.0</title>
+  <meta name="description" content="Pratica.dev 2.0 — plataforma de estudos, projetos e portfólio para estudantes de desenvolvimento de sistemas.">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:title" content="Pratica.dev 2.0">
+  <meta property="og:description" content="Seu mentor digital de carreira em tecnologia: estude, pratique e construa seu portfólio.">
+  <meta property="og:url" content="https://joaocaetano19.github.io/TCC/">
+  <meta property="og:image" content="https://joaocaetano19.github.io/TCC/apple-touch-icon.png">
+  <meta property="og:image:width" content="180">
+  <meta property="og:image:height" content="180">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Great+Vibes&family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,8 +24,16 @@
 <body class="h-full" style="background:#0f0f23; color:white; margin:0;">
   <div class="app-wrapper gradient-bg text-white" id="app" style="min-height:100vh; background:linear-gradient(135deg,#0f0f23 0%,#1a1a3e 50%,#0d0d2b 100%);">
 
+    <!-- BOOT SCREEN: evita exibir o login antes de confirmar a sessão -->
+    <div id="boot-screen" class="boot-screen" role="status" aria-live="polite">
+      <div class="boot-logo" aria-label="Pratica.dev 2.0"><span>&lt;/&gt;</span><b></b></div>
+      <div class="boot-spinner" aria-hidden="true"></div>
+      <p id="boot-message">Verificando sua sessão...</p>
+      <button id="boot-retry" type="button" class="btn-secondary px-5 py-2 rounded-lg hidden" onclick="init()">Tentar novamente</button>
+    </div>
+
     <!-- LOGIN SCREEN -->
-    <div id="login-screen" class="flex items-center justify-center h-full p-4" style="display:flex;">
+    <div id="login-screen" class="items-center justify-center h-full p-4" style="display:none;">
       <div class="card-glass rounded-2xl p-8 w-full max-w-md fade-in">
         <div class="text-center mb-8">
           <h1 class="text-3xl font-bold mb-2">
@@ -24,7 +44,7 @@
         </div>
 
         <!-- Login Form -->
-        <div id="login-form">
+        <form id="login-form" onsubmit="event.preventDefault(); handleLogin()">
           <div class="mb-4">
             <label class="block text-sm text-white/60 mb-1">Email</label>
             <input type="email" id="login-email" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-400" placeholder="seu@email.com">
@@ -34,12 +54,12 @@
             <input type="password" id="login-password" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-400" placeholder="••••••••">
           </div>
           <div id="login-error" class="text-red-400 text-sm mb-4 hidden"></div>
-          <button id="btn-login" onclick="handleLogin()" class="btn-primary w-full py-3 rounded-lg text-lg mb-3">Entrar</button>
-          <button onclick="showRegister()" class="btn-secondary w-full py-3 rounded-lg">Criar Conta</button>
-        </div>
+          <button id="btn-login" type="submit" class="btn-primary w-full py-3 rounded-lg text-lg mb-3">Entrar</button>
+          <button type="button" onclick="showRegister()" class="btn-secondary w-full py-3 rounded-lg">Criar Conta</button>
+        </form>
 
         <!-- Register Form -->
-        <div id="register-form" class="hidden">
+        <form id="register-form" class="hidden" onsubmit="event.preventDefault(); handleRegister()">
           <div class="mb-3">
             <label class="block text-sm text-white/60 mb-1">Nome completo</label>
             <input type="text" id="reg-name" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-400" placeholder="Seu nome">
@@ -57,9 +77,9 @@
             <input type="password" id="reg-password" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-400" placeholder="••••••••">
           </div>
           <div id="reg-error" class="text-red-400 text-sm mb-4 hidden"></div>
-          <button id="btn-register" onclick="handleRegister()" class="btn-primary w-full py-3 rounded-lg text-lg mb-3">Cadastrar</button>
-          <button onclick="showLogin()" class="btn-secondary w-full py-3 rounded-lg">Voltar ao Login</button>
-        </div>
+          <button id="btn-register" type="submit" class="btn-primary w-full py-3 rounded-lg text-lg mb-3">Cadastrar</button>
+          <button type="button" onclick="showLogin()" class="btn-secondary w-full py-3 rounded-lg">Voltar ao Login</button>
+        </form>
 
         <button type="button" onclick="openDemoCertificate()" class="w-full text-white/40 hover:text-green-400 text-xs mt-6 transition">
           Ver modelo do certificado visual
@@ -98,33 +118,33 @@
         <!-- SIDEBAR -->
         <nav id="app-sidebar" class="app-sidebar w-56 p-4 border-r border-white/5 overflow-y-auto flex-shrink-0">
           <div class="space-y-1">
-            <div class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard')">
+            <button type="button" class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard')">
               <i data-lucide="layout-dashboard" class="inline w-4 h-4 mr-2"></i>Dashboard
-            </div>
-            <div class="nav-item" data-tab="perfil" onclick="switchTab('perfil')">
+            </button>
+            <button type="button" class="nav-item" data-tab="perfil" onclick="switchTab('perfil')">
               <i data-lucide="user" class="inline w-4 h-4 mr-2"></i>Perfil
-            </div>
-            <div class="nav-item" data-tab="certificados" onclick="switchTab('certificados')">
+            </button>
+            <button type="button" class="nav-item" data-tab="certificados" onclick="switchTab('certificados')">
               <i data-lucide="award" class="inline w-4 h-4 mr-2"></i>Certificados
-            </div>
-            <div class="nav-item" data-tab="evolucao" onclick="switchTab('evolucao')">
+            </button>
+            <button type="button" class="nav-item" data-tab="evolucao" onclick="switchTab('evolucao')">
               <i data-lucide="trending-up" class="inline w-4 h-4 mr-2"></i>Evolução
-            </div>
-            <div class="nav-item" data-tab="estudos" onclick="switchTab('estudos')">
+            </button>
+            <button type="button" class="nav-item" data-tab="estudos" onclick="switchTab('estudos')">
               <i data-lucide="book-open" class="inline w-4 h-4 mr-2"></i>Centro de Estudos
-            </div>
-            <div class="nav-item" data-tab="sobre" onclick="switchTab('sobre')">
+            </button>
+            <button type="button" class="nav-item" data-tab="sobre" onclick="switchTab('sobre')">
               <i data-lucide="info" class="inline w-4 h-4 mr-2"></i>Sobre o Curso
-            </div>
-            <div class="nav-item" data-tab="projetos" onclick="switchTab('projetos')">
+            </button>
+            <button type="button" class="nav-item" data-tab="projetos" onclick="switchTab('projetos')">
               <i data-lucide="code-2" class="inline w-4 h-4 mr-2"></i>Projetos
-            </div>
-            <div class="nav-item" data-tab="portfolio" onclick="switchTab('portfolio')">
+            </button>
+            <button type="button" class="nav-item" data-tab="portfolio" onclick="switchTab('portfolio')">
               <i data-lucide="briefcase" class="inline w-4 h-4 mr-2"></i>Portfólio
-            </div>
-            <div class="nav-item hidden" id="nav-admin-item" data-tab="admin" onclick="switchTab('admin')">
+            </button>
+            <button type="button" class="nav-item hidden" id="nav-admin-item" data-tab="admin" onclick="switchTab('admin')">
               <i data-lucide="shield" class="inline w-4 h-4 mr-2"></i>Admin
-            </div>
+            </button>
           </div>
         </nav>
 

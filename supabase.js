@@ -64,7 +64,8 @@ async function supabaseLogout() {
 //  AUTH — Sessão ativa (para o init())
 // ============================================================
 async function getSession() {
-  const { data } = await db.auth.getSession();
+  const { data, error } = await db.auth.getSession();
+  if (error) throw new Error(error.message);
   return data.session;
 }
 
