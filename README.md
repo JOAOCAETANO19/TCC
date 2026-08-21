@@ -67,10 +67,12 @@ set is_admin = true
 where email = 'administrador@exemplo.com';
 ```
 
-O script é idempotente para uma instalação nova e inclui tabelas, dados iniciais, índices, RLS, triggers, funções RPC e o bucket de Storage utilizados pela aplicação. Instalações existentes precisam apenas dos blocos incrementais no final do arquivo:
+O script é idempotente para uma instalação nova e inclui tabelas, dados iniciais, índices, RLS, triggers, funções RPC e o bucket de Storage utilizados pela aplicação. Para uma instalação existente, execute:
 
-- **PORTFÓLIO PÚBLICO (incremental):** coluna `portfolio_public` + políticas de leitura anônima + grants por coluna;
-- **FOTO DE PERFIL (AVATAR) NO STORAGE (incremental):** coluna `avatar_url` + criação do bucket privado `avatars` + políticas do Storage (dono escreve; anon lê só fotos de portfólios publicados).
+- [`database/correcao-xp.sql`](database/correcao-xp.sql), para corrigir as funções de premiação do XP;
+- [`database/migracao-portfolio-avatar.sql`](database/migracao-portfolio-avatar.sql), para aplicar as colunas, políticas do portfólio público e o bucket privado `avatars`.
+
+Os dois arquivos incrementais são idempotentes. Os mesmos blocos também estão no final de `database/schema.sql`, para instalações que preferirem reaplicar o script completo.
 
 ## Estrutura
 

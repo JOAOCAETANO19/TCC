@@ -239,6 +239,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   check(!publicSection.includes("select('*')"), 'leitura pública nunca usa select(*)');
 
   const schema = fs.readFileSync(path.join(root, 'database/schema.sql'), 'utf8');
+  const avatarMigration = fs.readFileSync(path.join(root, 'database/migracao-portfolio-avatar.sql'), 'utf8');
   check(schema.includes('portfolio_public boolean not null default false'), 'schema.sql tem a coluna portfolio_public');
   check(schema.includes('profiles_public_read') && schema.includes('user_projects_public_read') && schema.includes('certificates_public_read'),
     'schema.sql tem as três políticas de leitura anônima');
@@ -403,7 +404,15 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     return new RegExp(`drop policy if exists\\s+${m[1]}\\s+on\\s+${m[2]}\\.${m[3]};\\s*$`).test(before);
   }), 'toda create policy tem drop policy if exists correspondente logo antes');
 
-  check(passed === 114, 'suíte contém 115 verificações de regressão');
+  const migrationPolicies = [...avatarMigration.matchAll(/create policy\s+(\w+)\s+on\s+(public|storage)\.(\w+)/g)];
+  check(avatarMigration.includes("values ('avatars', 'avatars', false)")
+    && migrationPolicies.length === 8
+    && migrationPolicies.every((m) => {
+      const before = avatarMigration.slice(0, m.index);
+      return new RegExp(`drop policy if exists\\s+${m[1]}\\s+on\\s+${m[2]}\\.${m[3]};\\s*$`).test(before);
+    }), 'migração existente do portfólio/avatar é idempotente e cria o bucket privado');
+
+  check(passed === 115, 'suíte contém 116 verificações de regressão');
   console.log(`\n${passed} verificações passaram.`);
   window.close();
 })().catch(error => {
