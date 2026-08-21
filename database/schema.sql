@@ -244,11 +244,12 @@ grant select, insert on public.certificates to authenticated;
 grant execute on all functions in schema public to authenticated;
 
 -- ============================================================
--- PORTFÓLIO PÚBLICO (incremental — já aplicado no Supabase)
+-- PORTFÓLIO PÚBLICO (incremental)
 -- ------------------------------------------------------------
--- Aplicado em 2026-08-20. Em instalações EXISTENTES basta
--- executar este bloco no SQL Editor; em instalações novas ele é
--- redundante (a coluna já está no CREATE TABLE acima) e seguro.
+-- Em instalações EXISTENTES execute este bloco no SQL Editor;
+-- em instalações novas ele é redundante (as colunas já estão no
+-- CREATE TABLE acima) e seguro. Também há uma versão destacada em
+-- database/migracao-portfolio-avatar.sql.
 --
 -- Regra: quem tem portfolio_public = true pode ter o perfil, os
 -- projetos concluídos e os certificados lidos SEM login (papel
@@ -284,11 +285,10 @@ grant select on public.user_projects, public.certificates to anon;
 -- ============================================================
 -- FOTO DE PERFIL (AVATAR) NO STORAGE (incremental)
 -- ------------------------------------------------------------
--- Registrado em 2026-08-20 no mesmo padrão dos blocos
--- anteriores. Em instalações EXISTENTES execute apenas este
--- bloco no SQL Editor; em instalações novas (script inteiro) a
--- coluna avatar_url já está no CREATE TABLE acima e todo o
--- restante é idempotente.
+-- Em instalações EXISTENTES execute este bloco no SQL Editor;
+-- em instalações novas (script inteiro) a coluna avatar_url já
+-- está no CREATE TABLE acima e todo o restante é idempotente. Há
+-- uma versão destacada em database/migracao-portfolio-avatar.sql.
 --
 -- Convenção de caminho dos arquivos:
 --   avatars/<id do usuário>/avatar.jpg  (ou avatar.png)

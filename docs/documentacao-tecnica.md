@@ -103,7 +103,7 @@ As políticas `profiles_public_read`, `user_projects_public_read` e `certificate
 4. Toda exibição usa **URL assinada** (`createSignedUrl`, validade de 1h), renovada no boot, ao salvar/remover e ao carregar a visão pública. Se a assinatura falhar ou não houver foto, a interface cai no fallback da bolinha com a inicial — no topo (dashboard), na aba Perfil, na aba Portfólio e na rota `#publico/<id>`.
 5. A privacidade é a mesma do portfólio: o bucket é privado (`public = false`, sem URL pública) e as políticas do Storage consultam `profiles.portfolio_public` — o papel `anon` só consegue assinar a URL da foto de quem publicou o portfólio; perfil privado nunca expõe a foto. O dono faz upload/update/delete apenas na própria pasta, conferido pelo primeiro segmento do caminho (`storage.foldername(name))[1] = auth.uid()`).
 
-O bloco incremental correspondente (coluna `avatar_url`, grant da coluna ao `anon`, criação do bucket com limite de 2 MB e MIME restrito, e as cinco políticas de `storage.objects`) está no final de `database/schema.sql`.
+O bloco incremental correspondente (coluna `avatar_url`, grant da coluna ao `anon`, criação do bucket com limite de 2 MB e MIME restrito, e as cinco políticas de `storage.objects`) está no final de `database/schema.sql` e pode ser aplicado diretamente com [`database/migracao-portfolio-avatar.sql`](../database/migracao-portfolio-avatar.sql).
 
 ## 5. Segurança
 
@@ -121,7 +121,7 @@ O bloco incremental correspondente (coluna `avatar_url`, grant da coluna ao `ano
 ## 6. Instalação e configuração
 
 1. Crie um projeto Supabase.
-2. Execute `database/schema.sql` no SQL Editor.
+2. Execute `database/schema.sql` no SQL Editor. Se o banco já existia, execute também `database/correcao-xp.sql` e `database/migracao-portfolio-avatar.sql`.
 3. Ajuste `SUPABASE_URL` e `SUPABASE_ANON` em `supabase.js` quando necessário.
 4. Sirva a raiz com `python3 -m http.server 8080`.
 5. Abra `http://localhost:8080` e faça um cadastro.
