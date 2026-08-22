@@ -51,7 +51,12 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     setAuth(v) { currentAuthId = v; },
     setCompleted(v) { completedProjects = v; },
     getCompleted() { return completedProjects.slice(); },
-    setCerts(v) { userCerts = v; }
+    setCerts(v) { userCerts = v; },
+    setProgress(v) { userSubjectProgress = v; },
+    getProgress() { return userSubjectProgress.slice(); },
+    setQuizRows(v) { userQuizRows = v; },
+    getExtras() { return subjectExtras; },
+    getSubjects() { return subjects; }
   };`);
   await tick();
 
@@ -521,7 +526,99 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     && /avatars_public_read[\s\S]*?is_blocked, false/.test(blockMigration),
     'bloqueados somem dos portfólios públicos (perfil, projetos, certificados e foto)');
 
-  check(passed === 133, 'suíte contém 134 verificações de regressão');
+  // ============================================================
+  // MEU NIVELAMENTO — card no Perfil com as respostas do quiz
+  // ============================================================
+  check(html.includes('id="prof-nivelamento"') && html.includes('Meu nivelamento'),
+    'Perfil tem o card Meu nivelamento');
+
+  window.__testHooks.setUser({ id: 'u1', name: 'Ana', age: 17, goal: 'Estágio', track: 'Front-end', level: 1, xp: 0, quiz_done: false, is_admin: false });
+  window.__testHooks.setQuizRows([]);
+  window.renderProfile();
+  check(window.document.getElementById('prof-nivelamento').textContent.includes('não realizado'),
+    'sem quiz, o nivelamento avisa que ainda não foi realizado');
+
+  window.__testHooks.setUser({ id: 'u1', name: 'Ana', age: 17, goal: 'Estágio', track: 'Front-end', level: 1, xp: 0, quiz_done: true, is_admin: false });
+  window.__testHooks.setQuizRows([
+    { question: 1, answer: 'Iniciante total' },
+    { question: 2, answer: 'Front-end' },
+    { question: 3, answer: 'Estágio em 6 meses' }
+  ]);
+  window.renderProfile();
+  const nivel = window.document.getElementById('prof-nivelamento');
+  check(nivel.textContent.includes('Qual área mais te interessa?') && nivel.textContent.includes('Front-end'),
+    'nivelamento exibe a pergunta real (e não o número) junto com a resposta');
+  check(nivel.textContent.includes('Qual seu nível atual?') && nivel.textContent.includes('Qual seu objetivo profissional?'),
+    'nivelamento mostra as três respostas do quiz');
+
+  // ============================================================
+  // CENTRO DE ESTUDOS — progresso, trilha, selo ✓ e conteúdo rico
+  // ============================================================
+  check(html.includes('id="subjects-counter"') && html.includes('id="studies-track"'),
+    'Centro de Estudos tem o contador e a área de trilha recomendada');
+
+  const extras = window.__testHooks.getExtras();
+  const subjectsList = window.__testHooks.getSubjects();
+  const extrasValues = Object.values(extras);
+  check(Object.keys(extras).length === subjectsList.length && subjectsList.length === 12,
+    'existem exatamente 12 matérias com conteúdo extra');
+  check(extrasValues.every(e => e.level && e.time),
+    'as 12 matérias têm nível e tempo estimado');
+  check(extrasValues.every(e => Array.isArray(e.mistakes) && e.mistakes.length >= 3),
+    'as 12 matérias têm a seção Erros comuns');
+  check(extrasValues.every(e => Array.isArray(e.deepDive) && e.deepDive.length >= 3 && e.deepDive.every(d => d.label && d.url)),
+    'as 12 matérias têm links para se aprofundar');
+  check(extrasValues.every(e => Array.isArray(e.quiz) && e.quiz.length === 3 && e.quiz.every(q => q.q && Array.isArray(q.options) && Number.isInteger(q.answer))),
+    'as 12 matérias têm quiz de conhecimento com 3 perguntas');
+
+  window.__testHooks.setUser({ id: 'u1', name: 'Ana', track: 'Front-end', level: 1, xp: 0, quiz_done: true, is_admin: false });
+  window.__testHooks.setProgress([]);
+  window.renderSubjects();
+  check(window.document.getElementById('subjects-counter').textContent === '0 de 12',
+    'contador começa em 0 de 12');
+  check(window.document.getElementById('studies-track').textContent.includes('Front-end'),
+    'trilha recomendada mostra a área do quiz');
+
+  const gridEmpty = window.document.getElementById('subjects-grid');
+  check(gridEmpty.textContent.includes('Comece por aqui'),
+    'com a trilha vazia, a primeira matéria ganha o destaque Comece por aqui');
+
+  window.__testHooks.setProgress(['html', 'css']);
+  window.renderSubjects();
+  check(window.document.getElementById('subjects-counter').textContent === '2 de 12',
+    'contador reflete as matérias já estudadas');
+  const grid = window.document.getElementById('subjects-grid');
+  check(grid.textContent.includes('✓ Estudada'),
+    'matérias estudadas exibem o selo ✓');
+  const jsCard = [...grid.querySelectorAll('.subject-card')].find(c => c.textContent.includes('JavaScript'));
+  check(!!jsCard && jsCard.textContent.includes('Comece por aqui'),
+    'Comece por aqui pula as matérias estudadas e aponta para a próxima da trilha');
+
+  // Matéria aberta: erros comuns, links e teste rápido
+  window.fetchProfile = async () => ({ id: 'u1', name: 'Ana', age: 17, goal: 'Estágio', track: 'Front-end', level: 1, xp: 0, quiz_done: true, is_admin: false });
+  await window.openSubject('html');
+  const studyContent = window.document.getElementById('study-content');
+  check(studyContent.textContent.includes('Erros comuns') && studyContent.textContent.includes('Para se aprofundar'),
+    'matéria aberta mostra Erros comuns e Para se aprofundar');
+  check(studyContent.textContent.includes('Teste rápido de conhecimento'),
+    'matéria aberta mostra o teste rápido de conhecimento');
+  check(window.document.getElementById('subject-quiz').querySelectorAll('button').length === 9,
+    'quiz por matéria tem 3 perguntas com 3 opções cada');
+
+  // Correção na hora: acerto e erro são destacados imediatamente
+  window.answerSubjectQuiz('html', 0, 0); // opção correta é a 0
+  const q0First = window.document.getElementById('sq-html-0-0');
+  check(q0First.textContent.includes('✓') && q0First.disabled,
+    'resposta correta ganha ✓ na hora e trava as opções');
+  window.answerSubjectQuiz('html', 1, 1); // erra (correta é a 0)
+  const q1Wrong = window.document.getElementById('sq-html-1-1');
+  const q1Right = window.document.getElementById('sq-html-1-0');
+  check(q1Wrong.textContent.includes('✗') && q1Right.textContent.includes('✓'),
+    'após errar, a opção errada ganha ✗ e a correta é destacada');
+  check(window.document.getElementById('subject-quiz-score').textContent.includes('1 de 2'),
+    'placar do teste rápido contabiliza acertos na hora');
+
+  check(passed === 155, 'suíte contém 156 verificações de regressão');
   console.log(`\n${passed} verificações passaram.`);
   window.close();
 })().catch(error => {
