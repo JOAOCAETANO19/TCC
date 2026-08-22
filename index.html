@@ -32,9 +32,96 @@
       <button id="boot-retry" type="button" class="btn-secondary px-5 py-2 rounded-lg hidden" onclick="init()">Tentar novamente</button>
     </div>
 
+    <!-- PÁGINA INICIAL (LANDING): primeira tela de quem chega sem login -->
+    <div id="landing-screen" style="display:none;">
+      <header class="landing-topbar">
+        <div class="landing-topbar-inner">
+          <p class="text-xl font-bold" aria-label="Pratica.dev 2.0">
+            <span class="text-green-400 font-mono">&lt;</span>Pratica.dev<span class="text-green-400 font-mono">/&gt;</span>
+            <span class="text-purple-400 text-sm">2.0</span>
+          </p>
+          <nav class="flex items-center gap-3" aria-label="Entrar ou criar conta">
+            <button type="button" id="landing-btn-login" onclick="openLoginFromLanding()"
+                    class="btn-secondary px-5 py-2 rounded-lg text-sm font-semibold">Entrar</button>
+            <button type="button" id="landing-btn-register" onclick="openRegisterFromLanding()"
+                    class="btn-primary px-5 py-2 rounded-lg text-sm font-semibold">Cadastrar</button>
+          </nav>
+        </div>
+      </header>
+
+      <section class="landing-hero">
+        <p class="landing-eyebrow">Curso técnico em Desenvolvimento de Sistemas</p>
+        <h1 class="landing-title">Estude, pratique e construa seu <span class="landing-highlight">portfólio</span> em tecnologia</h1>
+        <p class="landing-sub">O Pratica.dev 2.0 é o seu mentor digital de carreira: um lugar para estudar as matérias do curso, concluir projetos reais, ganhar XP, emitir certificados e mostrar sua evolução ao mercado.</p>
+        <div class="flex gap-3 justify-center flex-wrap">
+          <button type="button" onclick="openRegisterFromLanding()" class="btn-primary px-8 py-3 rounded-lg text-lg">Começar agora — criar conta</button>
+          <button type="button" onclick="openLoginFromLanding()" class="btn-secondary px-8 py-3 rounded-lg text-lg">Já tenho conta</button>
+        </div>
+      </section>
+
+      <section class="landing-section" aria-label="O que a plataforma oferece">
+        <h2 class="landing-section-title">Tudo o que você precisa para evoluir</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+          <div class="card-glass rounded-xl p-6 landing-card">
+            <p class="text-3xl mb-3" aria-hidden="true">📚</p>
+            <h3 class="font-bold mb-2">Centro de Estudos</h3>
+            <p class="text-white/60 text-sm leading-relaxed">Conteúdo organizado por matéria: HTML, CSS, JavaScript, SQL, Python e muito mais, com teoria e exercícios.</p>
+          </div>
+          <div class="card-glass rounded-xl p-6 landing-card">
+            <p class="text-3xl mb-3" aria-hidden="true">🧩</p>
+            <h3 class="font-bold mb-2">Projetos reais</h3>
+            <p class="text-white/60 text-sm leading-relaxed">Briefing, prática e recompensa: cada projeto concluído vale XP e faz você subir de nível.</p>
+          </div>
+          <div class="card-glass rounded-xl p-6 landing-card">
+            <p class="text-3xl mb-3" aria-hidden="true">🏅</p>
+            <h3 class="font-bold mb-2">Certificados visuais</h3>
+            <p class="text-white/60 text-sm leading-relaxed">Cada conquista gera um diploma visual da Pratica.dev, pronto para imprimir ou baixar em PNG.</p>
+          </div>
+          <div class="card-glass rounded-xl p-6 landing-card">
+            <p class="text-3xl mb-3" aria-hidden="true">🚀</p>
+            <h3 class="font-bold mb-2">Portfólio público</h3>
+            <p class="text-white/60 text-sm leading-relaxed">Publique suas conquistas com um link único e compartilhe sua evolução com recrutadores.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="landing-section" aria-label="Como funciona">
+        <h2 class="landing-section-title">Como funciona</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
+          <div class="landing-step">
+            <span class="landing-step-number" aria-hidden="true">1</span>
+            <h3 class="font-bold mb-1">Crie sua conta grátis</h3>
+            <p class="text-white/50 text-sm">Cadastro rápido: nome, idade, email e senha. Depois é só entrar.</p>
+          </div>
+          <div class="landing-step">
+            <span class="landing-step-number" aria-hidden="true">2</span>
+            <h3 class="font-bold mb-1">Estude e pratique</h3>
+            <p class="text-white/50 text-sm">Siga o Centro de Estudos, conclua projetos e acompanhe sua evolução de XP e nível.</p>
+          </div>
+          <div class="landing-step">
+            <span class="landing-step-number" aria-hidden="true">3</span>
+            <h3 class="font-bold mb-1">Compartilhe seu portfólio</h3>
+            <p class="text-white/50 text-sm">Publique seu portfólio e mostre seus projetos e certificados para o mercado.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="landing-cta">
+        <h2 class="text-2xl font-bold mb-2">Pronto para começar sua jornada?</h2>
+        <p class="text-white/50 mb-6">Do primeiro código ao primeiro emprego: sua carreira em tecnologia começa aqui.</p>
+        <button type="button" onclick="openRegisterFromLanding()" class="btn-primary px-8 py-3 rounded-lg text-lg">Cadastrar gratuitamente</button>
+      </section>
+
+      <footer class="landing-footer">Pratica.dev 2.0 • Projeto de TCC — Técnico em Desenvolvimento de Sistemas</footer>
+    </div>
+
     <!-- LOGIN SCREEN -->
     <div id="login-screen" class="items-center justify-center h-full p-4" style="display:none;">
       <div class="card-glass rounded-2xl p-8 w-full max-w-md fade-in">
+        <div class="text-center mb-2">
+          <button type="button" id="btn-back-to-landing" onclick="backToLanding()"
+                  class="text-white/40 hover:text-green-400 transition text-sm">← Voltar para a página inicial</button>
+        </div>
         <div class="text-center mb-8">
           <h1 class="text-3xl font-bold mb-2">
             <span class="text-green-400 font-mono">&lt;</span>Pratica.dev<span class="text-green-400 font-mono">/&gt;</span>

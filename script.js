@@ -789,6 +789,43 @@ function showLogin() {
 }
 
 
+// ===== PÁGINA INICIAL (LANDING) =====
+// Quem chega sem sessão vê a página inicial apresentando a plataforma
+// (estilo Alura), em vez de cair direto no login. Os botões Entrar e
+// Cadastrar abrem as telas de autenticação, e o logout volta para cá.
+// As rotas públicas #publico/<id> seguem sem passar por aqui.
+
+function showLanding() {
+  document.getElementById('boot-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-app').classList.add('hidden');
+  document.getElementById('landing-screen').style.display = 'block';
+}
+
+function hideLanding() {
+  const landing = document.getElementById('landing-screen');
+  if (landing) landing.style.display = 'none';
+}
+
+function openLoginFromLanding() {
+  showLogin(); // garante o formulário de login (e não o de cadastro)
+  document.getElementById('login-error').classList.add('hidden');
+  hideLanding();
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+function openRegisterFromLanding() {
+  showRegister();
+  document.getElementById('reg-error').classList.add('hidden');
+  hideLanding();
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
+function backToLanding() {
+  showLanding();
+}
+
+
 // ===== UI GENÉRICA: CONFIRMAÇÃO E TOAST =====
 // Substituem confirm()/alert() nativos do navegador por um modal e
 // notificações no mesmo visual do resto do site.
@@ -892,8 +929,7 @@ async function handleLogout() {
   userCerts         = [];
   currentAvatarUrl  = null;
   cancelAvatarPreview();
-  document.getElementById('main-app').classList.add('hidden');
-  document.getElementById('login-screen').style.display = 'flex';
+  showLanding();
 }
 
 
@@ -955,6 +991,7 @@ async function loadUserExtrasSafe(userId) {
 function enterApp() {
   document.getElementById('boot-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'none';
+  hideLanding();
   document.getElementById('main-app').classList.remove('hidden');
 
   // Mostra a aba Admin no menu só para quem tem is_admin = true no perfil
@@ -1692,6 +1729,7 @@ function publicPortfolioIdFromHash() {
 function openPublicView() {
   document.getElementById('boot-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'none';
+  hideLanding();
   document.getElementById('main-app').classList.add('hidden');
   document.getElementById('public-view').style.display = 'block';
   renderPublicPortfolio(publicPortfolioIdFromHash());
@@ -2077,6 +2115,7 @@ async function init() {
   message.textContent = 'Verificando sua sessão...';
   retry.classList.add('hidden');
   document.getElementById('login-screen').style.display = 'none';
+  hideLanding();
 
   const slowWarning = setTimeout(() => {
     message.textContent = 'A conexão está demorando mais que o normal. Ainda estamos tentando...';
@@ -2105,8 +2144,8 @@ async function init() {
         loadUserExtrasSafe(session.user.id);
       }
     } else {
-      boot.style.display = 'none';
-      document.getElementById('login-screen').style.display = 'flex';
+      // Sem sessão: apresenta a página inicial em vez de cair no login.
+      showLanding();
     }
   } catch (e) {
     clearTimeout(slowWarning);
