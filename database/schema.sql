@@ -15,6 +15,7 @@ create table if not exists public.profiles (
   goal text,
   quiz_done boolean not null default false,
   is_admin boolean not null default false,
+  is_blocked boolean not null default false,
   portfolio_public boolean not null default false,
   avatar_url text,
   created_at timestamptz not null default now()
@@ -129,7 +130,28 @@ for each row execute function public.protect_profile_fields();
 
 create or replace function public.current_is_admin()
 returns boolean language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.profiles where id = auth.uid() and is_admin);
+  select exists (select 1 from public.profiles where id = auth.uid() and is_admin and not coalesce(is_blocked, false));
+$$;
+
+-- Um usuário bloqueado (is_blocked = true) é tratado como deslogado em toda
+-- regra do banco: perde acesso a dados protegidos e deixa de ser
+-- administrador. A flag is_blocked só é alterada pela função
+-- admin_set_blocked (que exige um admin ativo e nunca age sobre si mesma).
+create or replace function public.current_is_blocked()
+returns boolean language sql stable security definer set search_path = public as $$
+  select coalesce((select is_blocked from public.profiles where id = auth.uid()), false);
+$$;
+
+-- Guarda usada pelas funções que concedem XP e pelas funções de admin:
+-- se o usuário logado estiver bloqueado, a ação é recusada no banco
+-- (não depende da interface).
+create or replace function public.ensure_not_blocked()
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if public.current_is_blocked() then
+    raise exception 'Sua conta foi bloqueada pelo administrador';
+  end if;
+end;
 $$;
 
 -- Todas as ações abaixo são atômicas e calculam a recompensa no servidor.
@@ -138,6 +160,7 @@ returns void language plpgsql security definer set search_path = public as $$
 declare uid uuid := auth.uid();
 begin
   if uid is null then raise exception 'Não autenticado'; end if;
+  perform public.ensure_not_blocked();
   insert into public.quiz_answers (user_id, question, answer)
   select uid, (row_number() over ())::integer, value::text
   from jsonb_array_elements_text(coalesce(p_answers, '[]'::jsonb)) value
@@ -152,6 +175,7 @@ returns void language plpgsql security definer set search_path = public as $$
 declare uid uuid := auth.uid();
 begin
   if uid is null then raise exception 'Não autenticado'; end if;
+  perform public.ensure_not_blocked();
   if not exists (select 1 from public.subject_progress where user_id=uid and subject_id=p_subject_id) then
     insert into public.subject_progress(user_id, subject_id) values (uid, p_subject_id);
     update public.profiles set xp=xp+10, level=public.recalculate_level(xp+10) where id=uid;
@@ -164,6 +188,7 @@ returns void language plpgsql security definer set search_path = public as $$
 declare uid uuid := auth.uid();
 begin
   if uid is null then raise exception 'Não autenticado'; end if;
+  perform public.ensure_not_blocked();
   insert into public.certificates(user_id, subject_id, title) values(uid,p_subject_id,p_cert_title)
     on conflict (user_id, subject_id) do nothing;
   if found then
@@ -177,6 +202,7 @@ returns void language plpgsql security definer set search_path = public as $$
 declare uid uuid := auth.uid(); reward integer;
 begin
   if uid is null then raise exception 'Não autenticado'; end if;
+  perform public.ensure_not_blocked();
   select xp_reward into reward from public.projects where id=p_project_id;
   if reward is null then raise exception 'Projeto inexistente'; end if;
   insert into public.user_projects(user_id, project_id) values(uid,p_project_id) on conflict do nothing;
@@ -188,6 +214,7 @@ create or replace function public.admin_reset_xp(target_id uuid)
 returns void language plpgsql security invoker as $$
 begin
   if not public.current_is_admin() then raise exception 'Acesso negado'; end if;
+  perform public.ensure_not_blocked();
   update public.profiles set xp=0, level=1 where id=target_id;
 end;
 $$;
@@ -196,7 +223,21 @@ create or replace function public.admin_delete_student(target_id uuid)
 returns void language plpgsql security invoker as $$
 begin
   if not public.current_is_admin() then raise exception 'Acesso negado'; end if;
+  perform public.ensure_not_blocked();
   delete from public.profiles where id=target_id and id <> auth.uid();
+end;
+$$;
+
+-- Bloquear/desbloquear um aluno. Só um admin ativo (não bloqueado) pode
+-- chamar, e nunca é permitido bloquear a própria conta — a trava é validada
+-- no banco, não apenas na interface.
+create or replace function public.admin_set_blocked(target_id uuid, blocked boolean)
+returns void language plpgsql security invoker as $$
+begin
+  if not public.current_is_admin() then raise exception 'Acesso negado'; end if;
+  perform public.ensure_not_blocked();
+  if target_id = auth.uid() then raise exception 'Você não pode bloquear a própria conta'; end if;
+  update public.profiles set is_blocked = coalesce(blocked, false) where id = target_id;
 end;
 $$;
 
@@ -216,19 +257,19 @@ drop policy if exists profiles_update on public.profiles;
 create policy profiles_update on public.profiles for update using (id=auth.uid() or public.current_is_admin()) with check (id=auth.uid() or public.current_is_admin());
 
 drop policy if exists quiz_select on public.quiz_answers;
-create policy quiz_select on public.quiz_answers for select using (user_id=auth.uid() or public.current_is_admin());
+create policy quiz_select on public.quiz_answers for select using ((user_id=auth.uid() or public.current_is_admin()) and not public.current_is_blocked());
 drop policy if exists quiz_insert on public.quiz_answers;
-create policy quiz_insert on public.quiz_answers for insert with check (user_id=auth.uid());
+create policy quiz_insert on public.quiz_answers for insert with check (user_id=auth.uid() and not public.current_is_blocked());
 drop policy if exists quiz_update on public.quiz_answers;
-create policy quiz_update on public.quiz_answers for update using (user_id=auth.uid());
+create policy quiz_update on public.quiz_answers for update using (user_id=auth.uid() and not public.current_is_blocked());
 drop policy if exists projects_select on public.projects;
 create policy projects_select on public.projects for select using (true);
 drop policy if exists progress_select on public.subject_progress;
-create policy progress_select on public.subject_progress for select using (user_id=auth.uid() or public.current_is_admin());
+create policy progress_select on public.subject_progress for select using ((user_id=auth.uid() or public.current_is_admin()) and not public.current_is_blocked());
 drop policy if exists projects_user_select on public.user_projects;
-create policy projects_user_select on public.user_projects for select using (user_id=auth.uid() or public.current_is_admin());
+create policy projects_user_select on public.user_projects for select using ((user_id=auth.uid() or public.current_is_admin()) and not public.current_is_blocked());
 drop policy if exists certificates_select on public.certificates;
-create policy certificates_select on public.certificates for select using (user_id=auth.uid() or public.current_is_admin());
+create policy certificates_select on public.certificates for select using ((user_id=auth.uid() or public.current_is_admin()) and not public.current_is_blocked());
 -- award_exercise_xp insere o certificado do próprio aluno. Sem esta
 -- política (e sem o grant de INSERT abaixo) o RLS barra a escrita e o
 -- exercício nunca emite certificado nem concede os 30 XP.
@@ -260,23 +301,24 @@ grant execute on all functions in schema public to authenticated;
 
 alter table public.profiles add column if not exists portfolio_public boolean not null default false;
 
--- Leitura anônima de perfis publicados (só as linhas públicas).
+-- Leitura anônima de perfis publicados (só as linhas públicas, e nunca
+-- de quem está bloqueado — bloqueados somem dos portfólios públicos).
 drop policy if exists profiles_public_read on public.profiles;
 create policy profiles_public_read on public.profiles
   for select to anon
-  using (portfolio_public = true);
+  using (portfolio_public = true and not coalesce(is_blocked, false));
 
 -- Leitura anônima de projetos concluídos de quem publicou o portfólio.
 drop policy if exists user_projects_public_read on public.user_projects;
 create policy user_projects_public_read on public.user_projects
   for select to anon
-  using (user_id in (select id from public.profiles where portfolio_public = true));
+  using (user_id in (select id from public.profiles where portfolio_public = true and not coalesce(is_blocked, false)));
 
 -- Leitura anônima de certificados de quem publicou o portfólio.
 drop policy if exists certificates_public_read on public.certificates;
 create policy certificates_public_read on public.certificates
   for select to anon
-  using (user_id in (select id from public.profiles where portfolio_public = true));
+  using (user_id in (select id from public.profiles where portfolio_public = true and not coalesce(is_blocked, false)));
 
 -- O papel anon só enxerga as colunas necessárias ao portfólio público.
 grant select (id, name, track, goal, level, xp, portfolio_public) on public.profiles to anon;
@@ -366,17 +408,18 @@ create policy avatars_owner_read on storage.objects
     bucket_id = 'avatars'
     and (
       (storage.foldername(name))[1] = auth.uid()::text
-      or (storage.foldername(name))[1] in (select id::text from public.profiles where portfolio_public = true)
+      or (storage.foldername(name))[1] in (select id::text from public.profiles where portfolio_public = true and not coalesce(is_blocked, false))
     )
   );
 
--- Leitura anônima: apenas fotos de quem publicou o portfólio.
+-- Leitura anônima: apenas fotos de quem publicou o portfólio (e não está
+-- bloqueado — bloqueados somem do portfólio público, foto incluída).
 drop policy if exists avatars_public_read on storage.objects;
 create policy avatars_public_read on storage.objects
   for select to anon
   using (
     bucket_id = 'avatars'
-    and (storage.foldername(name))[1] in (select id::text from public.profiles where portfolio_public = true)
+    and (storage.foldername(name))[1] in (select id::text from public.profiles where portfolio_public = true and not coalesce(is_blocked, false))
   );
 
 -- ============================================================
@@ -418,3 +461,27 @@ create policy avatars_public_read on storage.objects
 --   - UPDATE direto em profiles.xp continua sem efeito;
 --   - repetir exercício/projeto não duplica XP.
 -- ============================================================
+
+-- ============================================================
+-- BLOQUEIO ADMINISTRATIVO DE USUÁRIOS (incremental)
+-- ------------------------------------------------------------
+-- Em instalações EXISTENTES execute database/migracao-bloqueio-usuarios.sql
+-- no SQL Editor; em instalações novas este bloco já vem aplicado (a coluna
+-- is_blocked está no CREATE TABLE acima e as funções/políticas já existem).
+--
+-- Regra de negócio:
+--   - admin_set_blocked(target_id, blocked) bloqueia/desbloqueia um aluno;
+--     só um admin ativo chama, e nunca é permitido bloquear a própria conta
+--     (validado dentro da função, não só na interface).
+--   - um usuário bloqueado:
+--       • não entra: o cliente detecta is_blocked logo após o login e recusa
+--         a sessão (o banco é a fonte da verdade da flag);
+--       • não executa ações de XP: ensure_not_blocked() barra as 4 funções
+--         award_* dentro do banco;
+--       • não acessa dados protegidos: as políticas de leitura/escrita e
+--         current_is_admin() tratam bloqueados como deslogados;
+--       • não aparece em portfólios públicos: as políticas anon e as do
+--         Storage exigem is_blocked = false.
+-- ============================================================
+
+alter table public.profiles add column if not exists is_blocked boolean not null default false;

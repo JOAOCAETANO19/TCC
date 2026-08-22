@@ -241,6 +241,20 @@ async function adminDeleteStudent(targetId) {
 }
 
 // ============================================================
+//  ADMIN — Bloquear/desbloquear um aluno
+//  Chama a função admin_set_blocked no banco, que exige um admin
+//  ativo (não bloqueado) e impede bloquear a própria conta. A
+//  trava é validada no banco, não apenas pela interface.
+// ============================================================
+async function adminSetBlocked(targetId, blocked) {
+  const { error } = await db.rpc('admin_set_blocked', {
+    target_id: targetId,
+    blocked: !!blocked
+  });
+  if (error) throw new Error(error.message);
+}
+
+// ============================================================
 //  PORTFÓLIO PÚBLICO — leitura anônima (funciona SEM login)
 //  A chave anon + as políticas RLS "leitura anônima" liberam só o
 //  que o aluno marcou como público. Aqui o select é explícito:

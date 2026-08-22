@@ -36,7 +36,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     fetchUserProjects: async () => [], fetchCertificates: async () => [], fetchSubjectProgress: async () => [],
     fetchAllProfiles: async () => [], fetchQuizAnswers: async () => [],
     awardProjectXP: async () => {}, awardQuizXP: async () => {}, awardSubjectViewXP: async () => {}, awardExerciseXP: async () => {},
-    adminResetXP: async () => {}, adminSetIsAdmin: async () => {}, adminDeleteStudent: async () => {},
+    adminResetXP: async () => {}, adminSetIsAdmin: async () => {}, adminDeleteStudent: async () => {}, adminSetBlocked: async () => {},
     fetchPublicProfile: async () => null, fetchPublicProjects: async () => [], fetchPublicCertificates: async () => [],
     setPortfolioPublic: async () => {},
     uploadAvatar: async () => 'u1/avatar.jpg', removeAvatar: async () => {}, fetchAvatarSignedUrl: async () => null
@@ -412,7 +412,82 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
       return new RegExp(`drop policy if exists\\s+${m[1]}\\s+on\\s+${m[2]}\\.${m[3]};\\s*$`).test(before);
     }), 'migração existente do portfólio/avatar é idempotente e cria o bucket privado');
 
-  check(passed === 115, 'suíte contém 116 verificações de regressão');
+  // ============================================================
+  // BLOQUEIO ADMINISTRATIVO DE USUÁRIOS — login/sessão
+  // ============================================================
+  // Sessão bloqueada: o cliente desloga e recusa o acesso (fonte da
+  // verdade é o banco, mas o reflexo no cliente impede entrar no app).
+  let logoutCalls = 0;
+  window.supabaseLogout = async () => { logoutCalls++; };
+  window.__testHooks.setUser({ id: 'blk', name: 'B', is_blocked: true });
+  let rejectedMsg = null;
+  try { await window.rejectBlockedSession(); } catch (e) { rejectedMsg = e.message; }
+  check(logoutCalls === 1 && rejectedMsg && rejectedMsg.includes('bloqueada'),
+    'sessão bloqueada é deslogada e o acesso é recusado');
+
+  // Login de conta bloqueada: mostra aviso e não entra no app.
+  window.supabaseLogin = async () => ({ id: 'blk' });
+  window.fetchProfile = async () => ({ id: 'blk', name: 'B', is_blocked: true });
+  window.document.getElementById('login-email').value = 'b@b.com';
+  window.document.getElementById('login-password').value = '123456';
+  await window.handleLogin();
+  check(window.document.getElementById('login-error').textContent.includes('bloqueada'),
+    'login de conta bloqueada mostra aviso em português');
+
+  // ============================================================
+  // BLOQUEIO ADMINISTRATIVO DE USUÁRIOS — painel Admin
+  // ============================================================
+  window.fetchAllProfiles = async () => [
+    { id: 'beta',  name: 'Beta',  email: 'beta@b.com', age: 16, level: 2, xp: 60,  track: 'Back-end', quiz_done: true, is_admin: false, is_blocked: true  },
+    { id: 'alfa',  name: 'Alfa',  email: 'alfa@a.com', age: 17, level: 3, xp: 120, track: 'Front-end', quiz_done: true, is_admin: false, is_blocked: false },
+    { id: 'admin', name: 'Admin', email: 'a@a.com',    age: 18, level: 5, xp: 300, track: 'Full Stack', quiz_done: true, is_admin: true,  is_blocked: false }
+  ];
+  window.__testHooks.setAuth('admin');
+  await window.renderAdminPanel();
+  const adminBody = window.document.getElementById('admin-table-body');
+  check(adminBody.textContent.includes('Bloqueado') && adminBody.textContent.includes('Ativo'),
+    'tabela admin mostra status Ativo/Bloqueado');
+  check(adminBody.textContent.includes('Bloquear') && adminBody.textContent.includes('Desbloquear'),
+    'tabela admin tem botões Bloquear/Desbloquear');
+
+  // O admin nunca consegue bloquear a própria conta: a linha própria não
+  // mostra o botão e o banco também recusa (verificado mais abaixo).
+  const selfRow = [...adminBody.querySelectorAll('tr')].find(tr => tr.textContent.includes('Admin'));
+  check(!!selfRow && !selfRow.textContent.includes('Bloquear') && selfRow.textContent.includes('você'),
+    'admin não pode bloquear a própria conta (linha própria sem botão)');
+
+  // Bloquear pede confirmação e, confirmado, chama adminSetBlocked.
+  const blockCalls = [];
+  window.adminSetBlocked = async (id, v) => blockCalls.push({ id, v });
+  const blockPromise = window.adminHandleToggleBlock('beta', 'Beta', false);
+  await tick();
+  const confirmShown = !window.document.getElementById('confirm-modal').classList.contains('hidden');
+  window.resolveConfirm(true);
+  await blockPromise; await tick();
+  check(confirmShown && blockCalls.length === 1 && blockCalls[0].id === 'beta' && blockCalls[0].v === true,
+    'bloquear pede confirmação e chama adminSetBlocked corretamente');
+
+  // ============================================================
+  // BLOQUEIO ADMINISTRATIVO DE USUÁRIOS — banco (schema + migração)
+  // ============================================================
+  const blockMigration = fs.readFileSync(path.join(root, 'database/migracao-bloqueio-usuarios.sql'), 'utf8');
+  check(schema.includes('is_blocked boolean not null default false')
+    && blockMigration.includes('is_blocked boolean not null default false'),
+    'schema e migração têm a coluna is_blocked');
+  check(blockMigration.includes('current_is_blocked') && blockMigration.includes('ensure_not_blocked') && blockMigration.includes('admin_set_blocked'),
+    'migração tem as funções de bloqueio no banco');
+  check(blockMigration.includes('target_id = auth.uid()') && blockMigration.includes('bloquear a própria conta'),
+    'admin_set_blocked impede bloquear a própria conta no banco');
+  const blockAwardFns = ['award_quiz_xp', 'award_subject_view_xp', 'award_exercise_xp', 'award_project_xp'];
+  check(blockAwardFns.every(fn => new RegExp(`function public\\.${fn}\\([\\s\\S]*?ensure_not_blocked\\(\\)`).test(blockMigration)),
+    'ações de XP recusam usuário bloqueado no banco (ensure_not_blocked)');
+  check(/profiles_public_read[\s\S]*?is_blocked, false/.test(blockMigration)
+    && /user_projects_public_read[\s\S]*?is_blocked, false/.test(blockMigration)
+    && /certificates_public_read[\s\S]*?is_blocked, false/.test(blockMigration)
+    && /avatars_public_read[\s\S]*?is_blocked, false/.test(blockMigration),
+    'bloqueados somem dos portfólios públicos (perfil, projetos, certificados e foto)');
+
+  check(passed === 126, 'suíte contém 127 verificações de regressão');
   console.log(`\n${passed} verificações passaram.`);
   window.close();
 })().catch(error => {

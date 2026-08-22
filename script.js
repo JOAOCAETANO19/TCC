@@ -836,6 +836,7 @@ async function handleLogin() {
     const user = await supabaseLogin(email, pass);
     currentAuthId = user.id;
     currentUser   = await fetchProfile(user.id);
+    await rejectBlockedSession(); // lança se a conta estiver bloqueada
     completedProjects = [];
     userCerts = [];
     enterApp();
@@ -869,6 +870,7 @@ async function handleRegister() {
     const user = await supabaseRegister(email, pass, name, age);
     currentAuthId = user.id;
     currentUser   = await fetchProfile(user.id);
+    await rejectBlockedSession(); // conta recém-criada nunca está bloqueada, mas é seguro checar
     completedProjects = [];
     userCerts         = [];
     enterApp();
@@ -902,10 +904,26 @@ function traduzirErroAuth(msg = '') {
   if (msg.includes('already registered'))   return 'Este email já está cadastrado.';
   if (msg.includes('valid email'))          return 'Informe um email válido.';
   if (msg.includes('Password should be'))   return 'A senha precisa ter pelo menos 6 caracteres.';
+  if (/bloquead|is_blocked/i.test(msg))     return 'Sua conta foi bloqueada pelo administrador. Entre em contato para mais informações.';
   if (/profiles_(age|name)_check|violates check constraint/i.test(msg))
     return 'Os dados do cadastro são inválidos. Confira se o nome tem entre 2 e 120 caracteres e se a idade está entre 10 e 120 anos.';
   if (/Network|Failed to fetch|fetch failed/i.test(msg)) return 'Erro de conexão. Verifique sua internet.';
   return msg;
+}
+
+// ===== BLOQUEIO ADMINISTRATIVO =====
+// A fonte da verdade é o banco (coluna profiles.is_blocked). Aqui o
+// cliente apenas reflete a flag: se o perfil vier bloqueado, o login e a
+// sessão são recusados e a conta é deslogada — sem entrar no app.
+
+function rejectBlockedSession() {
+  if (!(currentUser && currentUser.is_blocked)) return;
+  return (async () => {
+    await supabaseLogout();
+    currentUser   = null;
+    currentAuthId = null;
+    throw new Error('Sua conta foi bloqueada pelo administrador.');
+  })();
 }
 
 
@@ -1833,7 +1851,7 @@ function escJsStr(str) {
 
 async function renderAdminPanel() {
   const tbody = document.getElementById('admin-table-body');
-  tbody.innerHTML = '<tr><td class="p-3 text-white/40" colspan="8">Carregando...</td></tr>';
+  tbody.innerHTML = '<tr><td class="p-3 text-white/40" colspan="9">Carregando...</td></tr>';
 
   try {
     const alunos = await fetchAllProfiles();
@@ -1844,6 +1862,10 @@ async function renderAdminPanel() {
           // encodeURIComponent mantém o nome fora da sintaxe do HTML/JS inline.
           const nomeArg = encodeURIComponent(a.name);
           const isSelf  = a.id === currentAuthId;
+
+          const status = a.is_blocked
+            ? '<span class="text-red-400 text-xs font-semibold">🔒 Bloqueado</span>'
+            : '<span class="text-green-400 text-xs font-semibold">● Ativo</span>';
 
           const acoes = isSelf
             ? '<span class="text-white/30 text-xs">— você —</span>'
@@ -1856,6 +1878,10 @@ async function renderAdminPanel() {
                 <button onclick="adminHandleToggleAdmin('${a.id}', decodeURIComponent('${nomeArg}'), ${!!a.is_admin})"
                   class="text-xs px-2 py-1 rounded transition ${a.is_admin ? 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/30' : 'bg-white/10 hover:bg-white/20'}">
                   ${a.is_admin ? 'Remover admin' : 'Tornar admin'}
+                </button>
+                <button onclick="adminHandleToggleBlock('${a.id}', decodeURIComponent('${nomeArg}'), ${!!a.is_blocked})"
+                  class="text-xs px-2 py-1 rounded transition ${a.is_blocked ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30' : 'bg-red-500/20 text-red-400 hover:bg-red-500/30'}">
+                  ${a.is_blocked ? 'Desbloquear' : 'Bloquear'}
                 </button>
                 <button onclick="adminHandleDelete('${a.id}', decodeURIComponent('${nomeArg}'))"
                   class="text-xs px-2 py-1 rounded bg-red-500/20 text-red-400 hover:bg-red-500/30 transition">
@@ -1875,13 +1901,14 @@ async function renderAdminPanel() {
               <td class="p-3">${a.xp} XP</td>
               <td class="p-3">${escapeHtml(a.track || '-')}</td>
               <td class="p-3">${a.quiz_done ? '✅' : '—'}</td>
+              <td class="p-3">${status}</td>
               <td class="p-3">${acoes}</td>
             </tr>
           `;
         }).join('')
-      : '<tr><td class="p-3 text-white/40" colspan="8">Nenhum aluno encontrado.</td></tr>';
+      : '<tr><td class="p-3 text-white/40" colspan="9">Nenhum aluno encontrado.</td></tr>';
   } catch (e) {
-    tbody.innerHTML = `<tr><td class="p-3 text-red-400" colspan="8">Erro ao carregar: ${escapeHtml(e.message)}</td></tr>`;
+    tbody.innerHTML = `<tr><td class="p-3 text-red-400" colspan="9">Erro ao carregar: ${escapeHtml(e.message)}</td></tr>`;
   }
 }
 
@@ -1928,6 +1955,24 @@ async function adminHandleDelete(id, nome) {
     showToast(`${nome} foi excluído.`, 'success');
   } catch (e) {
     showToast('Erro ao excluir aluno: ' + e.message, 'error');
+  }
+}
+
+// Bloquear/desbloquear um aluno. Confirma antes de agir e chama o banco
+// (admin_set_blocked), que valida de novo a permissão e impede bloquear a
+// própria conta. A linha da própria conta nem mostra esse botão.
+async function adminHandleToggleBlock(id, nome, isCurrentlyBlocked) {
+  const msg = isCurrentlyBlocked
+    ? `Desbloquear ${nome}? Ele voltará a entrar e usar a plataforma.`
+    : `Bloquear ${nome}? Ele não conseguirá mais entrar, ganhar XP nem aparecer em portfólios públicos.`;
+  const ok = await themedConfirm(msg, !isCurrentlyBlocked); // bloquear = estilo de perigo
+  if (!ok) return;
+  try {
+    await adminSetBlocked(id, !isCurrentlyBlocked);
+    renderAdminPanel();
+    showToast(isCurrentlyBlocked ? `${nome} foi desbloqueado.` : `${nome} foi bloqueado.`, 'success');
+  } catch (e) {
+    showToast('Erro ao alterar bloqueio: ' + e.message, 'error');
   }
 }
 
@@ -2044,10 +2089,21 @@ async function init() {
     if (session) {
       currentAuthId = session.user.id;
       currentUser = await fetchProfile(session.user.id);
-      completedProjects = [];
-      userCerts = [];
-      enterApp();
-      loadUserExtrasSafe(session.user.id);
+
+      if (currentUser && currentUser.is_blocked) {
+        // Conta bloqueada: desloga e devolve para o login com aviso.
+        await supabaseLogout();
+        currentUser   = null;
+        currentAuthId = null;
+        boot.style.display = 'none';
+        document.getElementById('login-screen').style.display = 'flex';
+        showError('login-error', traduzirErroAuth('Sua conta foi bloqueada pelo administrador.'));
+      } else {
+        completedProjects = [];
+        userCerts = [];
+        enterApp();
+        loadUserExtrasSafe(session.user.id);
+      }
     } else {
       boot.style.display = 'none';
       document.getElementById('login-screen').style.display = 'flex';
