@@ -330,6 +330,11 @@
                 </div>
               </div>
               <div class="card-glass rounded-xl p-6 mb-6">
+                <h3 class="font-bold mb-3">Meu nivelamento</h3>
+                <p class="text-white/40 text-xs mb-3">Suas respostas do quiz de nivelamento, usadas para montar sua trilha de estudos.</p>
+                <div id="prof-nivelamento"></div>
+              </div>
+              <div class="card-glass rounded-xl p-6 mb-6">
                 <h3 class="font-bold mb-3">Certificados</h3>
                 <p class="text-white/40 text-xs mb-3">Clique em um certificado para abrir o diploma visual, imprimir ou baixar em PNG.</p>
                 <div id="prof-certs" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
@@ -376,6 +381,13 @@
             <div class="fade-in">
               <h2 class="text-2xl font-bold mb-2">Centro de Estudos</h2>
               <p class="text-white/50 mb-6">Escolha uma matéria para estudar com conteúdo completo.</p>
+              <div class="card-glass rounded-xl p-4 mb-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div class="sm:mr-6">
+                  <p class="text-white/50 text-xs mb-1">Matérias estudadas</p>
+                  <p id="subjects-counter" class="text-2xl font-bold text-green-400">0 de 12</p>
+                </div>
+                <div id="studies-track" class="sm:flex-1"></div>
+              </div>
               <div id="subjects-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
               <div id="study-content" class="hidden mt-6"></div>
             </div>

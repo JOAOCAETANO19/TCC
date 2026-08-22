@@ -42,6 +42,242 @@ const subjectContent = {
   logica: { title:"Lógica de Programação", summary:"Base fundamental para qualquer linguagem. Ensina a pensar como um programador.", topics:["Algoritmos e fluxogramas","Variáveis e tipos de dados","Estruturas condicionais","Loops (repetição)","Vetores e matrizes","Funções e procedimentos","Debugging e resolução de problemas"], example:`// Algoritmo: Verificar se é par ou ímpar\nfuncao verificarParidade(numero):\n  se (numero % 2 == 0):\n    retornar "Par"\n  senao:\n    retornar "Ímpar"`, exercise:"Crie um algoritmo que receba 5 números e retorne o maior e o menor.", video:"https://www.youtube.com/embed/8mei6uVttho" }
 };
 
+// ===== TRILHA RECOMENDADA POR ÁREA =====
+// Cada área do quiz de nivelamento aponta para uma ordem de estudo.
+// O Centro de Estudos marca com "Comece por aqui" a primeira matéria
+// dessa sequência que o aluno ainda não abriu (subject_progress).
+const trackCurriculum = {
+  'Front-end':    ['html', 'css', 'js', 'git', 'apis', 'redes'],
+  'Back-end':     ['logica', 'python', 'sql', 'banco', 'apis', 'git'],
+  'Full Stack':   ['html', 'css', 'js', 'sql', 'banco', 'apis', 'git'],
+  'Mobile':       ['logica', 'js', 'apis', 'git', 'poo', 'banco'],
+  'Ainda não sei': ['logica', 'html', 'css', 'js', 'git', 'sql'],
+  default:        ['logica', 'html', 'css', 'js', 'git', 'sql']
+};
+
+// ===== CONTEÚDO EXTRA POR MATÉRIA =====
+// Nível/tempo (exibidos no card), erros comuns, links para se
+// aprofundar e um quiz rápido de conhecimento (3 perguntas, correção
+// na hora e apenas no cliente — nada disso vai para o banco).
+const subjectExtras = {
+  html: {
+    level: 'Iniciante', time: '1 semana',
+    mistakes: [
+      'Esquecer de fechar as tags (ex.: abrir <p> e não fechar </p>)',
+      'Usar <div> para tudo em vez das tags semânticas (header, nav, main, footer)',
+      'Não declarar o DOCTYPE no início do documento'
+    ],
+    deepDive: [
+      { label: 'MDN Web Docs — HTML', url: 'https://developer.mozilla.org/pt-BR/docs/Web/HTML' },
+      { label: 'W3Schools — HTML', url: 'https://www.w3schools.com/html/' },
+      { label: 'Curso em Vídeo — HTML5', url: 'https://www.cursoemvideo.com/curso/html5/' }
+    ],
+    quiz: [
+      { q: 'O que significa HTML?', options: ['HyperText Markup Language', 'High Tech Modern Language', 'Hyperlink Text Manager'], answer: 0 },
+      { q: 'Qual tag cria um link?', options: ['<a>', '<link>', '<href>'], answer: 0 },
+      { q: 'Qual elemento define o título exibido na aba do navegador?', options: ['<title>', '<h1>', '<head>'], answer: 0 }
+    ]
+  },
+  css: {
+    level: 'Iniciante', time: '2 semanas',
+    mistakes: [
+      'Confundir margin (espaço externo) com padding (espaço interno)',
+      'Não entender o Box Model ao alinhar elementos',
+      'Ignorar a responsividade e testar só no desktop'
+    ],
+    deepDive: [
+      { label: 'MDN Web Docs — CSS', url: 'https://developer.mozilla.org/pt-BR/docs/Web/CSS' },
+      { label: 'W3Schools — CSS', url: 'https://www.w3schools.com/css/' },
+      { label: 'Flexbox Froggy (jogo)', url: 'https://flexboxfroggy.com/' }
+    ],
+    quiz: [
+      { q: 'O que significa CSS?', options: ['Cascading Style Sheets', 'Creative Style System', 'Color Style Sheets'], answer: 0 },
+      { q: 'Qual propriedade muda a cor do texto?', options: ['color', 'text-color', 'font-color'], answer: 0 },
+      { q: 'Qual valor de display ativa um layout flexível?', options: ['flex', 'block', 'inline'], answer: 0 }
+    ]
+  },
+  js: {
+    level: 'Intermediário', time: '3 semanas',
+    mistakes: [
+      'Usar "==" quando deveria usar "===" (comparação sem tipo)',
+      'Declarar tudo com "var" em vez de "let" e "const"',
+      'Esquecer de tratar erros em chamadas assíncronas (promises)'
+    ],
+    deepDive: [
+      { label: 'MDN Web Docs — JavaScript', url: 'https://developer.mozilla.org/pt-BR/docs/Web/JavaScript' },
+      { label: 'JavaScript.info', url: 'https://javascript.info/' },
+      { label: 'Eloquent JavaScript (livro)', url: 'https://eloquentjavascript.net/' }
+    ],
+    quiz: [
+      { q: 'Como se declara uma variável que não muda de valor?', options: ['const', 'var', 'static'], answer: 0 },
+      { q: 'Qual método seleciona um elemento pelo id?', options: ['getElementById', 'querySelectorAll', 'getByClass'], answer: 0 },
+      { q: 'O que o operador "===" faz?', options: ['Compara valor e tipo', 'Compara apenas o valor', 'Atribui um valor'], answer: 0 }
+    ]
+  },
+  sql: {
+    level: 'Intermediário', time: '2 semanas',
+    mistakes: [
+      'Esquecer a cláusula WHERE em um UPDATE ou DELETE',
+      'Usar SELECT * em consultas que só precisam de algumas colunas',
+      'Ignorar os tipos de JOIN ao cruzar tabelas'
+    ],
+    deepDive: [
+      { label: 'W3Schools — SQL', url: 'https://www.w3schools.com/sql/' },
+      { label: 'SQLBolt (tutorial interativo)', url: 'https://sqlbolt.com/' },
+      { label: 'Documentação do PostgreSQL', url: 'https://www.postgresql.org/docs/' }
+    ],
+    quiz: [
+      { q: 'Qual comando busca dados de uma tabela?', options: ['SELECT', 'FETCH', 'GET'], answer: 0 },
+      { q: 'Qual cláusula filtra as linhas retornadas?', options: ['WHERE', 'IF', 'FILTER'], answer: 0 },
+      { q: 'Qual comando insere um novo registro?', options: ['INSERT INTO', 'ADD ROW', 'PUT'], answer: 0 }
+    ]
+  },
+  python: {
+    level: 'Intermediário', time: '3 semanas',
+    mistakes: [
+      'Esquecer a indentação (ela define os blocos em Python)',
+      'Confundir listas [ ] com tuplas ( ) e dicionários { }',
+      'Comparar com "=" em vez de "=="'
+    ],
+    deepDive: [
+      { label: 'Tutorial oficial do Python', url: 'https://docs.python.org/pt-br/3/tutorial/' },
+      { label: 'W3Schools — Python', url: 'https://www.w3schools.com/python/' },
+      { label: 'Real Python', url: 'https://realpython.com/' }
+    ],
+    quiz: [
+      { q: 'Como se imprime algo no console em Python?', options: ['print()', 'console.log()', 'echo'], answer: 0 },
+      { q: 'Qual palavra-chave define uma função?', options: ['def', 'function', 'func'], answer: 0 },
+      { q: 'Qual símbolo cria uma lista?', options: ['[ ]', '{ }', '( )'], answer: 0 }
+    ]
+  },
+  java: {
+    level: 'Intermediário', time: '4 semanas',
+    mistakes: [
+      'Esquecer que o nome do arquivo deve bater com o da classe pública',
+      'Ignorar a diferença entre tipos primitivos e seus wrappers',
+      'Não tratar exceções (try/catch) em operações de I/O'
+    ],
+    deepDive: [
+      { label: 'Tutoriais oficiais da Oracle', url: 'https://docs.oracle.com/javase/tutorial/' },
+      { label: 'W3Schools — Java', url: 'https://www.w3schools.com/java/' },
+      { label: 'Baeldung — Java', url: 'https://www.baeldung.com/' }
+    ],
+    quiz: [
+      { q: 'Qual é a assinatura correta do método main?', options: ['public static void main(String[] args)', 'void main()', 'public int main()'], answer: 0 },
+      { q: 'Qual palavra-chave cria uma classe?', options: ['class', 'struct', 'interface'], answer: 0 },
+      { q: 'Qual é a extensão do arquivo Java já compilado?', options: ['.class', '.java', '.jar'], answer: 0 }
+    ]
+  },
+  poo: {
+    level: 'Avançado', time: '2 semanas',
+    mistakes: [
+      'Expor atributos públicos em vez de usar encapsulamento',
+      'Abusar da herança quando composição seria mais simples',
+      'Confundir sobrescrita (override) com sobrecarga (overload)'
+    ],
+    deepDive: [
+      { label: 'MDN — Programação Orientada a Objetos', url: 'https://developer.mozilla.org/pt-BR/docs/Learn/JavaScript/Objects' },
+      { label: 'Refactoring Guru — Design Patterns', url: 'https://refactoring.guru/pt-br/design-patterns' },
+      { label: 'Alura — Orientação a Objetos', url: 'https://www.alura.com.br/cursos-online-programacao/orientacao-a-objetos' }
+    ],
+    quiz: [
+      { q: 'O que é encapsulamento?', options: ['Ocultar detalhes internos de um objeto', 'Criar várias classes', 'Compartilhar código entre projetos'], answer: 0 },
+      { q: 'O que é herança?', options: ['Uma classe herda membros de outra', 'Um objeto copia outro', 'Um método sobrecarregado'], answer: 0 },
+      { q: 'O que é polimorfismo?', options: ['Mesmo método com comportamentos diferentes', 'Muitas classes no sistema', 'Atributos sempre privados'], answer: 0 }
+    ]
+  },
+  git: {
+    level: 'Iniciante', time: '1 semana',
+    mistakes: [
+      'Commitar direto na main em vez de trabalhar em branch',
+      'Enviar arquivos grandes ou secretos para o repositório',
+      'Não escrever mensagens de commit descritivas'
+    ],
+    deepDive: [
+      { label: 'Pro Git (livro oficial)', url: 'https://git-scm.com/book/pt-br/v2' },
+      { label: 'Documentação do GitHub', url: 'https://docs.github.com/pt' },
+      { label: 'Tutorial de Git da Atlassian', url: 'https://www.atlassian.com/git/tutorials' }
+    ],
+    quiz: [
+      { q: 'Qual comando salva mudanças no histórico?', options: ['git commit', 'git save', 'git push'], answer: 0 },
+      { q: 'Qual comando envia commits para o repositório remoto?', options: ['git push', 'git pull', 'git fetch'], answer: 0 },
+      { q: 'O que é uma branch?', options: ['Uma linha independente de desenvolvimento', 'Um commit', 'Um arquivo'], answer: 0 }
+    ]
+  },
+  redes: {
+    level: 'Intermediário', time: '2 semanas',
+    mistakes: [
+      'Confundir endereço IP público com IP privado',
+      'Achar que HTTP é a mesma coisa que a Internet inteira',
+      'Ignorar a diferença entre TCP e UDP'
+    ],
+    deepDive: [
+      { label: 'MDN — Como a Web funciona', url: 'https://developer.mozilla.org/pt-BR/docs/Learn/Common_questions/How_does_the_Internet_work' },
+      { label: 'Cloudflare Learning Center', url: 'https://www.cloudflare.com/pt-br/learning/' },
+      { label: 'Cisco Networking Academy', url: 'https://www.netacad.com/pt-br' }
+    ],
+    quiz: [
+      { q: 'O que significa IP?', options: ['Internet Protocol', 'Internet Provider', 'Internal Port'], answer: 0 },
+      { q: 'Qual protocolo carrega páginas web?', options: ['HTTP', 'FTP', 'SMTP'], answer: 0 },
+      { q: 'O que o DNS faz?', options: ['Traduz nomes em endereços IP', 'Criptografa dados', 'Roteia pacotes'], answer: 0 }
+    ]
+  },
+  apis: {
+    level: 'Intermediário', time: '2 semanas',
+    mistakes: [
+      'Ignorar os códigos de status HTTP nas respostas',
+      'Não validar/tratar erros da resposta antes de usar os dados',
+      'Expor chaves secretas no cliente em vez de usar um backend'
+    ],
+    deepDive: [
+      { label: 'MDN — Fetch API', url: 'https://developer.mozilla.org/pt-BR/docs/Web/API/Fetch_API' },
+      { label: 'Guia de design de APIs REST (Microsoft)', url: 'https://learn.microsoft.com/pt-br/azure/architecture/best-practices/api-design' },
+      { label: 'Documentação do Postman', url: 'https://learning.postman.com/docs/introduction/overview/' }
+    ],
+    quiz: [
+      { q: 'O que significa API?', options: ['Application Programming Interface', 'Application Process Integration', 'Automated Program Interface'], answer: 0 },
+      { q: 'Qual método HTTP é usado para buscar dados?', options: ['GET', 'POST', 'DELETE'], answer: 0 },
+      { q: 'Qual formato de dados é comum em APIs?', options: ['JSON', 'Apenas XML', 'Apenas CSV'], answer: 0 }
+    ]
+  },
+  banco: {
+    level: 'Avançado', time: '3 semanas',
+    mistakes: [
+      'Modelar sem pensar nas chaves primárias e estrangeiras',
+      'Ignorar a normalização e criar redundância de dados',
+      'Não criar índices em colunas muito consultadas'
+    ],
+    deepDive: [
+      { label: 'W3Schools — Bancos de dados', url: 'https://www.w3schools.com/sql/sql_intro.asp' },
+      { label: 'Tutorial do PostgreSQL', url: 'https://www.postgresqltutorial.com/' },
+      { label: 'MongoDB University', url: 'https://learn.mongodb.com/' }
+    ],
+    quiz: [
+      { q: 'O que é uma chave primária?', options: ['Identificador único de uma linha', 'Uma coluna opcional', 'Uma tabela auxiliar'], answer: 0 },
+      { q: 'O que significa SQL?', options: ['Structured Query Language', 'Simple Query Language', 'System Query Logic'], answer: 0 },
+      { q: 'O que é normalização?', options: ['Organizar dados evitando redundância', 'Acelerar qualquer consulta', 'Fazer backup automático'], answer: 0 }
+    ]
+  },
+  logica: {
+    level: 'Iniciante', time: '2 semanas',
+    mistakes: [
+      'Tentar codar antes de entender o problema (faltar o algoritmo)',
+      'Confundir o operador de atribuição (=) com o de comparação (==)',
+      'Esquecer casos de borda (listas vazias, zero, valores negativos)'
+    ],
+    deepDive: [
+      { label: 'Curso em Vídeo — Lógica de Programação', url: 'https://www.cursoemvideo.com/curso/curso-de-algoritmo/' },
+      { label: 'Beecrowd (exercícios)', url: 'https://www.beecrowd.com.br/' },
+      { label: 'Khan Academy — Algoritmos', url: 'https://pt.khanacademy.org/computing/computer-science/algorithms' }
+    ],
+    quiz: [
+      { q: 'O que é um algoritmo?', options: ['Sequência de passos para resolver um problema', 'Uma linguagem de programação', 'Um tipo de dado'], answer: 0 },
+      { q: 'Qual estrutura repete um bloco de código?', options: ['Loop', 'Condicional', 'Variável'], answer: 0 },
+      { q: 'O que é uma estrutura condicional?', options: ['Decisão baseada em uma condição', 'Repetição de código', 'Atribuição de valor'], answer: 0 }
+    ]
+  }
+};
+
 const projects = [
   {
     level: "Iniciante", color: "text-green-400", border: "border-green-500/30",
@@ -281,6 +517,8 @@ let currentAuthId  = null;  // UUID do auth.users
 let completedProjects = []; // array de project_id já concluídos
 let userCerts      = [];    // array de { subject_id, title }
 let quizAnswers    = [];
+let userSubjectProgress = []; // array de subject_id já estudados (abertos)
+let userQuizRows   = [];    // respostas do quiz do usuário logado (exibidas no Perfil)
 let lastCertModel  = null;  // certificado atualmente aberto no modal
 let adminDetailStudent = null;
 let adminDetailCerts = [];
@@ -876,6 +1114,8 @@ async function handleLogin() {
     await rejectBlockedSession(); // lança se a conta estiver bloqueada
     completedProjects = [];
     userCerts = [];
+    userSubjectProgress = [];
+    userQuizRows = [];
     enterApp();
     loadUserExtrasSafe(user.id);
   } catch (err) {
@@ -910,6 +1150,8 @@ async function handleRegister() {
     await rejectBlockedSession(); // conta recém-criada nunca está bloqueada, mas é seguro checar
     completedProjects = [];
     userCerts         = [];
+    userSubjectProgress = [];
+    userQuizRows        = [];
     enterApp();
   } catch (err) {
     showError('reg-error', traduzirErroAuth(err.message));
@@ -927,6 +1169,8 @@ async function handleLogout() {
   currentAuthId     = null;
   completedProjects = [];
   userCerts         = [];
+  userSubjectProgress = [];
+  userQuizRows        = [];
   currentAvatarUrl  = null;
   cancelAvatarPreview();
   showLanding();
@@ -966,12 +1210,16 @@ function rejectBlockedSession() {
 // ===== CARREGAR EXTRAS (projetos e certificados) =====
 
 async function loadUserExtras(userId) {
-  const [projs, certs] = await Promise.all([
+  const [projs, certs, progress, quizRows] = await Promise.all([
     fetchUserProjects(userId),
-    fetchCertificates(userId)
+    fetchCertificates(userId),
+    fetchSubjectProgress(userId),
+    fetchQuizAnswers(userId)
   ]);
-  completedProjects = projs.map(p => p.project_id);
-  userCerts         = certs;
+  completedProjects   = projs.map(p => p.project_id);
+  userCerts           = certs;
+  userSubjectProgress = progress.map(p => p.subject_id);
+  userQuizRows        = quizRows || [];
 }
 
 // Projetos e certificados não devem impedir a entrada no app.
@@ -1054,6 +1302,9 @@ async function finishQuiz() {
     // O cliente só manda as respostas e a trilha/objetivo escolhidos.
     await awardQuizXP(quizAnswers, track, goal);
     currentUser = await fetchProfile(currentAuthId);
+    // Reflete as respostas recém-salvas no card "Meu nivelamento" do
+    // Perfil, sem precisar de uma nova leitura do banco.
+    userQuizRows = quizAnswers.map((answer, i) => ({ question: i + 1, answer }));
   } catch (e) {
     console.warn('Erro ao salvar quiz:', e.message);
   }
@@ -1182,6 +1433,37 @@ function renderProfile() {
       }).join('')
     : '<p class="text-white/40 text-sm">Nenhum projeto concluído. Vá para a aba Projetos!</p>';
   document.getElementById('prof-projects').innerHTML = projsHtml;
+
+  renderNivelamento();
+}
+
+// Card "Meu nivelamento": mostra as respostas do quiz de nivelamento
+// (nível atual, área e objetivo) usando o mesmo array quizQuestions.
+// Contas antigas que responderam só 3 perguntas continuam funcionando —
+// o quiz não é repetido e as respostas que existem são exibidas.
+function renderNivelamento() {
+  const el = document.getElementById('prof-nivelamento');
+  if (!el) return;
+
+  if (!currentUser || !currentUser.quiz_done) {
+    el.innerHTML = '<p class="text-white/40 text-sm">Quiz de nivelamento ainda não realizado.</p>';
+    return;
+  }
+
+  if (!userQuizRows.length) {
+    el.innerHTML = '<p class="text-white/40 text-sm">Respostas do quiz ainda não carregadas.</p>';
+    return;
+  }
+
+  const rows = userQuizRows.slice().sort((a, b) =>
+    quizQuestionIndex(a.question) - quizQuestionIndex(b.question)
+  );
+
+  el.innerHTML = rows.map(r => `
+    <div class="bg-white/5 rounded-lg p-3 mb-2 text-sm">
+      <p class="text-white/40 text-xs mb-1">${escapeHtml(quizQuestionLabel(r.question))}</p>
+      <p>${escapeHtml(r.answer)}</p>
+    </div>`).join('');
 }
 
 
@@ -1353,20 +1635,119 @@ function renderCareers() {
 
 // ===== RENDER: MATÉRIAS =====
 
+function recommendedTrack() {
+  const track = (currentUser && currentUser.track) || '';
+  return trackCurriculum[track] || trackCurriculum.default;
+}
+
+// Primeira matéria da trilha que o aluno ainda não abriu — é ela que
+// recebe o destaque "Comece por aqui".
+function recommendedNextSubject(studiedSet) {
+  const list = recommendedTrack();
+  return list.find(id => !studiedSet.has(id)) || list[0];
+}
+
 function renderSubjects() {
   document.getElementById('study-content').classList.add('hidden');
-  document.getElementById('subjects-grid').innerHTML = subjects.map(s => `
-    <div class="subject-card card-glass rounded-xl p-5 border ${s.color} text-center" onclick="openSubject('${s.id}')">
-      <div class="text-3xl mb-2">${s.icon}</div>
-      <p class="font-semibold text-sm">${s.name}</p>
-    </div>
-  `).join('');
+  const studied = new Set(userSubjectProgress || []);
+  const doneCount = subjects.filter(s => studied.has(s.id)).length;
+
+  // Contador "X de 12" usando subject_progress (matérias já abertas).
+  const counter = document.getElementById('subjects-counter');
+  if (counter) counter.textContent = `${doneCount} de ${subjects.length}`;
+
+  // Trilha recomendada pela área do quiz de nivelamento.
+  const track = (currentUser && currentUser.track) || 'Explorando';
+  const trackEl = document.getElementById('studies-track');
+  if (trackEl) {
+    trackEl.innerHTML = `
+      <p class="text-sm"><span class="text-white/50">Trilha recomendada:</span> <span class="font-semibold text-green-400">${escapeHtml(track)}</span></p>
+      <p class="text-xs text-white/40 mt-1">Siga na ordem sugerida e comece pela matéria com o destaque <span class="text-yellow-400 font-semibold">"Comece por aqui"</span>.</p>`;
+  }
+
+  const nextId = recommendedNextSubject(studied);
+  document.getElementById('subjects-grid').innerHTML = subjects.map(s => {
+    const isStudied = studied.has(s.id);
+    const extra = subjectExtras[s.id] || {};
+    const isStart = s.id === nextId && !isStudied;
+    return `
+      <div class="subject-card card-glass rounded-xl p-5 border ${s.color} text-center ${isStudied ? 'subject-studied' : ''}" onclick="openSubject('${s.id}')">
+        <div class="text-3xl mb-2">${s.icon}</div>
+        <p class="font-semibold text-sm">${s.name}</p>
+        <p class="text-white/40 text-xs mt-1">${escapeHtml(extra.level || '')}${extra.time ? ' • ' + escapeHtml(extra.time) : ''}</p>
+        ${isStudied ? '<p class="text-green-400 font-bold mt-1">✓ Estudada</p>' : ''}
+        ${isStart ? '<p class="mt-2"><span class="inline-block bg-yellow-400/15 text-yellow-300 text-xs font-semibold px-2 py-1 rounded">Comece por aqui</span></p>' : ''}
+      </div>`;
+  }).join('');
   document.getElementById('subjects-grid').classList.remove('hidden');
+}
+
+// Placar do quiz de conhecimento (só no cliente, sem persistência).
+const subjectQuizScores = {};
+
+function renderSubjectQuiz(id) {
+  const extra = subjectExtras[id];
+  const quiz = extra && extra.quiz;
+  const container = document.getElementById('subject-quiz');
+  if (!container || !quiz || !quiz.length) return;
+
+  const score = subjectQuizScores[id] || { answered: 0, correct: 0 };
+  container.innerHTML = `
+    <div class="mb-3 flex items-center justify-between">
+      <h4 class="font-semibold text-cyan-400">🧪 Teste rápido de conhecimento</h4>
+      <span id="subject-quiz-score" class="text-xs text-white/50">${score.answered > 0 ? `Acertos: ${score.correct} de ${score.answered}` : ''}</span>
+    </div>
+    <p class="text-white/40 text-xs mb-3">Responda e veja na hora se acertou. As respostas não são salvas.</p>
+    ${quiz.map((q, qi) => `
+      <div class="bg-white/5 rounded-lg p-4 mb-3">
+        <p class="font-semibold text-sm mb-2">${qi + 1}. ${escapeHtml(q.q)}</p>
+        <div class="space-y-2">
+          ${q.options.map((o, oi) => `
+            <button id="sq-${id}-${qi}-${oi}" onclick="answerSubjectQuiz('${id}', ${qi}, ${oi})"
+              class="w-full text-left bg-white/10 rounded-lg px-3 py-2 text-sm hover:border-green-400/50 transition border border-white/10">
+              ${escapeHtml(o)}
+            </button>`).join('')}
+        </div>
+      </div>`).join('')}
+  `;
+}
+
+function answerSubjectQuiz(id, qIndex, oIndex) {
+  const quiz = subjectExtras[id] && subjectExtras[id].quiz;
+  const q = quiz && quiz[qIndex];
+  if (!q) return;
+
+  const score = subjectQuizScores[id] || (subjectQuizScores[id] = { answered: 0, correct: 0 });
+  const correct = oIndex === q.answer;
+  score.answered += 1;
+  if (correct) score.correct += 1;
+
+  for (let i = 0; i < q.options.length; i++) {
+    const btn = document.getElementById(`sq-${id}-${qIndex}-${i}`);
+    if (!btn) continue;
+    btn.disabled = true;
+    if (i === q.answer) {
+      btn.classList.add('border-green-400/60');
+      btn.innerHTML = '✓ ' + escapeHtml(q.options[i]);
+    } else if (i === oIndex) {
+      btn.classList.add('border-red-400/60');
+      btn.innerHTML = '✗ ' + escapeHtml(q.options[i]);
+    } else {
+      btn.classList.add('opacity-50');
+    }
+  }
+
+  const scoreEl = document.getElementById('subject-quiz-score');
+  if (scoreEl) scoreEl.textContent = `Acertos: ${score.correct} de ${score.answered}`;
 }
 
 async function openSubject(id) {
   const content = subjectContent[id];
   if (!content) return;
+
+  const extra = subjectExtras[id] || {};
+  const mistakes = extra.mistakes || [];
+  const deepDive = extra.deepDive || [];
 
   document.getElementById('subjects-grid').classList.add('hidden');
   const el = document.getElementById('study-content');
@@ -1375,6 +1756,7 @@ async function openSubject(id) {
     <button onclick="closeSubject()" class="btn-secondary mb-4 px-4 py-2 rounded-lg text-sm">← Voltar</button>
     <div class="card-glass rounded-xl p-6 mb-4">
       <h3 class="text-xl font-bold text-green-400 mb-2">${content.title}</h3>
+      ${extra.level ? `<p class="text-xs text-white/40 mb-3">📈 Nível: <span class="text-white/70">${escapeHtml(extra.level)}</span>${extra.time ? ' &nbsp;•&nbsp; ⏱️ Tempo estimado: <span class="text-white/70">' + escapeHtml(extra.time) + '</span>' : ''}</p>` : ''}
       <p class="text-white/70 mb-4">${content.summary}</p>
       <h4 class="font-semibold mb-2">📚 Tópicos Principais:</h4>
       <ul class="text-white/60 text-sm space-y-1 mb-4">${content.topics.map(t => `<li>• ${t}</li>`).join('')}</ul>
@@ -1384,13 +1766,17 @@ async function openSubject(id) {
       <pre class="bg-black/40 rounded-lg p-4 text-sm text-green-300 overflow-x-auto font-mono">${content.example}</pre>
     </div>
     <div class="card-glass rounded-xl p-6 mb-4">
+      <h4 class="font-semibold mb-2 text-red-400">⚠️ Erros comuns:</h4>
+      <ul class="text-white/60 text-sm space-y-1">${mistakes.map(m => `<li>• ${escapeHtml(m)}</li>`).join('')}</ul>
+    </div>
+    <div class="card-glass rounded-xl p-6 mb-4">
       <h4 class="font-semibold mb-2 text-purple-400">🎯 Exercício:</h4>
       <p class="text-white/70 text-sm">${content.exercise}</p>
       <button onclick="completeExercise('${id}')" class="btn-primary mt-3 px-4 py-2 rounded-lg text-sm">
         Marcar como concluído (+30 XP)
       </button>
     </div>
-    <div class="card-glass rounded-xl p-6">
+    <div class="card-glass rounded-xl p-6 mb-4">
       <h4 class="font-semibold mb-3 text-blue-400">🎬 Vídeo de Apoio:</h4>
       <div class="aspect-video rounded-lg overflow-hidden bg-black/30">
         <iframe src="${content.video}" class="w-full h-full" frameborder="0"
@@ -1398,13 +1784,26 @@ async function openSubject(id) {
           allowfullscreen></iframe>
       </div>
     </div>
+    <div class="card-glass rounded-xl p-6 mb-4">
+      <h4 class="font-semibold mb-3 text-pink-400">📖 Para se aprofundar:</h4>
+      <ul class="space-y-2 text-sm">
+        ${deepDive.map(d => `<li><a href="${escapeHtml(d.url)}" target="_blank" rel="noopener noreferrer" class="text-green-400 hover:underline">↗ ${escapeHtml(d.label)}</a></li>`).join('')}
+      </ul>
+    </div>
+    <div class="card-glass rounded-xl p-6">
+      <div id="subject-quiz"></div>
+    </div>
   `;
 
+  renderSubjectQuiz(id);
+
   // +10 XP por abrir o conteúdo — calculado e salvo no banco (award_subject_view_xp),
-  // não somado aqui no cliente.
+  // não somado aqui no cliente. Também registra a matéria em subject_progress,
+  // que alimenta o selo ✓ e o contador "X de 12" no Centro de Estudos.
   try {
     await awardSubjectViewXP(id);
     currentUser = await fetchProfile(currentAuthId);
+    if (!userSubjectProgress.includes(id)) userSubjectProgress.push(id);
   } catch (e) {
     console.warn('Erro ao salvar progresso:', e.message);
   }
@@ -1413,8 +1812,9 @@ async function openSubject(id) {
 }
 
 function closeSubject() {
-  document.getElementById('study-content').classList.add('hidden');
-  document.getElementById('subjects-grid').classList.remove('hidden');
+  // Re-renderiza o grid para atualizar o contador "X de 12" e o selo ✓
+  // com as matérias estudadas desde a última renderização.
+  renderSubjects();
 }
 
 async function completeExercise(id) {
@@ -2017,15 +2417,21 @@ async function adminHandleToggleBlock(id, nome, isCurrentlyBlocked) {
 
 // ===== ADMIN: DETALHES DE UM ALUNO (quiz, projetos, certificados) =====
 
-// "Pergunta 1" salvo no banco não tem o texto da pergunta, só o número.
-// Aqui a gente recupera o texto real usando o mesmo array quizQuestions
-// que monta o quiz — assim o admin vê a pergunta, não só "Pergunta 1".
+// O banco guarda só o número da pergunta ("question" é um inteiro 1..N,
+// mas contas antigas podem ter o texto "Pergunta N"). Aqui a gente
+// recupera o texto real usando o mesmo array quizQuestions que monta o
+// quiz — assim a resposta aparece com a pergunta, não só um número.
+function quizQuestionIndex(question) {
+  const s = String(question == null ? '' : question);
+  const named = /Pergunta\s*(\d+)/i.exec(s);
+  if (named) return parseInt(named[1], 10) - 1;
+  const n = parseInt(s, 10);
+  return Number.isInteger(n) && n > 0 ? n - 1 : -1;
+}
+
 function quizQuestionLabel(question) {
-  const m = /Pergunta (\d+)/.exec(question || '');
-  if (m) {
-    const idx = parseInt(m[1], 10) - 1;
-    if (quizQuestions[idx]) return quizQuestions[idx].q;
-  }
+  const idx = quizQuestionIndex(question);
+  if (idx >= 0 && quizQuestions[idx]) return quizQuestions[idx].q;
   return question;
 }
 
@@ -2140,6 +2546,8 @@ async function init() {
       } else {
         completedProjects = [];
         userCerts = [];
+        userSubjectProgress = [];
+        userQuizRows = [];
         enterApp();
         loadUserExtrasSafe(session.user.id);
       }
