@@ -23,7 +23,7 @@ Navegador
 
 ### Componentes do frontend
 
-- `index.html`: marcação das telas de login, dashboard, estudos, certificados, projetos, portfólio e administração.
+- `index.html`: marcação da página inicial (landing), login, dashboard, estudos, certificados, projetos, portfólio e administração.
 - `style.css`: tema visual, diploma e componentes que não são cobertos pelo Tailwind.
 - `script.js`: estado da sessão, eventos, renderização, certificado visual e chamadas de negócio.
 - `supabase.js`: inicialização do cliente Supabase e funções de acesso ao backend.
@@ -58,11 +58,12 @@ O script completo, incluindo carga inicial do catálogo, está em [`database/sch
 
 ### Cadastro e login
 
-1. `supabaseRegister` chama `auth.signUp`.
-2. O trigger `on_auth_user_created` cria um perfil mínimo.
-3. O frontend faz `upsert` dos campos informados pelo aluno.
-4. Login usa `signInWithPassword` e recupera o perfil por `fetchProfile`.
-5. A sessão existente é restaurada por `getSession` durante a inicialização.
+1. Quem chega sem sessão vê a página inicial (landing) apresentando a plataforma; os botões Entrar e Cadastrar abrem as telas de autenticação e o logout volta para a landing. A rota `#publico/<id>` não passa pela landing.
+2. `supabaseRegister` chama `auth.signUp`.
+3. O trigger `on_auth_user_created` cria um perfil mínimo.
+4. O frontend faz `upsert` dos campos informados pelo aluno.
+5. Login usa `signInWithPassword` e recupera o perfil por `fetchProfile`.
+6. A sessão existente é restaurada por `getSession` durante a inicialização.
 
 ### XP e progresso
 

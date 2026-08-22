@@ -57,7 +57,9 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
 
   // Boot, metadata e assets
   check(!!window.document.getElementById('boot-screen'), 'existe tela de boot');
-  check(window.document.getElementById('login-screen').style.display === 'flex', 'login só aparece após sessão ausente');
+  check(window.document.getElementById('landing-screen').style.display === 'block'
+    && window.document.getElementById('login-screen').style.display === 'none',
+    'deslogado vê a página inicial em vez de cair direto no login');
   check(html.includes('A conexão está demorando') === false && script.includes('4000'), 'aviso de conexão lenta configurado para 4s');
   check(script.includes('Não foi possível verificar sua sessão:'), 'falha de sessão explica o motivo');
   check(script.includes('loadUserExtrasSafe(session.user.id)'), 'extras são carga secundária no boot');
@@ -67,6 +69,36 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   check(html.includes('rel="apple-touch-icon"'), 'apple-touch-icon declarado');
   check(html.includes('property="og:title"') && html.includes('property="og:image"'), 'Open Graph declarado');
   check(html.includes('name="description"'), 'meta description declarada');
+
+  // ============================================================
+  // PÁGINA INICIAL (LANDING) — primeira tela de quem chega sem login
+  // ============================================================
+  const landingEl = () => window.document.getElementById('landing-screen');
+  check(html.includes('id="landing-screen"') && html.includes('id="landing-btn-login"') && html.includes('id="landing-btn-register"'),
+    'página inicial existe no HTML com botões Entrar e Cadastrar');
+  const landingText = landingEl().textContent;
+  check(landingText.includes('Estude, pratique') && landingText.includes('Centro de Estudos') && landingText.includes('Portfólio público'),
+    'página inicial explica a plataforma para quem chega sem login');
+  window.openLoginFromLanding();
+  check(landingEl().style.display === 'none' && window.document.getElementById('login-screen').style.display === 'flex'
+    && !window.document.getElementById('login-form').classList.contains('hidden'),
+    'botão Entrar abre a tela de login');
+  window.backToLanding();
+  check(landingEl().style.display === 'block' && window.document.getElementById('login-screen').style.display === 'none',
+    'tela de autenticação permite voltar para a página inicial');
+  window.openRegisterFromLanding();
+  check(window.document.getElementById('login-screen').style.display === 'flex'
+    && !window.document.getElementById('register-form').classList.contains('hidden'),
+    'botão Cadastrar abre a tela de cadastro');
+  window.document.getElementById('login-email').value = 'a@b.com';
+  window.document.getElementById('login-password').value = '123456';
+  await window.handleLogin();
+  check(!window.document.getElementById('main-app').classList.contains('hidden') && landingEl().style.display === 'none',
+    'login com sucesso entra no app e esconde a página inicial');
+  await window.handleLogout();
+  check(landingEl().style.display === 'block' && window.document.getElementById('login-screen').style.display === 'none'
+    && window.document.getElementById('main-app').classList.contains('hidden'),
+    'logout volta para a página inicial');
 
   // Acessibilidade
   const navItems = [...window.document.querySelectorAll('.nav-item')];
@@ -225,7 +257,9 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   window.leavePublicView();
   await tick(); await tick();
   check(publicView().style.display === 'none', 'voltar da visão pública fecha a tela');
-  check(window.document.getElementById('login-screen').style.display === 'flex', 'voltar da visão pública cai no fluxo de login/sessão');
+  check(window.document.getElementById('landing-screen').style.display === 'block'
+    && window.document.getElementById('login-screen').style.display === 'none',
+    'voltar da visão pública cai na página inicial');
 
   // ============================================================
   // PORTFÓLIO PÚBLICO — código (supabase.js, schema.sql, HTML)
@@ -487,7 +521,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     && /avatars_public_read[\s\S]*?is_blocked, false/.test(blockMigration),
     'bloqueados somem dos portfólios públicos (perfil, projetos, certificados e foto)');
 
-  check(passed === 126, 'suíte contém 127 verificações de regressão');
+  check(passed === 133, 'suíte contém 134 verificações de regressão');
   console.log(`\n${passed} verificações passaram.`);
   window.close();
 })().catch(error => {

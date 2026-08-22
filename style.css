@@ -598,6 +598,114 @@ input:focus-visible {
   display: none;
 }
 
+/* ===== PÁGINA INICIAL (LANDING) ===== */
+.landing-topbar {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(15, 15, 35, 0.85);
+  backdrop-filter: blur(10px);
+}
+
+.landing-topbar-inner {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.landing-hero {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 80px 24px 56px;
+  text-align: center;
+}
+
+.landing-eyebrow {
+  color: #00ff88;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.landing-title {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-weight: 800;
+  line-height: 1.15;
+  margin-bottom: 18px;
+}
+
+.landing-highlight {
+  color: #00ff88;
+}
+
+.landing-sub {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  max-width: 44rem;
+  margin: 0 auto 32px;
+}
+
+.landing-section {
+  padding: 48px 24px;
+}
+
+.landing-section-title {
+  text-align: center;
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 28px;
+}
+
+.landing-card {
+  transition: transform 0.25s, border-color 0.25s;
+}
+
+.landing-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(0, 255, 136, 0.35);
+}
+
+.landing-step {
+  text-align: center;
+  padding: 24px 16px;
+}
+
+.landing-step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: #0f0f23;
+  background: linear-gradient(135deg, #00ff88, #00cc6a);
+  margin-bottom: 14px;
+}
+
+.landing-cta {
+  text-align: center;
+  padding: 64px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.landing-footer {
+  text-align: center;
+  padding: 24px;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
 @media print {
   @page {
     size: landscape;
