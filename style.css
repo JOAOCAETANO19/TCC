@@ -281,6 +281,12 @@ input:focus-visible {
   border-color: rgba(0, 255, 136, 0.5);
 }
 
+/* Matéria já estudada: destaque verde sutil no card do Centro de Estudos */
+.subject-studied {
+  border-color: rgba(0, 255, 136, 0.4);
+  background: rgba(0, 255, 136, 0.06);
+}
+
 /* ===== MODAL ===== */
 .modal-overlay {
   position: fixed;
