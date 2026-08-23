@@ -19,7 +19,7 @@ Plataforma educacional gamificada para estudantes de desenvolvimento de sistemas
 ## Recursos da interface
 
 - **Quiz de nivelamento com "Meu nivelamento":** no primeiro acesso o aluno responde 3 perguntas (nível atual, área de interesse e objetivo profissional); as respostas ficam visíveis no card **Meu nivelamento** da aba **Perfil**. Contas antigas seguem funcionando normalmente, sem repetir o quiz;
-- **Centro de Estudos ampliado:** as 12 matérias ganham nível e tempo estimado, seção **Erros comuns**, **Para se aprofundar** (com links externos) e um **teste rápido de conhecimento** de 3 perguntas com correção na hora (só no cliente). O painel mostra o progresso com o contador **"X de 12"**, o selo **✓** nas matérias já estudadas e a **trilha recomendada** pela área do quiz, com o destaque **"Comece por aqui"** na próxima matéria da sequência;
+- **Centro de Estudos ampliado:** as 12 matérias ganham nível e tempo estimado, seção **Erros comuns**, **Para se aprofundar** (com links externos) e um **teste rápido de conhecimento** de 3 perguntas com correção na hora (só no cliente). O painel mostra o progresso com o contador **"X de 12"**, o selo **✓** nas matérias já concluídas (as que geraram certificado ao clicar em **"Marcar como concluído"** — abrir a matéria dá +10 XP, mas não a marca como estudada) e a **trilha recomendada** pela área do quiz, com o destaque **"Comece por aqui"** na próxima matéria da sequência;
 - **Certificado visual:** diploma renderizado em canvas, com download em PNG e impressão em PDF;
 - **Briefing de projetos:** cada um dos 9 projetos práticos abre um briefing no formato usado no mercado, com contexto do cliente, tecnologias sugeridas, requisitos funcionais, entregáveis e critérios de aceite;
 - **Menu mobile:** em telas de até 768px a barra lateral vira uma gaveta acionada pelo botão de menu, com fundo escurecido, fechamento pelo `Esc`, por clique fora e ao escolher uma aba;
@@ -95,8 +95,8 @@ Os testes usam [jsdom](https://github.com/jsdom/jsdom) e não precisam de rede n
 
 ```bash
 npm install
-node tests/regressao.js      # regressão (156 verificações)
-node tests/smoke-completo.js # jornada completa do aluno (46 verificações)
+node tests/regressao.js      # regressão (157 verificações)
+node tests/smoke-completo.js # jornada completa do aluno (47 verificações)
 ```
 
 ## Publicação

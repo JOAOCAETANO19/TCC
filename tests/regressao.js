@@ -52,8 +52,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     setCompleted(v) { completedProjects = v; },
     getCompleted() { return completedProjects.slice(); },
     setCerts(v) { userCerts = v; },
-    setProgress(v) { userSubjectProgress = v; },
-    getProgress() { return userSubjectProgress.slice(); },
+    getCerts() { return userCerts.slice(); },
     setQuizRows(v) { userQuizRows = v; },
     getExtras() { return subjectExtras; },
     getSubjects() { return subjects; }
@@ -572,7 +571,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     'as 12 matérias têm quiz de conhecimento com 3 perguntas');
 
   window.__testHooks.setUser({ id: 'u1', name: 'Ana', track: 'Front-end', level: 1, xp: 0, quiz_done: true, is_admin: false });
-  window.__testHooks.setProgress([]);
+  window.__testHooks.setCerts([]);
   window.renderSubjects();
   check(window.document.getElementById('subjects-counter').textContent === '0 de 12',
     'contador começa em 0 de 12');
@@ -583,13 +582,16 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   check(gridEmpty.textContent.includes('Comece por aqui'),
     'com a trilha vazia, a primeira matéria ganha o destaque Comece por aqui');
 
-  window.__testHooks.setProgress(['html', 'css']);
+  window.__testHooks.setCerts([
+    { subject_id: 'html', title: 'HTML - Básico' },
+    { subject_id: 'css', title: 'CSS - Básico' }
+  ]);
   window.renderSubjects();
   check(window.document.getElementById('subjects-counter').textContent === '2 de 12',
-    'contador reflete as matérias já estudadas');
+    'contador conta apenas matérias concluídas (com certificado)');
   const grid = window.document.getElementById('subjects-grid');
   check(grid.textContent.includes('✓ Estudada'),
-    'matérias estudadas exibem o selo ✓');
+    'matérias concluídas exibem o selo ✓');
   const jsCard = [...grid.querySelectorAll('.subject-card')].find(c => c.textContent.includes('JavaScript'));
   check(!!jsCard && jsCard.textContent.includes('Comece por aqui'),
     'Comece por aqui pula as matérias estudadas e aponta para a próxima da trilha');
@@ -618,7 +620,18 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   check(window.document.getElementById('subject-quiz-score').textContent.includes('1 de 2'),
     'placar do teste rápido contabiliza acertos na hora');
 
-  check(passed === 155, 'suíte contém 156 verificações de regressão');
+  // Abrir a matéria dá XP de exploração, mas NÃO marca como estudada:
+  // só "Marcar como concluído" (certificado) conta no selo ✓ e no contador.
+  window.__testHooks.setCerts([]);
+  await window.openSubject('git');
+  window.closeSubject();
+  const gridAfterOpen = window.document.getElementById('subjects-grid');
+  check(window.document.getElementById('subjects-counter').textContent === '0 de 12'
+    && !gridAfterOpen.textContent.includes('✓ Estudada')
+    && !script.includes('userSubjectProgress'),
+    'abrir a matéria não a marca como estudada — só o certificado conta');
+
+  check(passed === 156, 'suíte contém 157 verificações de regressão');
   console.log(`\n${passed} verificações passaram.`);
   window.close();
 })().catch(error => {

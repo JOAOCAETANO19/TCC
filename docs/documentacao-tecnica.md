@@ -37,7 +37,7 @@ Não há dependências locais nem transpiler. Os scripts são carregados na orde
 | `profiles` | dados acadêmicos, XP, papel administrativo, visibilidade do portfólio (`portfolio_public`) e caminho da foto (`avatar_url`) | `id` referencia `auth.users` |
 | `quiz_answers` | três respostas do nivelamento | `user_id` → `profiles`; único por pergunta |
 | `projects` | catálogo dos nove projetos | `id` é a chave do catálogo |
-| `subject_progress` | matérias visualizadas | chave composta `user_id + subject_id` |
+| `subject_progress` | matérias visualizadas (XP de exploração; não conta como concluída na interface) | chave composta `user_id + subject_id` |
 | `user_projects` | projetos concluídos | `user_id + project_id` |
 | `certificates` | exercícios concluídos e certificados emitidos | único por usuário e matéria |
 
