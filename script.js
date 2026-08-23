@@ -45,7 +45,7 @@ const subjectContent = {
 // ===== TRILHA RECOMENDADA POR ÁREA =====
 // Cada área do quiz de nivelamento aponta para uma ordem de estudo.
 // O Centro de Estudos marca com "Comece por aqui" a primeira matéria
-// dessa sequência que o aluno ainda não abriu (subject_progress).
+// dessa sequência que o aluno ainda não concluiu (sem certificado emitido).
 const trackCurriculum = {
   'Front-end':    ['html', 'css', 'js', 'git', 'apis', 'redes'],
   'Back-end':     ['logica', 'python', 'sql', 'banco', 'apis', 'git'],
@@ -517,7 +517,6 @@ let currentAuthId  = null;  // UUID do auth.users
 let completedProjects = []; // array de project_id já concluídos
 let userCerts      = [];    // array de { subject_id, title }
 let quizAnswers    = [];
-let userSubjectProgress = []; // array de subject_id já estudados (abertos)
 let userQuizRows   = [];    // respostas do quiz do usuário logado (exibidas no Perfil)
 let lastCertModel  = null;  // certificado atualmente aberto no modal
 let adminDetailStudent = null;
@@ -1114,7 +1113,6 @@ async function handleLogin() {
     await rejectBlockedSession(); // lança se a conta estiver bloqueada
     completedProjects = [];
     userCerts = [];
-    userSubjectProgress = [];
     userQuizRows = [];
     enterApp();
     loadUserExtrasSafe(user.id);
@@ -1150,7 +1148,6 @@ async function handleRegister() {
     await rejectBlockedSession(); // conta recém-criada nunca está bloqueada, mas é seguro checar
     completedProjects = [];
     userCerts         = [];
-    userSubjectProgress = [];
     userQuizRows        = [];
     enterApp();
   } catch (err) {
@@ -1169,7 +1166,6 @@ async function handleLogout() {
   currentAuthId     = null;
   completedProjects = [];
   userCerts         = [];
-  userSubjectProgress = [];
   userQuizRows        = [];
   currentAvatarUrl  = null;
   cancelAvatarPreview();
@@ -1210,15 +1206,13 @@ function rejectBlockedSession() {
 // ===== CARREGAR EXTRAS (projetos e certificados) =====
 
 async function loadUserExtras(userId) {
-  const [projs, certs, progress, quizRows] = await Promise.all([
+  const [projs, certs, quizRows] = await Promise.all([
     fetchUserProjects(userId),
     fetchCertificates(userId),
-    fetchSubjectProgress(userId),
     fetchQuizAnswers(userId)
   ]);
   completedProjects   = projs.map(p => p.project_id);
   userCerts           = certs;
-  userSubjectProgress = progress.map(p => p.subject_id);
   userQuizRows        = quizRows || [];
 }
 
@@ -1640,7 +1634,7 @@ function recommendedTrack() {
   return trackCurriculum[track] || trackCurriculum.default;
 }
 
-// Primeira matéria da trilha que o aluno ainda não abriu — é ela que
+// Primeira matéria da trilha que o aluno ainda não concluiu — é ela que
 // recebe o destaque "Comece por aqui".
 function recommendedNextSubject(studiedSet) {
   const list = recommendedTrack();
@@ -1649,10 +1643,12 @@ function recommendedNextSubject(studiedSet) {
 
 function renderSubjects() {
   document.getElementById('study-content').classList.add('hidden');
-  const studied = new Set(userSubjectProgress || []);
+  // "Estudada" = "concluída": só conta a matéria que gerou certificado
+  // (botão "Marcar como concluído"), não a que foi apenas aberta.
+  const studied = new Set((userCerts || []).map(c => c.subject_id));
   const doneCount = subjects.filter(s => studied.has(s.id)).length;
 
-  // Contador "X de 12" usando subject_progress (matérias já abertas).
+  // Contador "X de 12" usando os certificados emitidos (matérias concluídas).
   const counter = document.getElementById('subjects-counter');
   if (counter) counter.textContent = `${doneCount} de ${subjects.length}`;
 
@@ -1803,7 +1799,6 @@ async function openSubject(id) {
   try {
     await awardSubjectViewXP(id);
     currentUser = await fetchProfile(currentAuthId);
-    if (!userSubjectProgress.includes(id)) userSubjectProgress.push(id);
   } catch (e) {
     console.warn('Erro ao salvar progresso:', e.message);
   }
@@ -1813,7 +1808,7 @@ async function openSubject(id) {
 
 function closeSubject() {
   // Re-renderiza o grid para atualizar o contador "X de 12" e o selo ✓
-  // com as matérias estudadas desde a última renderização.
+  // com as matérias concluídas desde a última renderização.
   renderSubjects();
 }
 
@@ -2546,7 +2541,6 @@ async function init() {
       } else {
         completedProjects = [];
         userCerts = [];
-        userSubjectProgress = [];
         userQuizRows = [];
         enterApp();
         loadUserExtrasSafe(session.user.id);

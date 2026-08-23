@@ -98,7 +98,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     setUser(v) { currentUser = v; },
     setAuth(v) { currentAuthId = v; },
     getQuizRows() { return userQuizRows.slice(); },
-    getProgress() { return userSubjectProgress.slice(); },
+    getCerts() { return userCerts.slice(); },
     getCompleted() { return completedProjects.slice(); }
   };`);
   await tick();
@@ -176,6 +176,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   window.answerSubjectQuiz('html', 2, 1); // erra (correta é 0)
   check(window.document.getElementById('sq-html-2-1').textContent.includes('✗'), 'erro no teste rápido é corrigido na hora');
   check(window.document.getElementById('subject-quiz-score').textContent.includes('1 de 2'), 'placar do teste rápido atualiza');
+  check(window.document.getElementById('subjects-counter').textContent === '0 de 12', 'abrir a matéria não a marca como estudada');
 
   // ============================================================
   // 7. CONCLUIR EXERCÍCIO → certificado + XP
@@ -188,7 +189,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
 
   window.closeSubject();
   check(window.document.getElementById('subjects-counter').textContent === '1 de 12', 'voltar atualiza o contador para 1 de 12');
-  check(window.document.getElementById('subjects-grid').textContent.includes('✓ Estudada'), 'matéria estudada ganha o selo ✓');
+  check(window.document.getElementById('subjects-grid').textContent.includes('✓ Estudada'), 'matéria concluída ganha o selo ✓');
 
   // ============================================================
   // 8. PROJETOS → briefing e conclusão
@@ -225,7 +226,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   check(window.document.getElementById('landing-screen').style.display === 'block', 'logout volta para a página inicial');
   check(window.document.getElementById('main-app').classList.contains('hidden'), 'app principal fica oculto após logout');
 
-  check(passed === 45, 'smoke-completo contém 46 verificações');
+  check(passed === 46, 'smoke-completo contém 47 verificações');
   console.log(`\n${passed} verificações passaram.`);
   window.close();
 })().catch(error => {
