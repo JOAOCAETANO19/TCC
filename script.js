@@ -1794,8 +1794,8 @@ async function openSubject(id) {
   renderSubjectQuiz(id);
 
   // +10 XP por abrir o conteúdo — calculado e salvo no banco (award_subject_view_xp),
-  // não somado aqui no cliente. Também registra a matéria em subject_progress,
-  // que alimenta o selo ✓ e o contador "X de 12" no Centro de Estudos.
+  // não somado aqui no cliente. Abrir a matéria NÃO a marca como estudada:
+  // o selo ✓ e o contador "X de 12" só avançam com "Marcar como concluído".
   try {
     await awardSubjectViewXP(id);
     currentUser = await fetchProfile(currentAuthId);
