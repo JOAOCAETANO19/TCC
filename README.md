@@ -71,22 +71,38 @@ where email = 'administrador@exemplo.com';
 
 O script é idempotente para uma instalação nova e inclui tabelas, dados iniciais, índices, RLS, triggers, funções RPC e o bucket de Storage utilizados pela aplicação. Para uma instalação existente, execute:
 
-- [`database/correcao-xp.sql`](database/correcao-xp.sql), para corrigir as funções de premiação do XP;
-- [`database/migracao-portfolio-avatar.sql`](database/migracao-portfolio-avatar.sql), para aplicar as colunas, políticas do portfólio público e o bucket privado `avatars`.
+1. [`database/correcao-xp.sql`](database/correcao-xp.sql)
+   - corrige as funções de premiação do XP;
 
-Os dois arquivos incrementais são idempotentes. Os mesmos blocos também estão no final de `database/schema.sql`, para instalações que preferirem reaplicar o script completo.
+2. [`database/migracao-portfolio-avatar.sql`](database/migracao-portfolio-avatar.sql)
+   - aplica as colunas e políticas do portfólio público;
+   - cria/configura o bucket privado `avatars`;
+
+3. [`database/migracao-bloqueio-usuarios.sql`](database/migracao-bloqueio-usuarios.sql)
+   - adiciona o bloqueio administrativo;
+   - impede ações de contas bloqueadas.
+
+Os três arquivos incrementais são idempotentes. Os mesmos blocos também estão no final de `database/schema.sql`, para instalações que preferirem reaplicar o script completo.
 
 ## Estrutura
 
 ```text
-index.html       interface e telas da aplicação
-style.css        estilos complementares, diploma visual, menu mobile e briefing
-script.js        estado, renderização, certificado visual, briefing e regras de interação
-supabase.js      cliente Supabase e chamadas ao backend
- database/
-   schema.sql     esquema, políticas e funções PostgreSQL
- docs/
-   documentacao-tecnica.md
+index.html                         interface e telas da aplicação
+style.css                          estilos complementares, diploma visual, menu mobile e briefing
+script.js                          estado, renderização, certificado visual, briefing e regras de interação
+supabase.js                        cliente Supabase e chamadas ao backend
+package.json                       dependência de testes (jsdom)
+package-lock.json                  versões fixadas das dependências
+database/
+  schema.sql                       esquema, políticas e funções PostgreSQL
+  correcao-xp.sql                  correção incremental das funções de XP
+  migracao-portfolio-avatar.sql    portfólio público e avatar
+  migracao-bloqueio-usuarios.sql   bloqueio administrativo de contas
+docs/
+  documentacao-tecnica.md          arquitetura, banco, segurança e fluxos
+tests/
+  regressao.js                     verificações de regressão
+  smoke-completo.js                jornada completa do aluno
 ```
 
 ## Testes
