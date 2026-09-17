@@ -155,6 +155,10 @@ end;
 $$;
 
 -- Todas as ações abaixo são atômicas e calculam a recompensa no servidor.
+-- Remove a assinatura antiga (text[], text, text) para o PostgREST não
+-- ficar ambíguo ("could not choose the best candidate function") ao
+-- resolver o RPC — a ambiguidade fazia o quiz falhar em silêncio.
+drop function if exists public.award_quiz_xp(text[], text, text);
 create or replace function public.award_quiz_xp(p_answers jsonb, p_track text, p_goal text)
 returns void language plpgsql security definer set search_path = public as $$
 declare uid uuid := auth.uid();
