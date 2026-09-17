@@ -25,7 +25,8 @@ Plataforma educacional gamificada para estudantes de desenvolvimento de sistemas
 - **Menu mobile:** em telas de até 768px a barra lateral vira uma gaveta acionada pelo botão de menu, com fundo escurecido, fechamento pelo `Esc`, por clique fora e ao escolher uma aba;
 - **Portfólio digital:** reúne XP, projetos concluídos e certificados do aluno;
 - **Portfólio público:** o aluno publica ou torna privado o portfólio na aba Portfólio e copia o link `#publico/<id>`, que abre uma visão pública sem login com apenas os dados autorizados;
-- **Foto de perfil (avatar):** upload com validação de formato (JPG/PNG) e tamanho (máx. 2 MB), prévia antes de salvar e opção de remover; armazenada em bucket privado do Supabase Storage, exibida por URL assinada e protegida pelas mesmas regras de privacidade do portfólio — sem foto, a bolinha com a inicial do nome continua em uso.
+- **Foto de perfil (avatar):** upload com validação de formato (JPG/PNG) e tamanho (máx. 2 MB), prévia antes de salvar e opção de remover; armazenada em bucket privado do Supabase Storage, exibida por URL assinada e protegida pelas mesmas regras de privacidade do portfólio — sem foto, a bolinha com a inicial do nome continua em uso;
+- **Feedback visível de falhas:** erros de gravação (quiz, progresso, foto, projeto, portfólio) aparecem como toast, não só no console.
 
 ## Tecnologias
 
@@ -82,7 +83,11 @@ O script é idempotente para uma instalação nova e inclui tabelas, dados inici
    - adiciona o bloqueio administrativo;
    - impede ações de contas bloqueadas.
 
-Os três arquivos incrementais são idempotentes. Os mesmos blocos também estão no final de `database/schema.sql`, para instalações que preferirem reaplicar o script completo.
+4. [`database/migracao-permissoes-anon.sql`](database/migracao-permissoes-anon.sql) (reforço de segurança, recomendado)
+   - revoga qualquer privilégio amplo do papel `anon` sobre `public.profiles`;
+   - reconcede apenas as colunas expostas pelo portfólio público.
+
+Os arquivos incrementais são idempotentes. Os blocos das três primeiras migrações também estão no final de `database/schema.sql`, para instalações que preferirem reaplicar o script completo.
 
 ## Estrutura
 
@@ -98,11 +103,13 @@ database/
   correcao-xp.sql                  correção incremental das funções de XP
   migracao-portfolio-avatar.sql    portfólio público e avatar
   migracao-bloqueio-usuarios.sql   bloqueio administrativo de contas
+  migracao-permissoes-anon.sql     reforço da restrição por coluna do papel anon
 docs/
   documentacao-tecnica.md          arquitetura, banco, segurança e fluxos
 tests/
   regressao.js                     verificações de regressão
   smoke-completo.js                jornada completa do aluno
+  verificacao-extra.js             menu mobile, certificado visual e painel admin
 ```
 
 ## Testes
@@ -111,8 +118,9 @@ Os testes usam [jsdom](https://github.com/jsdom/jsdom) e não precisam de rede n
 
 ```bash
 npm install
-node tests/regressao.js      # regressão (157 verificações)
-node tests/smoke-completo.js # jornada completa do aluno (47 verificações)
+node tests/regressao.js         # regressão (157 verificações)
+node tests/smoke-completo.js    # jornada completa do aluno (47 verificações)
+node tests/verificacao-extra.js # menu mobile, certificado e painel admin (55 verificações)
 ```
 
 ## Publicação

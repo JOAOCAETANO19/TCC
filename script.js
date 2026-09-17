@@ -1301,6 +1301,7 @@ async function finishQuiz() {
     userQuizRows = quizAnswers.map((answer, i) => ({ question: i + 1, answer }));
   } catch (e) {
     console.warn('Erro ao salvar quiz:', e.message);
+    showToast('Não foi possível salvar o quiz: ' + e.message, 'error');
   }
 
   document.getElementById('quiz-modal').classList.add('hidden');
@@ -1801,6 +1802,7 @@ async function openSubject(id) {
     currentUser = await fetchProfile(currentAuthId);
   } catch (e) {
     console.warn('Erro ao salvar progresso:', e.message);
+    showToast('Não foi possível registrar o progresso desta matéria.', 'error');
   }
 
   renderDashboard();
