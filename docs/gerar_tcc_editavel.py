@@ -2,7 +2,7 @@
 """Gera o TCC editável em DOCX a partir da documentação do Pratica.dev 2.0."""
 from docx import Document
 from docx.shared import Cm, Pt, RGBColor
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT, WD_TAB_LEADER
 from docx.enum.section import WD_SECTION
 from docx.enum.table import WD_TABLE_ALIGNMENT, WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.style import WD_STYLE_TYPE
@@ -301,9 +301,9 @@ for sigla, significado in [
 # A lista de símbolos é opcional e foi omitida, pois o trabalho não utiliza símbolos técnicos.
 # SUMÁRIO automático: os títulos pré-textuais usam estilo próprio e não aparecem aqui.
 preheading("SUMÁRIO")
-par = p("", first=False)
-fld = OxmlElement("w:fldSimple"); fld.set(qn("w:instr"), 'TOC \\o "1-3" \\h \\z \\u')
-par._p.append(fld)
+# Marcador substituído, ao final da geração, por entradas visíveis com números
+# de página atualizáveis. Isso evita o sumário em branco em alguns editores.
+toc_marker = p("", first=False)
 
 # 1 INTRODUÇÃO — início da parte textual e da numeração visível.
 bodysec = doc.add_section(WD_SECTION.NEW_PAGE)
@@ -311,11 +311,10 @@ bodysec.header.is_linked_to_previous = False
 bodysec.header.paragraphs[0].clear()
 bodysec.header_distance = Cm(2)
 page_number(bodysec.header.paragraphs[0])
-# Capa não é contada; folha de rosto, aprovação, dedicatória, agradecimentos,
-# epígrafe, resumo, lista de siglas e sumário totalizam oito páginas contadas.
-# A Introdução começa na página 9.
+# Capa não é contada. Como o sumário detalhado ocupa duas páginas, a parte
+# textual começa na página 10 neste modelo.
 pg_num = OxmlElement("w:pgNumType")
-pg_num.set(qn("w:start"), "9")
+pg_num.set(qn("w:start"), "10")
 bodysec._sectPr.append(pg_num)
 heading("1 INTRODUÇÃO",1,break_before=False)
 p("A formação em Desenvolvimento de Sistemas exige que o estudante articule fundamentos de programação, banco de dados, versionamento, desenvolvimento web, segurança e construção de projetos. Apesar da disponibilidade de materiais na internet, a aprendizagem pode ficar fragmentada entre vídeos, anotações, ambientes de código e plataformas distintas. Essa fragmentação dificulta a definição do próximo conteúdo, o acompanhamento do progresso e a organização das evidências produzidas ao longo do curso.")
@@ -493,6 +492,74 @@ table(["Item","Procedimento","Resultado/Data"],[("1","Criar uma nova conta e con
 
 heading("APÊNDICE C — CAMPOS A CONFERIR ANTES DA ENTREGA",1)
 bullets(["confirmar a grafia de “Antonio Carlos Ramires Golçalves”;","preencher data, conceito, coordenação e demais integrantes da banca;","inserir capturas de tela nos campos destacados;","atualizar o sumário e a lista de figuras no editor de texto;","confirmar se a instituição exige dedicatória, agradecimentos ou ficha catalográfica;","revisar citações, ortografia e regras específicas do professor;","remover esta lista após concluir a conferência."])
+
+# SUMÁRIO VISÍVEL E ATUALIZÁVEL
+# Os campos TOC vazios não são renderizados por alguns visualizadores. Para
+# evitar isso, cada título recebe um marcador e o sumário recebe campos PAGEREF
+# com um resultado visível de reserva. No Word, Ctrl+A e F9 recalculam os números.
+headings = [par for par in doc.paragraphs if par.style.name in ("Heading 1", "Heading 2", "Heading 3")]
+primary_starts = {
+    "1 INTRODUÇÃO": 10,
+    "2 FUNDAMENTAÇÃO TEÓRICA": 13,
+    "3 METODOLOGIA": 16,
+    "4 LEVANTAMENTO DE REQUISITOS E PLANEJAMENTO": 19,
+    "5 DESENVOLVIMENTO DA SOLUÇÃO": 23,
+    "6 TESTES E RESULTADOS": 31,
+    "7 DISCUSSÃO, LIMITAÇÕES E TRABALHOS FUTUROS": 34,
+    "8 CONCLUSÃO": 36,
+    "REFERÊNCIAS": 37,
+    "APÊNDICE A — GUIA DE INSTALAÇÃO E EXECUÇÃO": 39,
+    "APÊNDICE B — ROTEIRO DE VALIDAÇÃO MANUAL": 41,
+    "APÊNDICE C — CAMPOS A CONFERIR ANTES DA ENTREGA": 42,
+}
+current_page = 10
+sub_index = 0
+toc_entries = []
+for idx, par in enumerate(headings, 1):
+    bookmark = f"_TccToc{idx}"
+    start = OxmlElement("w:bookmarkStart")
+    start.set(qn("w:id"), str(1000 + idx))
+    start.set(qn("w:name"), bookmark)
+    end = OxmlElement("w:bookmarkEnd")
+    end.set(qn("w:id"), str(1000 + idx))
+    par._p.insert(0, start)
+    par._p.append(end)
+    level = int(par.style.name.split()[-1])
+    if level == 1:
+        current_page = primary_starts.get(par.text, current_page)
+        sub_index = 0
+    else:
+        sub_index += 1
+        current_page += 1 if sub_index > 1 and sub_index % 3 == 1 else 0
+    toc_entries.append((par.text, level, bookmark, current_page))
+
+new_toc_paragraphs = []
+for title, level, bookmark, fallback_page in toc_entries:
+    entry = doc.add_paragraph(style="Sem recuo")
+    entry.paragraph_format.left_indent = Cm((level - 1) * 0.75)
+    entry.paragraph_format.first_line_indent = Cm(0)
+    entry.paragraph_format.line_spacing = 1.0
+    entry.paragraph_format.space_after = Pt(3)
+    entry.paragraph_format.tab_stops.add_tab_stop(Cm(15.5), WD_TAB_ALIGNMENT.RIGHT, WD_TAB_LEADER.DOTS)
+    title_run = entry.add_run(title)
+    title_run.font.name = "Arial"; title_run.font.size = Pt(10)
+    title_run.bold = level == 1
+    entry.add_run("\t")
+    run = entry.add_run()
+    begin = OxmlElement("w:fldChar"); begin.set(qn("w:fldCharType"), "begin"); begin.set(qn("w:dirty"), "true")
+    instr = OxmlElement("w:instrText"); instr.set(qn("xml:space"), "preserve"); instr.text = f" PAGEREF {bookmark} \\h "
+    separate = OxmlElement("w:fldChar"); separate.set(qn("w:fldCharType"), "separate")
+    result = OxmlElement("w:t"); result.text = str(fallback_page)
+    end_field = OxmlElement("w:fldChar"); end_field.set(qn("w:fldCharType"), "end")
+    for el in (begin, instr, separate, result, end_field): run._r.append(el)
+    run.font.name = "Arial"; run.font.size = Pt(10)
+    new_toc_paragraphs.append(entry)
+
+anchor = toc_marker._p
+for entry in new_toc_paragraphs:
+    anchor.addnext(entry._p)
+    anchor = entry._p
+toc_marker._p.getparent().remove(toc_marker._p)
 
 # evita linhas órfãs em títulos e garante atualização de campos no Word
 settings = doc.settings._element
