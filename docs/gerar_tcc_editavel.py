@@ -24,7 +24,7 @@ sec = doc.sections[0]
 sec.page_width, sec.page_height = Cm(21), Cm(29.7)
 sec.top_margin, sec.left_margin = Cm(3), Cm(3)
 sec.bottom_margin, sec.right_margin = Cm(2), Cm(2)
-sec.header_distance, sec.footer_distance = Cm(1.25), Cm(1.25)
+sec.header_distance, sec.footer_distance = Cm(2), Cm(1.25)
 
 styles = doc.styles
 normal = styles["Normal"]
@@ -45,7 +45,6 @@ for style_name, size in [("Title", 14), ("Heading 1", 12), ("Heading 2", 12), ("
     st.paragraph_format.space_after = Pt(6)
     if style_name == "Heading 1":
         st.font.all_caps = True
-        st.paragraph_format.page_break_before = True
 
 if "Sem recuo" not in styles:
     st = styles.add_style("Sem recuo", WD_STYLE_TYPE.PARAGRAPH)
@@ -64,6 +63,13 @@ if "Legenda" not in styles:
     st.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
     st.paragraph_format.first_line_indent = Cm(0)
     st.paragraph_format.line_spacing = 1.0
+if "Referencia" not in styles:
+    st = styles.add_style("Referencia", WD_STYLE_TYPE.PARAGRAPH)
+    st.font.name = "Arial"; st.font.size = Pt(12)
+    st.paragraph_format.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    st.paragraph_format.first_line_indent = Cm(0)
+    st.paragraph_format.line_spacing = 1.0
+    st.paragraph_format.space_after = Pt(12)
 
 # Metadados
 doc.core_properties.title = TITLE.title()
@@ -83,7 +89,9 @@ def page_number(paragraph):
     fld = OxmlElement("w:fldSimple"); fld.set(qn("w:instr"), "PAGE")
     run._r.append(fld)
 
-page_number(sec.footer.paragraphs[0])
+# Conforme a ABNT, as páginas pré-textuais são contadas a partir da folha de
+# rosto, mas o número só é exibido na primeira página textual (Introdução).
+sec.header.paragraphs[0].text = ""
 
 
 def p(text="", align=None, bold=False, italic=False, style=None, first=True, before=0, after=0):
@@ -109,7 +117,11 @@ def spacer(lines=1):
 def new_page(): doc.add_page_break()
 
 
-def heading(text, level=1): doc.add_heading(text, level=level)
+def heading(text, level=1, break_before=True):
+    par = doc.add_heading(text, level=level)
+    if level == 1 and break_before:
+        par.paragraph_format.page_break_before = True
+    return par
 
 
 def bullets(items):
@@ -240,8 +252,18 @@ fld=OxmlElement("w:fldSimple"); fld.set(qn("w:instr"), 'TOC \\o "1-3" \\h \\z \\
 par._p.append(fld)
 p("No Microsoft Word: clique com o botão direito sobre o sumário e escolha “Atualizar Campo” > “Atualizar o índice inteiro”. No LibreOffice Writer: Ferramentas > Atualizar > Atualizar tudo.", italic=True, first=False, before=12)
 
-# 1 INTRODUÇÃO
-heading("1 INTRODUÇÃO",1)
+# 1 INTRODUÇÃO — início da parte textual e da numeração visível.
+bodysec = doc.add_section(WD_SECTION.NEW_PAGE)
+bodysec.header.is_linked_to_previous = False
+bodysec.header.paragraphs[0].clear()
+bodysec.header_distance = Cm(2)
+page_number(bodysec.header.paragraphs[0])
+# Capa não é contada; folha de rosto, aprovação, resumos, três listas e sumário
+# totalizam oito páginas pré-textuais neste modelo. A Introdução começa na p. 9.
+pg_num = OxmlElement("w:pgNumType")
+pg_num.set(qn("w:start"), "9")
+bodysec._sectPr.append(pg_num)
+heading("1 INTRODUÇÃO",1,break_before=False)
 p("A formação em Desenvolvimento de Sistemas exige que o estudante articule fundamentos de programação, banco de dados, versionamento, desenvolvimento web, segurança e construção de projetos. Apesar da disponibilidade de materiais na internet, a aprendizagem pode ficar fragmentada entre vídeos, anotações, ambientes de código e plataformas distintas. Essa fragmentação dificulta a definição do próximo conteúdo, o acompanhamento do progresso e a organização das evidências produzidas ao longo do curso.")
 p("O Pratica.dev 2.0 foi concebido para centralizar parte dessa jornada em uma aplicação web. A plataforma oferece um quiz inicial para identificar área de interesse e objetivo profissional, recomenda uma sequência de matérias, apresenta conteúdos e testes rápidos, propõe projetos contextualizados, concede pontos de experiência e emite certificados. Os resultados podem ser reunidos em um portfólio digital que o próprio estudante decide publicar ou manter privado.")
 p("A versão desenvolvida é uma aplicação de página única hospedável como conteúdo estático. O navegador executa a interface, e o Supabase fornece autenticação, banco PostgreSQL, funções de negócio, políticas de segurança e armazenamento de imagens. Essa arquitetura reduz a necessidade de manter um servidor próprio, sem retirar a necessidade de validações no banco de dados e de controle de acesso.")
@@ -259,7 +281,7 @@ p("O projeto também é pertinente como TCC por exigir decisões que ultrapassam
 heading("1.6 DELIMITAÇÃO",2)
 p("O trabalho limita-se a uma aplicação web responsiva para navegadores modernos. Não foram desenvolvidos aplicativos nativos para Android ou iOS, videoconferência, correção automática de código-fonte, integração com sistemas oficiais da instituição ou emissão de certificado com validade jurídica. Os testes automatizados verificam o comportamento do software em ambiente simulado; uma pesquisa com amostra de estudantes e professores permanece como etapa futura.")
 heading("1.7 ESTRUTURA DO TRABALHO",2)
-p("Além desta introdução, o capítulo 2 apresenta a fundamentação teórica. O capítulo 3 descreve a metodologia. O capítulo 4 registra requisitos e planejamento. O capítulo 5 detalha o desenvolvimento e a arquitetura. O capítulo 6 reúne testes e resultados. O capítulo 7 discute limitações e possibilidades de evolução. Por fim, o capítulo 8 apresenta as considerações finais.")
+p("Além desta introdução, a seção 2 apresenta a fundamentação teórica. A seção 3 descreve a metodologia. A seção 4 registra requisitos e planejamento. A seção 5 detalha o desenvolvimento e a arquitetura. A seção 6 reúne testes e resultados. A seção 7 discute limitações e possibilidades de evolução. Por fim, a seção 8 apresenta as considerações finais.")
 
 # 2 FUNDAMENTAÇÃO
 heading("2 FUNDAMENTAÇÃO TEÓRICA",1)
@@ -380,7 +402,10 @@ p("A execução de 259 verificações automatizadas, todas aprovadas, oferece ev
 # REFERÊNCIAS
 heading("REFERÊNCIAS",1)
 refs=[
-"ABNT — ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. NBR 14724: informação e documentação — trabalhos acadêmicos — apresentação. Rio de Janeiro: ABNT, 2011.",
+"ABNT — ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. ABNT NBR 14724:2024: informação e documentação — trabalhos acadêmicos — apresentação. Rio de Janeiro: ABNT, 2024.",
+"ABNT — ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. ABNT NBR 6023:2025: informação e documentação — referências — elaboração. Rio de Janeiro: ABNT, 2025.",
+"ABNT — ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. ABNT NBR 6028:2021: informação e documentação — resumo, resenha e recensão — apresentação. Rio de Janeiro: ABNT, 2021.",
+"ABNT — ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. ABNT NBR 10520:2023: informação e documentação — citações em documentos — apresentação. Rio de Janeiro: ABNT, 2023.",
 "GITHUB. GitHub Pages documentation. Disponível em: https://docs.github.com/pages. Acesso em: 1 out. 2026.",
 "KAPP, Karl M. The gamification of learning and instruction: game-based methods and strategies for training and education. San Francisco: Pfeiffer, 2012.",
 "MDN WEB DOCS. JavaScript. Disponível em: https://developer.mozilla.org/docs/Web/JavaScript. Acesso em: 1 out. 2026.",
@@ -392,7 +417,7 @@ refs=[
 "SUPABASE. Supabase documentation. Disponível em: https://supabase.com/docs. Acesso em: 1 out. 2026.",
 "W3C — WORLD WIDE WEB CONSORTIUM. Web Content Accessibility Guidelines (WCAG) 2.2. Disponível em: https://www.w3.org/TR/WCAG22/. Acesso em: 1 out. 2026."
 ]
-for ref in refs: p(ref, first=False, after=8)
+for ref in refs: p(ref, style="Referencia", first=False)
 
 # APÊNDICES
 heading("APÊNDICE A — GUIA DE INSTALAÇÃO E EXECUÇÃO",1)
