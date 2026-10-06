@@ -278,6 +278,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
 
   const schema = fs.readFileSync(path.join(root, 'database/schema.sql'), 'utf8');
   const avatarMigration = fs.readFileSync(path.join(root, 'database/migracao-portfolio-avatar.sql'), 'utf8');
+  const integrityMigration = fs.readFileSync(path.join(root, 'database/migracao-integridade-xp.sql'), 'utf8');
   check(schema.includes('portfolio_public boolean not null default false'), 'schema.sql tem a coluna portfolio_public');
   check(schema.includes('profiles_public_read') && schema.includes('user_projects_public_read') && schema.includes('certificates_public_read'),
     'schema.sql tem as três políticas de leitura anônima');
@@ -426,12 +427,24 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   check(['award_quiz_xp', 'award_subject_view_xp', 'award_exercise_xp', 'award_project_xp'].every(fn =>
     new RegExp(`create or replace function public\\.${fn}\\([\\s\\S]*?language plpgsql security definer set search_path = public`).test(schema)),
     'as 4 funções de XP são security definer com search_path fixo');
-  check(['admin_reset_xp', 'admin_delete_student'].every(fn =>
-    new RegExp(`create or replace function public\\.${fn}\\([\\s\\S]*?security invoker`).test(schema)),
-    'funções de admin seguem security invoker (autorizadas por current_is_admin)');
+  check(/create or replace function public\.admin_reset_xp[\s\S]*?security invoker/.test(schema)
+    && /create or replace function public\.admin_set_blocked[\s\S]*?security invoker/.test(schema)
+    && /create or replace function public\.admin_delete_student[\s\S]*?security definer set search_path = public/.test(schema),
+    'admin usa invoker nas atualizações e definer controlado na exclusão');
   check(/create policy certificates_insert on public\.certificates for insert with check \(user_id=auth\.uid\(\)\)/.test(schema)
     && /grant select, insert on public\.certificates to authenticated/.test(schema),
     'certificados têm política e grant de INSERT para o próprio aluno');
+  check(/select quiz_done into already_done[\s\S]*?for update;[\s\S]*?if already_done then return/.test(schema),
+    'quiz é atômico e concede XP somente na primeira conclusão');
+  check(/p_subject_id not in \('html','css','js','sql','python','java','poo','git','redes','apis','banco','logica'\)/.test(schema)
+    && /p_cert_title is distinct from expected_title/.test(schema),
+    'RPCs validam matéria e título do certificado no servidor');
+  check(schema.includes('revoke execute on all functions in schema public from public, anon'),
+    'RPCs do schema público não ficam executáveis pelo papel anônimo');
+  check(integrityMigration.includes('already_done')
+    && integrityMigration.includes('admin_delete_student')
+    && integrityMigration.includes('revoke execute on function public.award_quiz_xp'),
+    'migração de integridade aplica os reforços em bancos existentes');
 
   // Reexecutar o schema.sql num banco já existente não pode abortar:
   // toda create policy precisa de um drop policy if exists da mesma
@@ -631,7 +644,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     && !script.includes('userSubjectProgress'),
     'abrir a matéria não a marca como estudada — só o certificado conta');
 
-  check(passed === 156, 'suíte contém 157 verificações de regressão');
+  check(passed === 160, 'suíte contém 161 verificações de regressão');
   console.log(`\n${passed} verificações passaram.`);
   window.close();
 })().catch(error => {

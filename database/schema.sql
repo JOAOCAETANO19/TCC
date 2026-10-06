@@ -161,14 +161,37 @@ $$;
 drop function if exists public.award_quiz_xp(text[], text, text);
 create or replace function public.award_quiz_xp(p_answers jsonb, p_track text, p_goal text)
 returns void language plpgsql security definer set search_path = public as $$
-declare uid uuid := auth.uid();
+declare
+  uid uuid := auth.uid();
+  already_done boolean;
 begin
   if uid is null then raise exception 'Não autenticado'; end if;
   perform public.ensure_not_blocked();
+
+  -- O servidor valida o questionário completo e a correspondência entre
+  -- respostas, trilha e objetivo; não confia apenas nas opções da interface.
+  if p_answers is null or jsonb_typeof(p_answers) <> 'array'
+     or jsonb_array_length(p_answers) <> 3
+     or (p_answers ->> 0) not in ('Iniciante total', 'Já sei o básico', 'Intermediário')
+     or (p_answers ->> 1) not in ('Front-end', 'Back-end', 'Full Stack', 'Mobile', 'Ainda não sei')
+     or (p_answers ->> 2) not in ('Estágio em 6 meses', 'Primeiro emprego em 1 ano', 'Freelancer', 'Criar meu próprio produto')
+     or p_track is distinct from (p_answers ->> 1)
+     or p_goal is distinct from (p_answers ->> 2) then
+    raise exception 'Respostas do quiz inválidas';
+  end if;
+
+  -- O bloqueio da linha torna a operação segura mesmo sob duas chamadas
+  -- concorrentes. Quiz já concluído é idempotente: não altera respostas e
+  -- não concede outros 50 XP.
+  select quiz_done into already_done from public.profiles where id = uid for update;
+  if not found then raise exception 'Perfil inexistente'; end if;
+  if already_done then return; end if;
+
   insert into public.quiz_answers (user_id, question, answer)
-  select uid, (row_number() over ())::integer, value::text
-  from jsonb_array_elements_text(coalesce(p_answers, '[]'::jsonb)) value
+  select uid, answer.ordinality::integer, answer.value
+  from jsonb_array_elements_text(p_answers) with ordinality as answer(value, ordinality)
   on conflict (user_id, question) do update set answer = excluded.answer;
+
   update public.profiles set track = p_track, goal = p_goal, quiz_done = true,
     xp = xp + 50, level = public.recalculate_level(xp + 50) where id = uid;
 end;
@@ -180,8 +203,14 @@ declare uid uuid := auth.uid();
 begin
   if uid is null then raise exception 'Não autenticado'; end if;
   perform public.ensure_not_blocked();
-  if not exists (select 1 from public.subject_progress where user_id=uid and subject_id=p_subject_id) then
-    insert into public.subject_progress(user_id, subject_id) values (uid, p_subject_id);
+  if p_subject_id not in ('html','css','js','sql','python','java','poo','git','redes','apis','banco','logica') then
+    raise exception 'Matéria inexistente';
+  end if;
+
+  -- INSERT ... ON CONFLICT também evita corrida entre duas abas abertas.
+  insert into public.subject_progress(user_id, subject_id) values (uid, p_subject_id)
+    on conflict (user_id, subject_id) do nothing;
+  if found then
     update public.profiles set xp=xp+10, level=public.recalculate_level(xp+10) where id=uid;
   end if;
 end;
@@ -189,11 +218,32 @@ $$;
 
 create or replace function public.award_exercise_xp(p_subject_id text, p_cert_title text)
 returns void language plpgsql security definer set search_path = public as $$
-declare uid uuid := auth.uid();
+declare
+  uid uuid := auth.uid();
+  expected_title text;
 begin
   if uid is null then raise exception 'Não autenticado'; end if;
   perform public.ensure_not_blocked();
-  insert into public.certificates(user_id, subject_id, title) values(uid,p_subject_id,p_cert_title)
+
+  expected_title := case p_subject_id
+    when 'html' then 'HTML - Básico'
+    when 'css' then 'CSS - Básico'
+    when 'js' then 'JavaScript - Básico'
+    when 'sql' then 'SQL - Básico'
+    when 'python' then 'Python - Básico'
+    when 'java' then 'Java - Básico'
+    when 'poo' then 'POO - Básico'
+    when 'git' then 'Git/GitHub - Básico'
+    when 'redes' then 'Redes - Básico'
+    when 'apis' then 'APIs - Básico'
+    when 'banco' then 'Banco de Dados - Básico'
+    when 'logica' then 'Lógica - Básico'
+    else null
+  end;
+  if expected_title is null then raise exception 'Matéria inexistente'; end if;
+  if p_cert_title is distinct from expected_title then raise exception 'Título de certificado inválido'; end if;
+
+  insert into public.certificates(user_id, subject_id, title) values(uid,p_subject_id,expected_title)
     on conflict (user_id, subject_id) do nothing;
   if found then
     update public.profiles set xp=xp+30, level=public.recalculate_level(xp+30) where id=uid;
@@ -224,11 +274,12 @@ end;
 $$;
 
 create or replace function public.admin_delete_student(target_id uuid)
-returns void language plpgsql security invoker as $$
+returns void language plpgsql security definer set search_path = public as $$
 begin
   if not public.current_is_admin() then raise exception 'Acesso negado'; end if;
   perform public.ensure_not_blocked();
-  delete from public.profiles where id=target_id and id <> auth.uid();
+  if target_id = auth.uid() then raise exception 'Você não pode excluir a própria conta'; end if;
+  delete from public.profiles where id = target_id;
 end;
 $$;
 
@@ -286,6 +337,10 @@ grant select on public.projects to anon, authenticated;
 grant select, insert, update on public.profiles, public.quiz_answers to authenticated;
 grant select on public.subject_progress, public.user_projects to authenticated;
 grant select, insert on public.certificates to authenticated;
+-- PostgreSQL concede EXECUTE de novas funções a PUBLIC por padrão. Revogar
+-- primeiro impede visitantes anon de chamarem RPCs, mesmo as que hoje também
+-- se protegem verificando auth.uid().
+revoke execute on all functions in schema public from public, anon;
 grant execute on all functions in schema public to authenticated;
 
 -- ============================================================
@@ -450,9 +505,10 @@ create policy avatars_public_read on storage.objects
 --   3. certificates ganhou a política certificates_insert e o
 --      grant de INSERT para o papel authenticated.
 --
--- As funções admin_* seguem SECURITY INVOKER de propósito: elas
--- se autorizam por current_is_admin() e o trigger já abre exceção
--- para administradores.
+-- admin_reset_xp e admin_set_blocked seguem SECURITY INVOKER: elas se
+-- autorizam por current_is_admin() e o trigger abre exceção para admins.
+-- admin_delete_student é SECURITY DEFINER porque DELETE não é concedido ao
+-- cliente; a função revalida o admin e impede autoexclusão antes de agir.
 --
 -- Em instalações NOVAS não há nada a fazer: rodar este arquivo
 -- inteiro já aplica tudo. Em instalações EXISTENTES, reexecute o

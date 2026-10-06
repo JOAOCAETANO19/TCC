@@ -83,11 +83,17 @@ O script é idempotente para uma instalação nova e inclui tabelas, dados inici
    - adiciona o bloqueio administrativo;
    - impede ações de contas bloqueadas.
 
-4. [`database/migracao-permissoes-anon.sql`](database/migracao-permissoes-anon.sql) (reforço de segurança, recomendado)
+4. [`database/migracao-permissoes-anon.sql`](database/migracao-permissoes-anon.sql) (reforço de segurança)
    - revoga qualquer privilégio amplo do papel `anon` sobre `public.profiles`;
    - reconcede apenas as colunas expostas pelo portfólio público.
 
-Os arquivos incrementais são idempotentes. Os blocos das três primeiras migrações também estão no final de `database/schema.sql`, para instalações que preferirem reaplicar o script completo.
+5. [`database/migracao-integridade-xp.sql`](database/migracao-integridade-xp.sql) (reforço de integridade)
+   - torna o quiz idempotente e valida suas três respostas;
+   - aceita XP/certificado somente para as 12 matérias do catálogo;
+   - revoga execução anônima das RPCs sensíveis;
+   - corrige a exclusão acadêmica administrativa, com revalidação e sem autoexclusão.
+
+Os arquivos incrementais são idempotentes. Para uma instalação nova, `database/schema.sql` já consolida as regras; em instalações existentes, aplique as migrações na ordem acima.
 
 ## Estrutura
 
@@ -104,23 +110,41 @@ database/
   migracao-portfolio-avatar.sql    portfólio público e avatar
   migracao-bloqueio-usuarios.sql   bloqueio administrativo de contas
   migracao-permissoes-anon.sql     reforço da restrição por coluna do papel anon
+  migracao-integridade-xp.sql      validação/idempotência do XP e exclusão admin
 docs/
   documentacao-tecnica.md          arquitetura, banco, segurança e fluxos
+  TCC-Pratica.dev-2.0-ABNT.docx    TCC completo em Word, formatado nas normas ABNT
+scripts/
+  gerar_tcc_abnt.py                gerador reprodutível do documento Word
+  requirements-docs.txt            dependências Python do gerador
 tests/
   regressao.js                     verificações de regressão
   smoke-completo.js                jornada completa do aluno
   verificacao-extra.js             menu mobile, certificado visual e painel admin
 ```
 
+## Documento acadêmico em Word
+
+O TCC completo está em [`docs/TCC-Pratica.dev-2.0-ABNT.docx`](docs/TCC-Pratica.dev-2.0-ABNT.docx). Para regenerá-lo após alterar o conteúdo:
+
+```bash
+python3 -m pip install -r scripts/requirements-docs.txt
+python3 scripts/gerar_tcc_abnt.py
+```
+
+Ao abrir o arquivo no Microsoft Word, selecione tudo (`Ctrl+A`) e pressione `F9` para atualizar sumário, listas e páginas. Antes da entrega, substitua os campos amarelos da instituição, orientação e banca.
+
 ## Testes
 
 Os testes usam [jsdom](https://github.com/jsdom/jsdom) e não precisam de rede nem de um Supabase real — todas as integrações externas são substituídas por mocks.
 
 ```bash
-npm install
-node tests/regressao.js         # regressão (157 verificações)
+npm ci
+npm test                        # executa as três suítes (263 verificações)
+node tests/regressao.js         # regressão e segurança (161 verificações)
 node tests/smoke-completo.js    # jornada completa do aluno (47 verificações)
 node tests/verificacao-extra.js # menu mobile, certificado e painel admin (55 verificações)
+npm run audit                   # audita as dependências de desenvolvimento
 ```
 
 ## Publicação

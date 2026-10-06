@@ -69,12 +69,12 @@ O script completo, incluindo carga inicial do catálogo, está em [`database/sch
 
 XP nunca é calculado pelo JavaScript. As ações chamam funções PostgreSQL:
 
-- `award_quiz_xp`: registra respostas, trilha e objetivo e adiciona 50 XP;
-- `award_subject_view_xp`: registra a primeira visualização e adiciona 10 XP;
-- `award_exercise_xp`: emite um certificado e adiciona 30 XP apenas uma vez;
+- `award_quiz_xp`: valida as três respostas, registra trilha e objetivo e adiciona 50 XP somente na primeira conclusão;
+- `award_subject_view_xp`: aceita apenas os 12 IDs de matérias, registra a primeira visualização e adiciona 10 XP;
+- `award_exercise_xp`: valida matéria e título, emite um certificado e adiciona 30 XP apenas uma vez;
 - `award_project_xp`: registra o projeto e usa a recompensa do catálogo.
 
-Cada função usa uma chave única para impedir que a mesma atividade seja repetida para farmar XP. O nível é recalculado no servidor pela função `recalculate_level`.
+As operações são validadas no banco: o quiz aceita exatamente as três opções previstas e concede XP somente na primeira conclusão; matéria e exercício aceitam apenas os 12 identificadores do catálogo; visualizações, certificados e projetos possuem chaves únicas e inserção idempotente. Assim, chamadas repetidas ou identificadores inventados não permitem acumular XP. O nível é recalculado no servidor pela função `recalculate_level`.
 
 ### Certificado visual
 
@@ -82,7 +82,7 @@ O registro em `certificates` continua sendo a fonte da verdade. O frontend apena
 
 ### Administração
 
-`is_admin` controla a exibição do painel no cliente, mas não é a proteção real. As políticas RLS e as funções `admin_reset_xp` e `admin_delete_student` verificam o papel no banco. A lista de alunos permite consulta administrativa; detalhes combinam perfil, respostas, projetos e certificados.
+`is_admin` controla a exibição do painel no cliente, mas não é a proteção real. As políticas RLS e as funções administrativas revalidam o papel no banco. `admin_reset_xp` e `admin_set_blocked` usam as permissões do administrador autenticado; `admin_delete_student` usa privilégio controlado (`SECURITY DEFINER`, com `search_path` fixo) porque o cliente não recebe `DELETE` direto, e impede autoexclusão. A lista de alunos permite consulta administrativa; detalhes combinam perfil, respostas, projetos e certificados.
 
 ### Portfólio público
 
@@ -122,7 +122,7 @@ O bloco incremental correspondente (coluna `avatar_url`, grant da coluna ao `ano
 ## 6. Instalação e configuração
 
 1. Crie um projeto Supabase.
-2. Execute `database/schema.sql` no SQL Editor. Se o banco já existia, execute também `database/correcao-xp.sql` e `database/migracao-portfolio-avatar.sql`.
+2. Execute `database/schema.sql` no SQL Editor. Se o banco já existia, aplique, nesta ordem: `database/correcao-xp.sql`, `database/migracao-portfolio-avatar.sql`, `database/migracao-bloqueio-usuarios.sql`, `database/migracao-permissoes-anon.sql` e `database/migracao-integridade-xp.sql`.
 3. Ajuste `SUPABASE_URL` e `SUPABASE_ANON` em `supabase.js` quando necessário.
 4. Sirva a raiz com `python3 -m http.server 8080`.
 5. Abra `http://localhost:8080` e faça um cadastro.

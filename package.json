@@ -1,5 +1,9 @@
 {
-  "dependencies": {
+  "scripts": {
+    "test": "node tests/regressao.js && node tests/smoke-completo.js && node tests/verificacao-extra.js",
+    "audit": "npm audit --audit-level=high"
+  },
+  "devDependencies": {
     "jsdom": "^30.0.1"
   }
 }
