@@ -537,9 +537,6 @@ for cmd in ["npm ci","node tests/regressao.js","node tests/smoke-completo.js","n
 heading("APÊNDICE B — ROTEIRO DE VALIDAÇÃO MANUAL",1)
 table(["Item","Procedimento","Resultado/Data"],[("1","Criar uma nova conta e concluir o quiz.","________________"),("2","Abrir uma matéria, responder ao teste e emitir certificado.","________________"),("3","Concluir um projeto e conferir XP/portfólio.","________________"),("4","Publicar o portfólio e abrir o link sem login.","________________"),("5","Enviar e remover JPG/PNG; testar arquivo inválido.","________________"),("6","Validar menu e formulários em celular.","________________"),("7","Imprimir certificado em PDF.","________________"),("8","Testar bloqueio com conta administrativa.","________________")],[1.5,11,4], "Roteiro de validação manual")
 
-heading("APÊNDICE C — CAMPOS A CONFERIR ANTES DA ENTREGA",1)
-bullets(["confirmar a grafia de “Antonio Carlos Ramires Golçalves”;","preencher data, conceito, coordenação e demais integrantes da banca quando essas informações forem divulgadas;","atualizar o sumário e a Lista de Figuras no editor de texto após qualquer alteração;","confirmar se a instituição exige ficha catalográfica;","realizar a revisão final com o professor orientador;","remover esta lista após concluir a conferência."])
-
 # LISTA DE FIGURAS VISÍVEL E ATUALIZÁVEL
 figure_fallback_pages = [26, 28, 29, 30, 32, 33, 34, 35, 37, 38, 39, 40]
 new_figure_list_paragraphs = []
@@ -583,7 +580,6 @@ primary_starts = {
     "REFERÊNCIAS": 46,
     "APÊNDICE A — GUIA DE INSTALAÇÃO E EXECUÇÃO": 48,
     "APÊNDICE B — ROTEIRO DE VALIDAÇÃO MANUAL": 50,
-    "APÊNDICE C — CAMPOS A CONFERIR ANTES DA ENTREGA": 51,
 }
 current_page = 12
 sub_index = 0
