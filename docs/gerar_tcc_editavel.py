@@ -11,6 +11,7 @@ from docx.oxml.ns import qn
 from docx.enum.text import WD_BREAK
 
 OUT = "docs/TCC-Pratica-dev-2.0-editavel.docx"
+PRINTS = "docs/prints-praticadev"
 TITLE = "PRATICA.DEV 2.0: PLATAFORMA EDUCACIONAL GAMIFICADA PARA ESTUDANTES DE DESENVOLVIMENTO DE SISTEMAS"
 AUTHORS = ["JOÃO CLEBERSON CAETANO", "RAMON OASKA DE FREITAS"]
 ADVISOR = "Prof. Antonio Carlos Ramires Golçalves"
@@ -135,6 +136,37 @@ def heading(text, level=1, break_before=True):
 
 def preheading(text):
     return doc.add_paragraph(text, style="PreTextual")
+
+
+figure_records = []
+
+def figure_title(title):
+    number = len(figure_records) + 1
+    par = p("", align=WD_ALIGN_PARAGRAPH.CENTER, first=False, before=6, after=4)
+    run = par.add_run(f"Figura {number} – {title}")
+    run.bold = True; run.font.size = Pt(10)
+    bookmark = f"_TccFig{number}"
+    start = OxmlElement("w:bookmarkStart"); start.set(qn("w:id"), str(2000 + number)); start.set(qn("w:name"), bookmark)
+    end = OxmlElement("w:bookmarkEnd"); end.set(qn("w:id"), str(2000 + number))
+    par._p.insert(0, start); par._p.append(end)
+    figure_records.append((number, title, bookmark))
+    return par
+
+
+def add_screenshot(filename, title, force_page=False, source="Elaborado pelos autores (2026)."):
+    if force_page:
+        doc.add_page_break()
+    figure_title(title)
+    par = doc.add_paragraph(style="Sem recuo")
+    par.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    par.add_run().add_picture(f"{PRINTS}/{filename}", width=Cm(15.5))
+    p(f"Fonte: {source}", style="Legenda", first=False, after=8)
+
+
+def diagram(title, content):
+    figure_title(title)
+    p(content, align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, first=False)
+    p("Fonte: Elaborado pelos autores (2026).", style="Legenda", first=False)
 
 
 def bullets(items):
@@ -273,11 +305,23 @@ par.alignment = WD_ALIGN_PARAGRAPH.RIGHT
 
 # RESUMO — bloco único, sem recuo, conforme o modelo.
 preheading("RESUMO")
-par = p("Este trabalho apresenta o desenvolvimento do Pratica.dev 2.0, uma plataforma web educacional gamificada destinada a estudantes de cursos técnicos de Desenvolvimento de Sistemas. O problema abordado é a dispersão de conteúdos, atividades práticas e evidências de aprendizagem em diferentes ferramentas, situação que dificulta ao estudante visualizar sua evolução e organizar uma trilha de estudos. Como solução, foi construída uma aplicação de página única que reúne cadastro e autenticação, quiz de nivelamento, centro de estudos com doze matérias, testes rápidos, projetos com briefing, sistema de experiência, certificados e portfólio público. O frontend utiliza HTML5, CSS3 e JavaScript, enquanto autenticação, persistência, armazenamento e controle de acesso são fornecidos pelo Supabase, com PostgreSQL, Row Level Security e funções RPC. O desenvolvimento adotou abordagem aplicada, incremental e orientada a protótipos, com requisitos extraídos da jornada do estudante e validação por testes automatizados. Foram executadas 259 verificações distribuídas entre testes de regressão, jornada completa e verificações adicionais; todas foram aprovadas no ambiente de desenvolvimento em 1º de outubro de 2026. Os resultados indicam que a solução implementa os fluxos essenciais propostos e mantém controles de privacidade para dados pessoais, portfólios e imagens de perfil. Conclui-se que o produto funciona como apoio à organização do aprendizado e à apresentação das competências desenvolvidas, permanecendo como possibilidades futuras a ampliação do conteúdo, métricas de aprendizagem, acessibilidade e avaliação com usuários reais.", first=False)
+par = p("Este trabalho apresenta o desenvolvimento do Pratica.dev 2.0, uma plataforma web educacional gamificada destinada a estudantes de cursos técnicos de Desenvolvimento de Sistemas. O problema abordado é a dispersão de conteúdos, atividades práticas e evidências de aprendizagem em diferentes ferramentas, situação que dificulta ao estudante visualizar sua evolução e organizar uma trilha de estudos. Como solução, foi construída uma aplicação de página única que reúne cadastro e autenticação, quiz de nivelamento, centro de estudos com doze matérias, testes rápidos, projetos com briefing, sistema de experiência, certificados e portfólio público. O frontend utiliza HTML5, CSS3 e JavaScript, enquanto autenticação, persistência, armazenamento e controle de acesso são fornecidos pelo Supabase, com PostgreSQL, Row Level Security e funções RPC. O desenvolvimento adotou abordagem aplicada, incremental e orientada a protótipos, com requisitos extraídos da jornada do estudante e validação por testes automatizados. Foram executadas 259 verificações distribuídas entre testes de regressão, jornada completa e verificações adicionais; todas foram aprovadas no ambiente de desenvolvimento em 6 de outubro de 2026. Os resultados indicam que a solução implementa os fluxos essenciais propostos e mantém controles de privacidade para dados pessoais, portfólios e imagens de perfil. Conclui-se que o produto funciona como apoio à organização do aprendizado e à apresentação das competências desenvolvidas, permanecendo como possibilidades futuras a ampliação do conteúdo, métricas de aprendizagem, acessibilidade e avaliação com usuários reais.", first=False)
 par.paragraph_format.line_spacing = 1.5
 par = p("", first=False, before=12)
 r = par.add_run("Palavras-chave: "); r.bold = True
-par.add_run("educação tecnológica. Gamificação. Desenvolvimento de sistemas. Aplicação web. Portfólio digital.")
+par.add_run("educação tecnológica; gamificação; desenvolvimento de sistemas; aplicação web; portfólio digital.")
+
+# ABSTRACT — obrigatório pela ABNT NBR 14724:2024.
+preheading("ABSTRACT")
+par = p("This work presents the development of Pratica.dev 2.0, a gamified educational web platform aimed at students enrolled in technical Systems Development programs. The problem addressed is the fragmentation of content, practical activities and evidence of learning across different tools, which makes it difficult for students to visualize their progress and organize a study path. The proposed solution is a single-page application that combines registration and authentication, a placement quiz, a study center with twelve subjects, quick tests, projects with professional-style briefs, an experience system, certificates and a public portfolio. The frontend uses HTML5, CSS3 and JavaScript, while authentication, persistence, storage and access control are provided by Supabase with PostgreSQL, Row Level Security and RPC functions. The development adopted an applied, incremental and prototype-oriented approach, with requirements derived from the student journey and validation through automated tests. A total of 259 checks were performed across regression, complete journey and additional verification suites, all of which passed in the development environment. The results indicate that the solution implements the proposed core workflows and maintains privacy controls for personal data, portfolios and profile images. It is concluded that the product supports the organization of learning and the presentation of acquired skills, while future improvements may include broader content, learning analytics, accessibility enhancements and evaluations with real users.", first=False)
+par.paragraph_format.line_spacing = 1.5
+par = p("", first=False, before=12)
+r = par.add_run("Keywords: "); r.bold = True
+par.add_run("technology education; gamification; systems development; web application; digital portfolio.")
+
+# LISTA DE FIGURAS — preenchida no final com campos de página atualizáveis.
+preheading("LISTA DE FIGURAS")
+figure_list_marker = p("", first=False)
 
 # LISTA DE ABREVIATURAS E SIGLAS — sem grade, seguindo o modelo.
 preheading("LISTA DE ABREVIATURAS E SIGLAS")
@@ -311,10 +355,10 @@ bodysec.header.is_linked_to_previous = False
 bodysec.header.paragraphs[0].clear()
 bodysec.header_distance = Cm(2)
 page_number(bodysec.header.paragraphs[0])
-# Capa não é contada. Como o sumário detalhado ocupa duas páginas, a parte
-# textual começa na página 10 neste modelo.
+# Capa não é contada. Com Abstract, Lista de Figuras e sumário detalhado, a
+# parte textual começa na página 12 neste modelo.
 pg_num = OxmlElement("w:pgNumType")
-pg_num.set(qn("w:start"), "10")
+pg_num.set(qn("w:start"), "12")
 bodysec._sectPr.append(pg_num)
 heading("1 INTRODUÇÃO",1,break_before=False)
 p("A formação em Desenvolvimento de Sistemas exige que o estudante articule fundamentos de programação, banco de dados, versionamento, desenvolvimento web, segurança e construção de projetos. Apesar da disponibilidade de materiais na internet, a aprendizagem pode ficar fragmentada entre vídeos, anotações, ambientes de código e plataformas distintas. Essa fragmentação dificulta a definição do próximo conteúdo, o acompanhamento do progresso e a organização das evidências produzidas ao longo do curso.")
@@ -388,30 +432,27 @@ heading("5 DESENVOLVIMENTO DA SOLUÇÃO",1)
 heading("5.1 VISÃO GERAL DA ARQUITETURA",2)
 p("A aplicação adota arquitetura cliente-serviço. O cliente é composto por index.html, style.css, script.js e supabase.js, publicados no GitHub Pages. Bibliotecas externas são carregadas por CDN. O cliente se comunica por HTTPS com os serviços do Supabase. Não existe servidor Node.js de produção neste repositório.")
 table(["Camada","Componentes","Responsabilidade"],[("Apresentação","HTML, CSS, Tailwind, Lucide","Telas, formulários, layout e feedback."),("Aplicação no cliente","JavaScript","Estado, eventos, navegação e montagem de dados."),("Integração","Supabase JS","Auth, consultas, RPC e Storage."),("Dados e regras","PostgreSQL","Persistência, integridade, XP e autorização."),("Publicação","GitHub Pages","Entrega dos arquivos estáticos por HTTPS.")],[3.5,5,8], "Camadas da arquitetura do sistema")
-p("Figura 1 — Visão geral da arquitetura do sistema", style="Legenda", first=False)
-par=p("NAVEGADOR  →  HTTPS / SUPABASE JS  →  AUTH + POSTGRESQL/RLS/RPC + STORAGE", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, first=False)
-p("Fonte: Elaborado pelos autores (2026).", style="Legenda", first=False)
+diagram("Visão geral da arquitetura do sistema", "NAVEGADOR  →  HTTPS / SUPABASE JS  →  AUTH + POSTGRESQL/RLS/RPC + STORAGE")
 heading("5.2 ORGANIZAÇÃO DO FRONTEND",2)
 p("O arquivo index.html reúne landing page, autenticação, aplicação principal, modais e visão pública. O style.css complementa o Tailwind com estilos próprios para navegação móvel, diploma, briefing e elementos específicos. O script.js mantém o estado da sessão, os conteúdos das matérias, os briefings, a renderização e os eventos. O supabase.js concentra a criação do cliente e as funções de acesso ao backend.")
 p("A inicialização consulta a sessão existente. Sem sessão, a landing page é exibida; com sessão válida, perfil e dados essenciais são carregados antes da aplicação. Dados secundários são carregados depois para reduzir o bloqueio inicial. A rota por hash #publico/<id> é tratada separadamente e pode ser aberta sem autenticação.")
 heading("5.3 JORNADA DO ESTUDANTE",2)
 numbered(["o visitante conhece a proposta na página inicial e escolhe entrar ou cadastrar;","após o cadastro, responde ao quiz sobre nível, área e objetivo;","o painel apresenta XP, nível e acesso aos módulos;","o Centro de Estudos destaca a próxima matéria recomendada;","o estudante lê o conteúdo, realiza o teste rápido e conclui o exercício;","projetos práticos podem ser abertos em formato de briefing;","certificados e projetos concluídos compõem o portfólio;","quando desejar, o estudante publica um link público e pode torná-lo privado novamente."])
-p("Figura 2 — Fluxo principal do estudante", style="Legenda", first=False)
-p("VISITANTE → CADASTRO → QUIZ → ESTUDOS → EXERCÍCIOS/PROJETOS → CERTIFICADOS → PORTFÓLIO", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, first=False)
-p("Fonte: Elaborado pelos autores (2026).", style="Legenda", first=False)
+add_screenshot("Captura de tela 2026-10-06 210533.png", "Painel principal e acompanhamento do progresso do estudante", force_page=True)
+diagram("Fluxo principal do estudante", "VISITANTE → CADASTRO → QUIZ → ESTUDOS → EXERCÍCIOS/PROJETOS → CERTIFICADOS → PORTFÓLIO")
 heading("5.4 CENTRO DE ESTUDOS",2)
 p("O Centro de Estudos contém doze matérias. Cada item informa nível e tempo estimado, apresenta conceitos, exemplo, erros comuns, referências externas e teste de três questões com correção imediata. A trilha recomendada deriva da área selecionada no quiz. O destaque “Comece por aqui” avança para a primeira matéria da sequência que ainda não possui certificado.")
-placeholder("Inserir captura de tela do Centro de Estudos e adicionar legenda como Figura")
+add_screenshot("Captura de tela 2026-10-06 210555.png", "Centro de Estudos e trilha recomendada", force_page=True)
 heading("5.5 PROJETOS, CERTIFICADOS E PORTFÓLIO",2)
 p("O catálogo oferece nove projetos organizados por dificuldade. Cada briefing informa cenário, tecnologias, requisitos funcionais, entregáveis e critérios de aceite. Ao concluir, a aplicação chama a operação persistente e atualiza a interface somente após resposta positiva, evitando que uma falha seja mostrada como sucesso.")
 p("O certificado é renderizado em canvas com nome do aluno, módulo, data, trilha, nível, XP e código de verificação determinístico. A imagem pode ser baixada em PNG ou impressa para PDF. O registro persistido em certificates, e não o desenho do canvas, é a fonte da verdade sobre a conclusão.")
 p("O portfólio reúne perfil, projetos e certificados. Publicá-lo altera portfolio_public e produz um link contendo o identificador do perfil. A visualização pública solicita apenas os campos autorizados e não exige login. A retirada da publicação impede novas leituras anônimas.")
-placeholder("Inserir capturas do certificado e do portfólio; atualizar a Lista de Figuras")
+add_screenshot("Captura de tela 2026-10-06 210656.png", "Catálogo de projetos práticos e acesso aos briefings", force_page=True)
+add_screenshot("Captura de tela 2026-10-06 210634.png", "Certificados emitidos após a conclusão dos exercícios", force_page=True)
+add_screenshot("Captura de tela 2026-10-06 210645.png", "Portfólio digital e controle de publicação", force_page=True)
 heading("5.6 MODELO DE DADOS",2)
 table(["Entidade","Finalidade","Relacionamento principal"],[("profiles","Perfil, XP, nível, trilha, privacidade e avatar.","id referencia auth.users"),("quiz_answers","Respostas do nivelamento.","N:1 com profiles"),("projects","Catálogo dos nove projetos.","Referenciado por user_projects"),("subject_progress","Primeira visualização das matérias.","N:1 com profiles"),("user_projects","Projetos concluídos pelo estudante.","N:1 com profiles e projects"),("certificates","Conclusões e certificados emitidos.","N:1 com profiles")],[4,7.5,5], "Entidades do banco de dados")
-p("Figura 3 — Relacionamento lógico entre as entidades", style="Legenda", first=False)
-p("auth.users 1—1 profiles 1—N {quiz_answers, subject_progress, certificates, user_projects} N—1 projects", align=WD_ALIGN_PARAGRAPH.CENTER, bold=True, first=False)
-p("Fonte: Elaborado pelos autores (2026).", style="Legenda", first=False)
+diagram("Relacionamento lógico entre as entidades", "auth.users 1—1 profiles 1—N {quiz_answers, subject_progress, certificates, user_projects} N—1 projects")
 heading("5.7 REGRAS DE XP E CONSISTÊNCIA",2)
 p("Quatro funções principais controlam as recompensas: award_quiz_xp, award_subject_view_xp, award_exercise_xp e award_project_xp. Restrições únicas registram se a atividade já ocorreu. A atualização e o recálculo do nível fazem parte da operação no banco, reduzindo condições de corrida e divergências entre interface e persistência.")
 p("As funções privilegiadas fixam o search_path e revalidam a identidade. Triggers impedem que um cliente comum altere diretamente XP, nível ou papel administrativo. Operações administrativas permanecem condicionadas à verificação do papel no banco.")
@@ -419,8 +460,14 @@ heading("5.8 SEGURANÇA E PRIVACIDADE",2)
 bullets(["RLS habilitado nas tabelas públicas;","privilégio anônimo limitado às colunas necessárias do portfólio;","consultas públicas sem select(*) e sem exposição de e-mail, idade ou is_admin;","escape de nomes e conteúdos antes da inserção em HTML;","bucket de avatar privado e uso de URL assinada;","validação de tipo e tamanho da imagem no cliente e no Storage;","mensagem idêntica para perfil privado e inexistente;","confirmação antes de bloqueio, exclusão e outras ações críticas;","ausência de chave service_role no frontend."])
 heading("5.9 PAINEL ADMINISTRATIVO",2)
 p("O painel administrativo lista estudantes e permite consultar detalhes de nivelamento, projetos e certificados. Também contém ações para reiniciar XP, promover, bloquear, desbloquear ou remover os dados acadêmicos. A ocultação dos botões no frontend melhora a experiência, porém a autorização real é repetida no banco. A exclusão implementada não remove a identidade do Supabase Auth, pois isso exigiria uma API administrativa executada em ambiente seguro.")
+add_screenshot("painel-administrativo-dados-protegidos.png", "Painel administrativo com dados pessoais protegidos", force_page=True)
 heading("5.10 PUBLICAÇÃO",2)
 p("O repositório é publicado pelo GitHub Pages e pode ser acessado em https://joaocaetano19.github.io/TCC/. Como não há compilação, os arquivos estáticos são entregues diretamente. A implantação do banco exige executar database/schema.sql em um projeto Supabase e configurar a URL e a chave publicável em supabase.js. As URLs autorizadas de autenticação também precisam corresponder ao ambiente publicado.")
+heading("5.11 OUTRAS INTERFACES DO SISTEMA",2)
+p("Além dos fluxos centrais, a plataforma apresenta telas específicas para identidade acadêmica, orientação profissional e contextualização do curso. O perfil reúne foto, nome, idade, nível, experiência e respostas do nivelamento. A área de evolução aproxima as matérias de possibilidades de carreira, enquanto a página Sobre o Curso descreve conteúdos e competências trabalhadas.")
+add_screenshot("Captura de tela 2026-10-06 210547.png", "Perfil do estudante e informações acadêmicas", force_page=True)
+add_screenshot("Captura de tela 2026-10-06 210622.png", "Relação entre matérias e possibilidades de carreira", force_page=True)
+add_screenshot("Captura de tela 2026-10-06 210610.png", "Apresentação dos conteúdos do Curso Técnico", force_page=True)
 
 # 6 TESTES
 heading("6 TESTES E RESULTADOS",1)
@@ -428,7 +475,7 @@ heading("6.1 ESTRATÉGIA DE TESTES",2)
 p("Os testes utilizam Node.js e jsdom para simular o DOM e substituir serviços externos por mocks. Essa estratégia permite verificar o comportamento da interface sem criar usuários reais ou depender de rede. Foram organizadas três suítes: regressão ampla, jornada completa do estudante e verificações adicionais de navegação móvel, certificado e administração.")
 heading("6.2 RESULTADOS AUTOMATIZADOS",2)
 table(["Suíte","Escopo","Verificações","Resultado"],[("regressao.js","Autenticação, segurança, portfólio, avatar, conteúdo e SQL","157","Aprovadas"),("smoke-completo.js","Jornada do cadastro ao portfólio","47","Aprovadas"),("verificacao-extra.js","Menu móvel, certificado, projetos e administração","55","Aprovadas"),("TOTAL","—","259","Aprovadas")],[4,7,3,3], "Resultados dos testes automatizados")
-p("As três suítes foram executadas novamente em 1º de outubro de 2026 no ambiente de desenvolvimento deste trabalho, após a instalação das dependências com npm ci. O resultado foi de 259 verificações aprovadas e nenhuma falha funcional nas suítes.")
+p("As três suítes foram executadas novamente em 6 de outubro de 2026 no ambiente de desenvolvimento deste trabalho, após a instalação das dependências com npm ci. O resultado foi de 259 verificações aprovadas e nenhuma falha funcional nas suítes.")
 heading("6.3 CENÁRIOS REPRESENTATIVOS",2)
 bullets(["cadastro válido abre o quiz e registra as três respostas;","conclusão de exercício emite certificado e atualiza o contador;","falha ao concluir projeto não altera o estado como se houvesse sucesso;","conteúdo malicioso em nome e URL não cria elementos executáveis;","visitante não recebe e-mail, idade ou papel administrativo;","foto acima de 2 MB ou em formato inválido é recusada;","perfil privado não é exibido na rota pública;","conta bloqueada perde acesso e deixa de aparecer publicamente;","menu móvel fecha por Escape, mudança de aba e redimensionamento;","ações administrativas exigem confirmação e tratam falhas."])
 heading("6.4 ANÁLISE DOS RESULTADOS",2)
@@ -459,16 +506,16 @@ refs=[
 "ABNT — ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. ABNT NBR 6023:2025: informação e documentação — referências — elaboração. Rio de Janeiro: ABNT, 2025.",
 "ABNT — ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. ABNT NBR 6028:2021: informação e documentação — resumo, resenha e recensão — apresentação. Rio de Janeiro: ABNT, 2021.",
 "ABNT — ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. ABNT NBR 10520:2023: informação e documentação — citações em documentos — apresentação. Rio de Janeiro: ABNT, 2023.",
-"GITHUB. GitHub Pages documentation. Disponível em: https://docs.github.com/pages. Acesso em: 1 out. 2026.",
+"GITHUB. GitHub Pages documentation. Disponível em: https://docs.github.com/pages. Acesso em: 6 out. 2026.",
 "KAPP, Karl M. The gamification of learning and instruction: game-based methods and strategies for training and education. San Francisco: Pfeiffer, 2012.",
-"MDN WEB DOCS. JavaScript. Disponível em: https://developer.mozilla.org/docs/Web/JavaScript. Acesso em: 1 out. 2026.",
+"MDN WEB DOCS. JavaScript. Disponível em: https://developer.mozilla.org/docs/Web/JavaScript. Acesso em: 6 out. 2026.",
 "NIELSEN, Jakob. Usability engineering. San Francisco: Morgan Kaufmann, 1994.",
-"OWASP FOUNDATION. OWASP Top 10: the ten most critical web application security risks. Disponível em: https://owasp.org/www-project-top-ten/. Acesso em: 1 out. 2026.",
-"POSTGRESQL GLOBAL DEVELOPMENT GROUP. PostgreSQL documentation. Disponível em: https://www.postgresql.org/docs/. Acesso em: 1 out. 2026.",
+"OWASP FOUNDATION. OWASP Top 10: the ten most critical web application security risks. Disponível em: https://owasp.org/www-project-top-ten/. Acesso em: 6 out. 2026.",
+"POSTGRESQL GLOBAL DEVELOPMENT GROUP. PostgreSQL documentation. Disponível em: https://www.postgresql.org/docs/. Acesso em: 6 out. 2026.",
 "PRESSMAN, Roger S.; MAXIM, Bruce R. Engenharia de software: uma abordagem profissional. 8. ed. Porto Alegre: AMGH, 2016.",
 "SOMMERVILLE, Ian. Engenharia de software. 10. ed. São Paulo: Pearson, 2019.",
-"SUPABASE. Supabase documentation. Disponível em: https://supabase.com/docs. Acesso em: 1 out. 2026.",
-"W3C — WORLD WIDE WEB CONSORTIUM. Web Content Accessibility Guidelines (WCAG) 2.2. Disponível em: https://www.w3.org/TR/WCAG22/. Acesso em: 1 out. 2026."
+"SUPABASE. Supabase documentation. Disponível em: https://supabase.com/docs. Acesso em: 6 out. 2026.",
+"W3C — WORLD WIDE WEB CONSORTIUM. Web Content Accessibility Guidelines (WCAG) 2.2. Disponível em: https://www.w3.org/TR/WCAG22/. Acesso em: 6 out. 2026."
 ]
 for ref in refs: p(ref, style="Referencia", first=False)
 
@@ -491,7 +538,33 @@ heading("APÊNDICE B — ROTEIRO DE VALIDAÇÃO MANUAL",1)
 table(["Item","Procedimento","Resultado/Data"],[("1","Criar uma nova conta e concluir o quiz.","________________"),("2","Abrir uma matéria, responder ao teste e emitir certificado.","________________"),("3","Concluir um projeto e conferir XP/portfólio.","________________"),("4","Publicar o portfólio e abrir o link sem login.","________________"),("5","Enviar e remover JPG/PNG; testar arquivo inválido.","________________"),("6","Validar menu e formulários em celular.","________________"),("7","Imprimir certificado em PDF.","________________"),("8","Testar bloqueio com conta administrativa.","________________")],[1.5,11,4], "Roteiro de validação manual")
 
 heading("APÊNDICE C — CAMPOS A CONFERIR ANTES DA ENTREGA",1)
-bullets(["confirmar a grafia de “Antonio Carlos Ramires Golçalves”;","preencher data, conceito, coordenação e demais integrantes da banca;","inserir capturas de tela nos campos destacados;","atualizar o sumário e a lista de figuras no editor de texto;","confirmar se a instituição exige dedicatória, agradecimentos ou ficha catalográfica;","revisar citações, ortografia e regras específicas do professor;","remover esta lista após concluir a conferência."])
+bullets(["confirmar a grafia de “Antonio Carlos Ramires Golçalves”;","preencher data, conceito, coordenação e demais integrantes da banca quando essas informações forem divulgadas;","atualizar o sumário e a Lista de Figuras no editor de texto após qualquer alteração;","confirmar se a instituição exige ficha catalográfica;","realizar a revisão final com o professor orientador;","remover esta lista após concluir a conferência."])
+
+# LISTA DE FIGURAS VISÍVEL E ATUALIZÁVEL
+figure_fallback_pages = [26, 28, 29, 30, 32, 33, 34, 35, 37, 38, 39, 40]
+new_figure_list_paragraphs = []
+for idx, (number, title, bookmark) in enumerate(figure_records):
+    entry = doc.add_paragraph(style="Sem recuo")
+    entry.paragraph_format.first_line_indent = Cm(0)
+    entry.paragraph_format.line_spacing = 1.0
+    entry.paragraph_format.space_after = Pt(5)
+    entry.paragraph_format.tab_stops.add_tab_stop(Cm(15.5), WD_TAB_ALIGNMENT.RIGHT, WD_TAB_LEADER.DOTS)
+    run = entry.add_run(f"Figura {number} – {title}")
+    run.font.name = "Arial"; run.font.size = Pt(10)
+    entry.add_run("\t")
+    field_run = entry.add_run()
+    begin = OxmlElement("w:fldChar"); begin.set(qn("w:fldCharType"), "begin"); begin.set(qn("w:dirty"), "true")
+    instr = OxmlElement("w:instrText"); instr.set(qn("xml:space"), "preserve"); instr.text = f" PAGEREF {bookmark} \\h "
+    separate = OxmlElement("w:fldChar"); separate.set(qn("w:fldCharType"), "separate")
+    result = OxmlElement("w:t"); result.text = str(figure_fallback_pages[idx] if idx < len(figure_fallback_pages) else 40 + idx)
+    end_field = OxmlElement("w:fldChar"); end_field.set(qn("w:fldCharType"), "end")
+    for el in (begin, instr, separate, result, end_field): field_run._r.append(el)
+    field_run.font.name = "Arial"; field_run.font.size = Pt(10)
+    new_figure_list_paragraphs.append(entry)
+anchor = figure_list_marker._p
+for entry in new_figure_list_paragraphs:
+    anchor.addnext(entry._p); anchor = entry._p
+figure_list_marker._p.getparent().remove(figure_list_marker._p)
 
 # SUMÁRIO VISÍVEL E ATUALIZÁVEL
 # Os campos TOC vazios não são renderizados por alguns visualizadores. Para
@@ -499,20 +572,20 @@ bullets(["confirmar a grafia de “Antonio Carlos Ramires Golçalves”;","preen
 # com um resultado visível de reserva. No Word, Ctrl+A e F9 recalculam os números.
 headings = [par for par in doc.paragraphs if par.style.name in ("Heading 1", "Heading 2", "Heading 3")]
 primary_starts = {
-    "1 INTRODUÇÃO": 10,
-    "2 FUNDAMENTAÇÃO TEÓRICA": 13,
-    "3 METODOLOGIA": 16,
-    "4 LEVANTAMENTO DE REQUISITOS E PLANEJAMENTO": 19,
-    "5 DESENVOLVIMENTO DA SOLUÇÃO": 23,
-    "6 TESTES E RESULTADOS": 31,
-    "7 DISCUSSÃO, LIMITAÇÕES E TRABALHOS FUTUROS": 34,
-    "8 CONCLUSÃO": 36,
-    "REFERÊNCIAS": 37,
-    "APÊNDICE A — GUIA DE INSTALAÇÃO E EXECUÇÃO": 39,
-    "APÊNDICE B — ROTEIRO DE VALIDAÇÃO MANUAL": 41,
-    "APÊNDICE C — CAMPOS A CONFERIR ANTES DA ENTREGA": 42,
+    "1 INTRODUÇÃO": 12,
+    "2 FUNDAMENTAÇÃO TEÓRICA": 15,
+    "3 METODOLOGIA": 18,
+    "4 LEVANTAMENTO DE REQUISITOS E PLANEJAMENTO": 21,
+    "5 DESENVOLVIMENTO DA SOLUÇÃO": 25,
+    "6 TESTES E RESULTADOS": 40,
+    "7 DISCUSSÃO, LIMITAÇÕES E TRABALHOS FUTUROS": 43,
+    "8 CONCLUSÃO": 45,
+    "REFERÊNCIAS": 46,
+    "APÊNDICE A — GUIA DE INSTALAÇÃO E EXECUÇÃO": 48,
+    "APÊNDICE B — ROTEIRO DE VALIDAÇÃO MANUAL": 50,
+    "APÊNDICE C — CAMPOS A CONFERIR ANTES DA ENTREGA": 51,
 }
-current_page = 10
+current_page = 12
 sub_index = 0
 toc_entries = []
 for idx, par in enumerate(headings, 1):
