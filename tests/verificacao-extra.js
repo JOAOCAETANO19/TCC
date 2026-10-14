@@ -1,6 +1,6 @@
 // ============================================================
-//  verificacao-extra.js — menu mobile, certificado visual e
-//  painel admin
+//  verificacao-extra.js — menu mobile, certificado visual,
+//  painel admin, recuperação de senha e acessibilidade
 //
 //  Suíte complementar às outras duas: cobre a gaveta do menu
 //  mobile (abrir/fechar, Esc, resize e troca de aba), o diploma
@@ -8,8 +8,15 @@
 //  fechamento) e as ações do painel admin (confirmar e cancelar,
 //  detalhes do aluno com erro) — além de pickAvatarFile,
 //  renderCareers, o botão de conclusão do briefing (sucesso e
-//  falha) e o escapamento escJsStr. Tudo com jsdom e backend
-//  mockado, sem rede e sem banco real.
+//  falha) e o escapamento escJsStr.
+//
+//  A partir do pacote de melhorias, cobre também o fluxo de
+//  recuperação de senha (link "Esqueci minha senha", e-mail com
+//  resetPasswordForEmail, evento PASSWORD_RECOVERY, tela de nova
+//  senha e cancelamento) e a acessibilidade dos diálogos
+//  (role="dialog", aria-modal, foco controlado, Esc na pilha de
+//  modais, prefers-reduced-motion e preconnect dos CDNs).
+//  Tudo com jsdom e backend mockado, sem rede e sem banco real.
 // ============================================================
 
 const fs = require('fs');
@@ -19,6 +26,7 @@ const { JSDOM } = require('jsdom');
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const script = fs.readFileSync(path.join(root, 'script.js'), 'utf8');
+const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 
 let passed = 0;
 function check(condition, description) {
@@ -69,12 +77,23 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   const bruno = { id: 'u2', name: 'Bruno Lima', email: 'bruno@b.com', age: 16, level: 1, xp: 40, track: null, goal: null, quiz_done: true, is_admin: false, is_blocked: false };
   const adminCalls = { resetXP: [], setAdmin: [], setBlocked: [], delete: [] };
   const failProjects = new Set();
+  // Recuperação de senha: registra o que foi chamado e guarda o
+  // callback de eventos de autenticação para disparar o
+  // PASSWORD_RECOVERY manualmente.
+  const authCalls = { reset: [], update: [], logout: 0 };
+  let authEventCallback = null;
 
   Object.assign(window, {
     getSession: async () => null,
     supabaseLogin: async () => ({ id: 'u1' }),
     supabaseRegister: async () => ({ id: 'u1' }),
-    supabaseLogout: async () => {},
+    supabaseRequestPasswordReset: async (email) => {
+      authCalls.reset.push(email);
+      if (email === 'falha@b.com') throw new Error('falha proposital');
+    },
+    supabaseUpdatePassword: async (pass) => { authCalls.update.push(pass); },
+    supabaseLogout: async () => { authCalls.logout++; },
+    onSupabaseAuthEvent: (cb) => { authEventCallback = cb; },
     fetchProfile: async (id) => {
       if (id === 'u3') throw new Error('falha proposital');
       return { ...(id === 'u2' ? bruno : mainProfile) };
@@ -319,7 +338,112 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   check(window.escJsStr("O'Brien") === "O\\'Brien" && window.escJsStr('a\\b') === 'a\\\\b',
     'escJsStr escapa apóstrofos e barras para uso em onclick inline');
 
-  check(passed === 54, 'verificacao-extra contém 55 verificações');
+  // ============================================================
+  // 6. RECUPERAÇÃO DE SENHA (Esqueci minha senha → link → nova senha)
+  // ============================================================
+  const doc = window.document;
+  const el = id => doc.getElementById(id);
+  const isVisible = id => { const node = el(id); return !!node && !node.classList.contains('hidden'); };
+
+  check(!!el('btn-forgot-link') && el('login-form').contains(el('btn-forgot-link'))
+    && el('btn-forgot-link').textContent.includes('Esqueci minha senha')
+    && !isVisible('forgot-form') && !isVisible('new-password-form')
+    && !!el('forgot-email') && !!el('forgot-error') && !!el('forgot-info') && el('btn-forgot').type === 'submit'
+    && !!el('new-password') && !!el('new-password-confirm') && !!el('newpass-error') && el('btn-newpass').type === 'submit',
+    'tela de login tem o link Esqueci minha senha e os formulários de recuperação e nova senha');
+
+  window.showForgotForm();
+  check(isVisible('forgot-form') && !isVisible('login-form') && !isVisible('register-form') && !isVisible('new-password-form'),
+    'showForgotForm mostra o formulário de recuperação e esconde os outros');
+
+  const resetsBefore = authCalls.reset.length;
+  el('forgot-email').value = '';
+  await window.handleForgotPassword();
+  const emptyEmailBlocked = authCalls.reset.length === resetsBefore && isVisible('forgot-error');
+  el('forgot-email').value = 'nao-eh-email';
+  await window.handleForgotPassword();
+  check(emptyEmailBlocked && authCalls.reset.length === resetsBefore && isVisible('forgot-error'),
+    'e-mail vazio ou inválido mostra erro na hora e não chama o Supabase');
+
+  el('forgot-email').value = 'ana@b.com';
+  await window.handleForgotPassword();
+  check(authCalls.reset.length === resetsBefore + 1 && authCalls.reset[resetsBefore] === 'ana@b.com'
+    && isVisible('forgot-info') && el('forgot-info').textContent.includes('ana@b.com'),
+    'e-mail válido pede o link (resetPasswordForEmail) e mostra a confirmação de envio');
+
+  el('forgot-email').value = 'falha@b.com';
+  await window.handleForgotPassword();
+  check(isVisible('forgot-error') && el('forgot-error').textContent.includes('falha proposital')
+    && !isVisible('forgot-info'),
+    'falha ao pedir o link aparece como erro inline, sem confirmação falsa');
+
+  const recoveryNotified = typeof authEventCallback === 'function';
+  if (recoveryNotified) authEventCallback('PASSWORD_RECOVERY', {});
+  check(recoveryNotified && isVisible('new-password-form') && !isVisible('main-app') && !isVisible('login-form')
+    && el('boot-screen').style.display === 'none' && el('login-screen').style.display === 'flex',
+    'evento PASSWORD_RECOVERY abre a tela de nova senha e esconde o app');
+
+  const updatesBefore = authCalls.update.length;
+  el('new-password').value = '123456';
+  el('new-password-confirm').value = '654321';
+  await window.handleNewPassword();
+  check(authCalls.update.length === updatesBefore && isVisible('newpass-error') && !isVisible('login-form'),
+    'senhas diferentes mostram erro e não chamam o Supabase');
+
+  const logoutsBefore = authCalls.logout;
+  el('new-password').value = 'senhaNova123';
+  el('new-password-confirm').value = 'senhaNova123';
+  await window.handleNewPassword();
+  check(authCalls.update.length === updatesBefore + 1 && authCalls.update[updatesBefore] === 'senhaNova123'
+    && authCalls.logout === logoutsBefore + 1 && isVisible('login-form') && !isVisible('new-password-form'),
+    'nova senha válida salva com updateUser, desloga a sessão do link e volta ao login');
+
+  check(toastText().includes('Senha alterada com sucesso'), 'trocar a senha avisa em toast de sucesso');
+
+  window.showNewPasswordScreen();
+  const logoutsBeforeCancel = authCalls.logout;
+  window.cancelPasswordRecovery();
+  await tick();
+  check(authCalls.logout === logoutsBeforeCancel + 1 && isVisible('login-form') && !isVisible('new-password-form'),
+    'cancelar a recuperação descarta a sessão do link e volta ao login');
+
+  // ============================================================
+  // 7. ACESSIBILIDADE — diálogos, Esc, movimento reduzido e preconnect
+  // ============================================================
+  const dialogIds = ['quiz-modal', 'admin-detail-modal', 'confirm-modal', 'briefing-modal', 'certificate-modal'];
+  check(dialogIds.every(id => {
+    const modal = el(id);
+    return !!modal && modal.getAttribute('role') === 'dialog' && modal.getAttribute('aria-modal') === 'true'
+      && modal.getAttribute('tabindex') === '-1'
+      && !!(modal.getAttribute('aria-label') || modal.getAttribute('aria-labelledby'));
+  }), 'os cinco modais são role="dialog" com aria-modal, tabindex e rótulo');
+
+  window.openBriefing(2);
+  const briefingWasOpen = isVisible('briefing-modal');
+  doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
+  check(briefingWasOpen && !isVisible('briefing-modal'),
+    'Esc fecha o briefing, o diálogo mais acima da pilha');
+
+  const xpBefore = adminCalls.resetXP.length;
+  const resetPromise = window.adminHandleResetXP('u2', 'Bruno');
+  await tick();
+  const confirmWasOpen = isVisible('confirm-modal');
+  doc.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape' }));
+  await resetPromise;
+  check(confirmWasOpen && !isVisible('confirm-modal') && adminCalls.resetXP.length === xpBefore,
+    'Esc no modal de confirmação cancela a ação sem chamar o backend');
+
+  check(/prefers-reduced-motion:\s*reduce/.test(css) && css.includes('animation-duration: 0.01ms')
+    && css.includes('transition-duration: 0.01ms') && css.includes('scroll-behavior: auto'),
+    'style.css respeita prefers-reduced-motion (animações e transições quase zeradas)');
+
+  const head = html.slice(0, html.indexOf('</head>'));
+  check(head.includes('rel="preconnect" href="https://cdn.tailwindcss.com"')
+    && head.includes('rel="preconnect" href="https://cdn.jsdelivr.net"')
+    && head.includes('rel="preconnect" href="https://fonts.gstatic.com" crossorigin'),
+    'head faz preconnect para os três CDNs (Tailwind, jsDelivr e Google Fonts)');
+
+  check(passed === 69, 'verificacao-extra contém 70 verificações');
   console.log(`\n${passed} verificações passaram.`);
   window.close();
 })().catch(error => {
