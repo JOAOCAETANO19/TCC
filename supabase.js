@@ -70,6 +70,36 @@ async function getSession() {
 }
 
 // ============================================================
+//  AUTH — Recuperação de senha
+//  Envia o e-mail com o link de redefinição. O link devolve o
+//  usuário para o site com um evento PASSWORD_RECOVERY, tratado
+//  no script.js pela tela de nova senha.
+//
+//  ⚠️ Cadastre a URL do site em Supabase → Authentication →
+//  URL Configuration → Redirect URLs, senão o link do e-mail
+//  cai fora da aplicação.
+// ============================================================
+async function supabaseRequestPasswordReset(email) {
+  const { error } = await db.auth.resetPasswordForEmail(email, {
+    redirectTo: location.origin + location.pathname
+  });
+  if (error) throw new Error(error.message);
+}
+
+// Troca a senha do usuário logado. No fluxo de recuperação, a
+// sessão do link é temporária: o script.js desloga em seguida.
+async function supabaseUpdatePassword(newPassword) {
+  const { error } = await db.auth.updateUser({ password: newPassword });
+  if (error) throw new Error(error.message);
+}
+
+// Escuta os eventos de autenticação do Supabase (ex.: o
+// PASSWORD_RECOVERY disparado quando o aluno abre o link).
+function onSupabaseAuthEvent(callback) {
+  db.auth.onAuthStateChange((event, session) => callback(event, session));
+}
+
+// ============================================================
 //  PERFIL — Buscar dados do usuário logado
 // ============================================================
 async function fetchProfile(userId) {

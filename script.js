@@ -887,6 +887,7 @@ async function openCertificate(cert, student) {
   const canvas = document.getElementById('cert-canvas');
   if (!modal || !canvas) return;
   modal.classList.remove('hidden');
+  focusDialog(modal);
   drawCertificate(canvas, lastCertModel);
   try {
     await ensureCertFonts();
@@ -900,7 +901,9 @@ async function openCertificate(cert, student) {
 
 function closeCertificate() {
   const modal = document.getElementById('certificate-modal');
+  const wasOpen = !!(modal && !modal.classList.contains('hidden'));
   if (modal) modal.classList.add('hidden');
+  if (wasOpen) restoreDialogFocus();
   lastCertModel = null;
   if (/^#certificado=/.test(location.hash)) {
     history.replaceState(null, '', location.pathname + location.search);
@@ -1015,14 +1018,20 @@ function setLoading(btnId, loading, originalText) {
   btn.textContent = loading ? 'Aguarde...' : originalText;
 }
 
+// Mostra um dos formulários da tela de autenticação (login, cadastro,
+// recuperação de senha ou nova senha) e esconde os demais.
+function showAuthForm(formId) {
+  ['login-form', 'register-form', 'forgot-form', 'new-password-form'].forEach(id => {
+    document.getElementById(id).classList.toggle('hidden', id !== formId);
+  });
+}
+
 function showRegister() {
-  document.getElementById('login-form').classList.add('hidden');
-  document.getElementById('register-form').classList.remove('hidden');
+  showAuthForm('register-form');
 }
 
 function showLogin() {
-  document.getElementById('register-form').classList.add('hidden');
-  document.getElementById('login-form').classList.remove('hidden');
+  showAuthForm('login-form');
 }
 
 
@@ -1063,6 +1072,30 @@ function backToLanding() {
 }
 
 
+// ===== ACESSIBILIDADE DOS DIÁLOGOS =====
+// Cada modal é um role="dialog" com aria-modal="true" e tabindex="-1".
+// Ao abrir, guardamos quem tinha o foco e movemos o foco para o próprio
+// modal; ao fechar, o foco volta para o elemento de origem (somente se
+// o modal estava mesmo aberto).
+
+let _dialogOpener = null;
+
+function focusDialog(modal) {
+  if (!modal || modal.classList.contains('hidden')) return;
+  _dialogOpener = document.activeElement;
+  if (!modal.hasAttribute('tabindex')) modal.setAttribute('tabindex', '-1');
+  modal.focus({ preventScroll: true });
+}
+
+function restoreDialogFocus() {
+  const opener = _dialogOpener;
+  _dialogOpener = null;
+  if (opener && typeof opener.focus === 'function') {
+    try { opener.focus({ preventScroll: true }); } catch (_) { /* elemento saiu da tela */ }
+  }
+}
+
+
 // ===== UI GENÉRICA: CONFIRMAÇÃO E TOAST =====
 // Substituem confirm()/alert() nativos do navegador por um modal e
 // notificações no mesmo visual do resto do site.
@@ -1074,12 +1107,17 @@ function themedConfirm(message, danger = false) {
   const okBtn = document.getElementById('confirm-ok-btn');
   okBtn.className = 'flex-1 py-2.5 rounded-lg text-sm font-semibold transition ' +
     (danger ? 'bg-red-500 hover:bg-red-600 text-white' : 'btn-primary');
-  document.getElementById('confirm-modal').classList.remove('hidden');
+  const modal = document.getElementById('confirm-modal');
+  modal.classList.remove('hidden');
+  focusDialog(modal);
   return new Promise(resolve => { _confirmResolve = resolve; });
 }
 
 function resolveConfirm(value) {
-  document.getElementById('confirm-modal').classList.add('hidden');
+  const modal = document.getElementById('confirm-modal');
+  const wasOpen = !modal.classList.contains('hidden');
+  modal.classList.add('hidden');
+  if (wasOpen) restoreDialogFocus();
   if (_confirmResolve) { _confirmResolve(value); _confirmResolve = null; }
 }
 
@@ -1155,6 +1193,95 @@ async function handleRegister() {
   } finally {
     setLoading('btn-register', false, 'Cadastrar');
   }
+}
+
+
+// ============================================================
+//  AUTH — RECUPERAÇÃO DE SENHA
+//  Fluxo em 3 passos:
+//   1. "Esqueci minha senha" envia o e-mail com o link
+//      (supabaseRequestPasswordReset → resetPasswordForEmail);
+//   2. o link volta para o site e o Supabase avisa o evento
+//      PASSWORD_RECOVERY, que abre a tela de nova senha;
+//   3. handleNewPassword troca a senha (updateUser) e desloga a
+//      sessão temporária do link, devolvendo o aluno ao login.
+// ============================================================
+
+let _recoveryMode = false;
+
+function showForgotForm() {
+  document.getElementById('forgot-error').classList.add('hidden');
+  const info = document.getElementById('forgot-info');
+  info.textContent = '';
+  info.classList.add('hidden');
+  showAuthForm('forgot-form');
+}
+
+async function handleForgotPassword() {
+  const email = document.getElementById('forgot-email').value.trim();
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showError('forgot-error', 'Informe um email válido.');
+    return;
+  }
+
+  const info = document.getElementById('forgot-info');
+  info.textContent = '';
+  info.classList.add('hidden');
+  setLoading('btn-forgot', true, 'Enviar link de recuperação');
+
+  try {
+    await supabaseRequestPasswordReset(email);
+    info.textContent = 'Enviamos um link de recuperação para ' + email +
+      '. Confira sua caixa de entrada (e a pasta de spam).';
+    info.classList.remove('hidden');
+  } catch (err) {
+    showError('forgot-error', traduzirErroAuth(err.message));
+  } finally {
+    setLoading('btn-forgot', false, 'Enviar link de recuperação');
+  }
+}
+
+// Abre a tela de nova senha (usada pelo link do e-mail e pelo init).
+function showNewPasswordScreen() {
+  _recoveryMode = true;
+  document.getElementById('boot-screen').style.display = 'none';
+  hideLanding();
+  document.getElementById('main-app').classList.add('hidden');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-error').classList.add('hidden');
+  document.getElementById('newpass-error').classList.add('hidden');
+  showAuthForm('new-password-form');
+}
+
+async function handleNewPassword() {
+  const p1 = document.getElementById('new-password').value;
+  const p2 = document.getElementById('new-password-confirm').value;
+
+  if (p1.length < 6) { showError('newpass-error', 'A nova senha precisa ter pelo menos 6 caracteres.'); return; }
+  if (p1 !== p2)     { showError('newpass-error', 'As senhas não são iguais. Digite a mesma senha nos dois campos.'); return; }
+
+  setLoading('btn-newpass', true, 'Salvar nova senha');
+
+  try {
+    await supabaseUpdatePassword(p1);
+    // A sessão criada pelo link de recuperação é temporária: encerra
+    // para o aluno entrar com a senha nova.
+    await supabaseLogout();
+    _recoveryMode = false;
+    showLogin();
+    showToast('Senha alterada com sucesso! Entre com a nova senha.', 'success');
+  } catch (err) {
+    showError('newpass-error', traduzirErroAuth(err.message));
+  } finally {
+    setLoading('btn-newpass', false, 'Salvar nova senha');
+  }
+}
+
+function cancelPasswordRecovery() {
+  try { supabaseLogout(); } catch (_) { /* apenas descarta a sessão do link */ }
+  _recoveryMode = false;
+  showLogin();
 }
 
 
@@ -1260,7 +1387,9 @@ const quizQuestions = [
 ];
 
 function showQuiz() {
-  document.getElementById('quiz-modal').classList.remove('hidden');
+  const modal = document.getElementById('quiz-modal');
+  modal.classList.remove('hidden');
+  focusDialog(modal);
   renderQuizStep(0);
 }
 
@@ -1956,11 +2085,16 @@ function openBriefing(projectId) {
     }
   };
 
-  document.getElementById('briefing-modal').classList.remove('hidden');
+  const modal = document.getElementById('briefing-modal');
+  modal.classList.remove('hidden');
+  focusDialog(modal);
 }
 
 function closeBriefing() {
-  document.getElementById('briefing-modal').classList.add('hidden');
+  const modal = document.getElementById('briefing-modal');
+  const wasOpen = !modal.classList.contains('hidden');
+  modal.classList.add('hidden');
+  if (wasOpen) restoreDialogFocus();
 }
 
 async function startProject(projectId, projectName, btn) {
@@ -2438,6 +2572,7 @@ async function adminShowDetails(id) {
   document.getElementById('admin-detail-email').textContent = '';
   document.getElementById('admin-detail-content').innerHTML = '';
   modal.classList.remove('hidden');
+  focusDialog(modal);
 
   try {
     const [profile, quizRows, projRows, certRows] = await Promise.all([
@@ -2458,7 +2593,10 @@ async function adminShowDetails(id) {
 }
 
 function closeAdminDetailModal() {
-  document.getElementById('admin-detail-modal').classList.add('hidden');
+  const modal = document.getElementById('admin-detail-modal');
+  const wasOpen = !modal.classList.contains('hidden');
+  modal.classList.add('hidden');
+  if (wasOpen) restoreDialogFocus();
 }
 
 function renderStudentDetailModal(quizRows, projRows, certRows) {
@@ -2528,6 +2666,15 @@ async function init() {
     const session = await getSession();
     clearTimeout(slowWarning);
 
+    // Link de recuperação aberto: o evento PASSWORD_RECOVERY já
+    // marcou o modo de recuperação — mostra a tela de nova senha em
+    // vez de entrar no app.
+    if (_recoveryMode) {
+      showNewPasswordScreen();
+      lucide.createIcons();
+      return;
+    }
+
     if (session) {
       currentAuthId = session.user.id;
       currentUser = await fetchProfile(session.user.id);
@@ -2561,8 +2708,20 @@ async function init() {
   lucide.createIcons();
 }
 
+// Esc fecha apenas o diálogo mais acima da pilha, do topo para baixo:
+// certificado → confirmação → briefing → detalhes do aluno. O quiz de
+// nivelamento é obrigatório e fica fora de propósito; a gaveta do menu
+// mobile mantém o listener de Esc próprio dela.
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape') closeCertificate();
+  if (event.key !== 'Escape') return;
+  const isOpen = id => {
+    const el = document.getElementById(id);
+    return !!el && !el.classList.contains('hidden');
+  };
+  if (isOpen('certificate-modal'))       closeCertificate();
+  else if (isOpen('confirm-modal'))      resolveConfirm(false);
+  else if (isOpen('briefing-modal'))     closeBriefing();
+  else if (isOpen('admin-detail-modal')) closeAdminDetailModal();
 });
 window.addEventListener('hashchange', () => {
   if (isPublicPortfolioHash()) {
@@ -2572,5 +2731,14 @@ window.addEventListener('hashchange', () => {
     tryOpenCertFromHash();
   }
 });
+
+// O link do e-mail de recuperação volta para o site com o evento
+// PASSWORD_RECOVERY: nesse momento a tela de nova senha é aberta
+// (a rota pública do portfólio não entra nesse fluxo).
+if (typeof onSupabaseAuthEvent === 'function') {
+  onSupabaseAuthEvent((event) => {
+    if (event === 'PASSWORD_RECOVERY' && !isPublicPortfolioHash()) showNewPasswordScreen();
+  });
+}
 
 init();

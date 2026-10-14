@@ -16,6 +16,12 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="preconnect" href="https://cdn.tailwindcss.com">
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="dns-prefetch" href="https://fonts.googleapis.com">
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Great+Vibes&family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -143,6 +149,7 @@
           <div id="login-error" class="text-red-400 text-sm mb-4 hidden"></div>
           <button id="btn-login" type="submit" class="btn-primary w-full py-3 rounded-lg text-lg mb-3">Entrar</button>
           <button type="button" onclick="showRegister()" class="btn-secondary w-full py-3 rounded-lg">Criar Conta</button>
+          <button type="button" id="btn-forgot-link" onclick="showForgotForm()" class="w-full text-white/40 hover:text-green-400 text-sm mt-4 transition">Esqueci minha senha</button>
         </form>
 
         <!-- Register Form -->
@@ -166,6 +173,35 @@
           <div id="reg-error" class="text-red-400 text-sm mb-4 hidden"></div>
           <button id="btn-register" type="submit" class="btn-primary w-full py-3 rounded-lg text-lg mb-3">Cadastrar</button>
           <button type="button" onclick="showLogin()" class="btn-secondary w-full py-3 rounded-lg">Voltar ao Login</button>
+        </form>
+
+        <!-- Esqueci minha senha -->
+        <form id="forgot-form" class="hidden" onsubmit="event.preventDefault(); handleForgotPassword()">
+          <p class="text-white/60 text-sm mb-4">Informe o e-mail cadastrado e enviaremos um link para você criar uma nova senha.</p>
+          <div class="mb-4">
+            <label class="block text-sm text-white/60 mb-1">Email</label>
+            <input type="email" id="forgot-email" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-400" placeholder="seu@email.com">
+          </div>
+          <div id="forgot-error" class="text-red-400 text-sm mb-4 hidden"></div>
+          <div id="forgot-info" class="text-green-300 text-sm mb-4 hidden"></div>
+          <button id="btn-forgot" type="submit" class="btn-primary w-full py-3 rounded-lg text-lg mb-3">Enviar link de recuperação</button>
+          <button type="button" onclick="showLogin()" class="btn-secondary w-full py-3 rounded-lg">Voltar ao Login</button>
+        </form>
+
+        <!-- Nova senha (aberta pelo link de recuperação) -->
+        <form id="new-password-form" class="hidden" onsubmit="event.preventDefault(); handleNewPassword()">
+          <p class="text-white/60 text-sm mb-4">Você abriu o link de recuperação. Escolha a nova senha da sua conta.</p>
+          <div class="mb-3">
+            <label class="block text-sm text-white/60 mb-1">Nova senha</label>
+            <input type="password" id="new-password" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-400" placeholder="••••••••">
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm text-white/60 mb-1">Confirme a nova senha</label>
+            <input type="password" id="new-password-confirm" class="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-green-400" placeholder="••••••••">
+          </div>
+          <div id="newpass-error" class="text-red-400 text-sm mb-4 hidden"></div>
+          <button id="btn-newpass" type="submit" class="btn-primary w-full py-3 rounded-lg text-lg mb-3">Salvar nova senha</button>
+          <button type="button" onclick="cancelPasswordRecovery()" class="btn-secondary w-full py-3 rounded-lg">Cancelar</button>
         </form>
 
         <button type="button" onclick="openDemoCertificate()" class="w-full text-white/40 hover:text-green-400 text-xs mt-6 transition">
@@ -502,7 +538,7 @@
     </div>
 
     <!-- QUIZ MODAL -->
-    <div id="quiz-modal" class="modal-overlay hidden">
+    <div id="quiz-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" tabindex="-1" aria-label="Quiz de nivelamento">
       <div class="card-glass rounded-2xl p-8 w-full max-w-lg mx-4 fade-in">
         <h2 class="text-xl font-bold mb-2 text-center">🚀 Vamos personalizar sua jornada!</h2>
         <p class="text-white/50 text-sm text-center mb-6">Responda 3 perguntas rápidas para montar sua trilha.</p>
@@ -511,7 +547,7 @@
     </div>
 
     <!-- ADMIN: DETALHES DO ALUNO -->
-    <div id="admin-detail-modal" class="modal-overlay hidden">
+    <div id="admin-detail-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="admin-detail-name">
       <div class="card-glass rounded-2xl p-8 w-full max-w-2xl mx-4 fade-in" style="max-height:85vh; overflow-y:auto;">
         <div class="flex items-start justify-between mb-6">
           <div>
@@ -525,7 +561,7 @@
     </div>
 
     <!-- CONFIRMAÇÃO GENÉRICA (substitui o confirm() nativo) -->
-    <div id="confirm-modal" class="modal-overlay hidden">
+    <div id="confirm-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" tabindex="-1" aria-label="Confirmação">
       <div class="card-glass rounded-2xl p-6 w-full max-w-sm mx-4 fade-in">
         <p id="confirm-message" class="text-white/90 mb-6 leading-relaxed" style="white-space:pre-line"></p>
         <div class="flex gap-3">
@@ -539,7 +575,7 @@
     <div id="toast-container" class="fixed bottom-6 left-1/2 z-50 flex flex-col gap-2" style="transform:translateX(-50%);"></div>
 
     <!-- BRIEFING DO PROJETO -->
-    <div id="briefing-modal" class="modal-overlay hidden" onclick="if (event.target === this) closeBriefing()">
+    <div id="briefing-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="briefing-title" onclick="if (event.target === this) closeBriefing()">
       <div class="briefing-panel card-glass fade-in">
         <div class="briefing-header">
           <div>
@@ -558,7 +594,7 @@
     </div>
 
     <!-- CERTIFICADO VISUAL -->
-    <div id="certificate-modal" class="modal-overlay hidden" onclick="if (event.target === this) closeCertificate()">
+    <div id="certificate-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" tabindex="-1" aria-label="Certificado visual" onclick="if (event.target === this) closeCertificate()">
       <div class="cert-modal-panel fade-in">
         <div class="cert-toolbar">
           <div>

@@ -26,6 +26,8 @@ Plataforma educacional gamificada para estudantes de desenvolvimento de sistemas
 - **Portfólio digital:** reúne XP, projetos concluídos e certificados do aluno;
 - **Portfólio público:** o aluno publica ou torna privado o portfólio na aba Portfólio e copia o link `#publico/<id>`, que abre uma visão pública sem login com apenas os dados autorizados;
 - **Foto de perfil (avatar):** upload com validação de formato (JPG/PNG) e tamanho (máx. 2 MB), prévia antes de salvar e opção de remover; armazenada em bucket privado do Supabase Storage, exibida por URL assinada e protegida pelas mesmas regras de privacidade do portfólio — sem foto, a bolinha com a inicial do nome continua em uso;
+- **Recuperação de senha:** o link **Esqueci minha senha** na tela de login envia um e-mail com o link de redefinição (Supabase Auth); ao abrir o link, o aluno cai direto na tela de nova senha, troca a senha e entra com ela;
+- **Acessibilidade e desempenho:** os modais são diálogos acessíveis (`role="dialog"`, `aria-modal`, rótulo, foco que entra no modal e volta para o botão de origem, fechamento por `Esc` no modal mais acima), o CSS respeita `prefers-reduced-motion` para quem prefere menos animações e o `<head>` faz `preconnect`/`dns-prefetch` dos CDNs (Tailwind, jsDelivr e Google Fonts);
 - **Feedback visível de falhas:** erros de gravação (quiz, progresso, foto, projeto, portfólio) aparecem como toast, não só no console.
 
 ## Tecnologias
@@ -61,8 +63,9 @@ As credenciais públicas do projeto Supabase ficam em `supabase.js`. A chave usa
 1. Crie um projeto no [Supabase](https://supabase.com).
 2. Abra **SQL Editor** e execute [`database/schema.sql`](database/schema.sql) inteiro.
 3. Copie a URL e a chave publicável em **Settings → API** para `SUPABASE_URL` e `SUPABASE_ANON` em `supabase.js`, se estiver usando outro projeto.
-4. Cadastre o primeiro usuário pela tela de registro.
-5. Para conceder acesso administrativo, execute no SQL Editor, substituindo o e-mail:
+4. Em **Authentication → URL Configuration → Redirect URLs**, cadastre a URL do site (por exemplo `https://joaocaetano19.github.io/TCC/` e, para testar localmente, `http://localhost:8080/`). Sem isso, o link do e-mail de recuperação de senha não volta para a aplicação.
+5. Cadastre o primeiro usuário pela tela de registro.
+6. Para conceder acesso administrativo, execute no SQL Editor, substituindo o e-mail:
 
 ```sql
 update public.profiles
@@ -109,7 +112,7 @@ docs/
 tests/
   regressao.js                     verificações de regressão
   smoke-completo.js                jornada completa do aluno
-  verificacao-extra.js             menu mobile, certificado visual e painel admin
+  verificacao-extra.js             menu mobile, certificado visual, painel admin, recuperação de senha e acessibilidade
 ```
 
 ## Testes
@@ -120,7 +123,7 @@ Os testes usam [jsdom](https://github.com/jsdom/jsdom) e não precisam de rede n
 npm install
 node tests/regressao.js         # regressão (157 verificações)
 node tests/smoke-completo.js    # jornada completa do aluno (47 verificações)
-node tests/verificacao-extra.js # menu mobile, certificado e painel admin (55 verificações)
+node tests/verificacao-extra.js # menu mobile, certificado, painel admin, recuperação de senha e acessibilidade (70 verificações)
 ```
 
 ## Publicação

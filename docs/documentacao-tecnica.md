@@ -65,6 +65,12 @@ O script completo, incluindo carga inicial do catálogo, está em [`database/sch
 5. Login usa `signInWithPassword` e recupera o perfil por `fetchProfile`.
 6. A sessão existente é restaurada por `getSession` durante a inicialização.
 
+### Recuperação de senha
+
+1. O link **Esqueci minha senha** na tela de login chama `supabaseRequestPasswordReset`, que usa `auth.resetPasswordForEmail` com `redirectTo` apontando para a própria página. A URL do site precisa estar cadastrada em Supabase → **Authentication → URL Configuration → Redirect URLs**, senão o link do e-mail cai fora da aplicação.
+2. Ao abrir o link, o Supabase dispara o evento **`PASSWORD_RECOVERY`** (ouvido por `onSupabaseAuthEvent`); o frontend então exibe a tela de nova senha (`showNewPasswordScreen`), escondendo o app e a landing. A rota pública `#publico/<id>` não entra nesse fluxo.
+3. `handleNewPassword` valida a senha e a confirmação, chama `supabaseUpdatePassword` (`auth.updateUser`) e, em seguida, `supabaseLogout` — descartando a sessão temporária criada pelo link — para o aluno entrar com a senha nova. Cancelar a recuperação também encerra essa sessão.
+
 ### XP e progresso
 
 XP nunca é calculado pelo JavaScript. As ações chamam funções PostgreSQL:
