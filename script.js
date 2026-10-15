@@ -1209,6 +1209,18 @@ async function handleRegister() {
 
 let _recoveryMode = false;
 
+// O Supabase pode consumir o fragmento/query da URL ao restaurar a sessão
+// antes de registrar o listener. A marca é capturada em supabase.js; a URL
+// ao vivo permanece como fallback para links ainda não processados.
+function isRecoveryLink() {
+  return (typeof RECOVERY_LINK_DETECTED !== 'undefined' && RECOVERY_LINK_DETECTED)
+    || /(?:^|[#&?])type=recovery(?:&|$)/.test((location.hash || '') + (location.search || ''));
+}
+
+function consumeRecoveryLink() {
+  if (typeof RECOVERY_LINK_DETECTED !== 'undefined') RECOVERY_LINK_DETECTED = false;
+}
+
 function showForgotForm() {
   document.getElementById('forgot-error').classList.add('hidden');
   const info = document.getElementById('forgot-info');
@@ -1244,6 +1256,7 @@ async function handleForgotPassword() {
 
 // Abre a tela de nova senha (usada pelo link do e-mail e pelo init).
 function showNewPasswordScreen() {
+  consumeRecoveryLink();
   _recoveryMode = true;
   document.getElementById('boot-screen').style.display = 'none';
   hideLanding();
@@ -2666,10 +2679,10 @@ async function init() {
     const session = await getSession();
     clearTimeout(slowWarning);
 
-    // Link de recuperação aberto: o evento PASSWORD_RECOVERY já
-    // marcou o modo de recuperação — mostra a tela de nova senha em
-    // vez de entrar no app.
-    if (_recoveryMode) {
+    // O evento PASSWORD_RECOVERY pode ter marcado o modo de recuperação;
+    // isRecoveryLink também cobre o caso em que o evento se perdeu antes
+    // do listener. Em qualquer caso, não entra no app.
+    if (_recoveryMode || isRecoveryLink()) {
       showNewPasswordScreen();
       lucide.createIcons();
       return;
