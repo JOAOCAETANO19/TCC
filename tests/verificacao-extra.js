@@ -383,6 +383,34 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     && el('boot-screen').style.display === 'none' && el('login-screen').style.display === 'flex',
     'evento PASSWORD_RECOVERY abre a tela de nova senha e esconde o app');
 
+  // Simula o evento perdido: supabase.js preserva a marca antes de o
+  // supabase-js limpar a URL. Também cobre formatos reais com type=recovery
+  // em posições diferentes do fragmento e da query string.
+  const originalRecoveryUrl = window.location.href;
+  const recoveryUrlFormats = [
+    '#access_token=a&type=recovery',
+    '#type=recovery&access_token=a',
+    '#access_token=a&expires_in=3600&refresh_token=r&token_type=bearer&type=recovery',
+    '#access_token=a&type=recovery&expires_in=3600',
+    '?type=recovery',
+    '?type=recovery&access_token=a',
+    '?access_token=a&type=recovery',
+    '?code=c&type=recovery',
+    '?redirect_to=%2FTCC%2F&type=recovery'
+  ];
+  window.RECOVERY_LINK_DETECTED = false;
+  const allRecoveryFormatsDetected = recoveryUrlFormats.every(url => {
+    window.history.replaceState({}, '', url);
+    return window.isRecoveryLink();
+  });
+  window.history.replaceState({}, '', originalRecoveryUrl);
+  window.RECOVERY_LINK_DETECTED = true;
+  check(window.isRecoveryLink() === true && allRecoveryFormatsDetected,
+    'isRecoveryLink reconhece a marca capturada e 9 formatos de URL mesmo sem o evento');
+  window.showNewPasswordScreen();
+  check(window.RECOVERY_LINK_DETECTED === false && isVisible('new-password-form'),
+    'showNewPasswordScreen consome a marca capturada e exibe o formulário de nova senha');
+
   const updatesBefore = authCalls.update.length;
   el('new-password').value = '123456';
   el('new-password-confirm').value = '654321';
@@ -443,7 +471,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     && head.includes('rel="preconnect" href="https://fonts.gstatic.com" crossorigin'),
     'head faz preconnect para os três CDNs (Tailwind, jsDelivr e Google Fonts)');
 
-  check(passed === 69, 'verificacao-extra contém 70 verificações');
+  check(passed === 71, 'verificacao-extra contém 72 verificações');
   console.log(`\n${passed} verificações passaram.`);
   window.close();
 })().catch(error => {

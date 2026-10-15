@@ -13,6 +13,9 @@ const SUPABASE_ANON = 'sb_publishable_zNnninUZuh7wz3qH-Sfeeg_cyFqnsvf';
 // ── cliente leve (sem npm) via CDN ──────────────────────────
 // O index.html já deve carregar antes deste arquivo:
 //   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+// Captura o marcador antes de createClient: o supabase-js pode processar a
+// sessão e limpar a URL antes que o listener de PASSWORD_RECOVERY seja instalado.
+var RECOVERY_LINK_DETECTED = /(?:^|[#&?])type=recovery(?:&|$)/.test((location.hash || '') + (location.search || ''));
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON);
 
