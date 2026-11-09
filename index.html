@@ -81,7 +81,7 @@
           <div class="card-glass rounded-xl p-6 landing-card">
             <p class="text-3xl mb-3" aria-hidden="true">🏅</p>
             <h3 class="font-bold mb-2">Certificados visuais</h3>
-            <p class="text-white/60 text-sm leading-relaxed">Cada conquista gera um diploma visual da Pratica.dev, pronto para imprimir ou baixar em PNG.</p>
+            <p class="text-white/60 text-sm leading-relaxed">Conclua as aulas, pratique e passe na avaliação para conquistar seu diploma visual.</p>
           </div>
           <div class="card-glass rounded-xl p-6 landing-card">
             <p class="text-3xl mb-3" aria-hidden="true">🚀</p>
@@ -386,7 +386,7 @@
           <div class="tab-content" id="tab-certificados">
             <div class="fade-in">
               <h2 class="text-2xl font-bold mb-2">Meus Certificados</h2>
-              <p class="text-white/50 mb-6">Cada exercício concluído gera um diploma visual da Pratica.dev 2.0, pronto para imprimir ou baixar.</p>
+              <p class="text-white/50 mb-6">Conclua as aulas, entregue a atividade prática e seja aprovado na avaliação para conquistar seu diploma visual.</p>
               <div id="certs-gallery" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
             </div>
           </div>
@@ -416,15 +416,16 @@
           <div class="tab-content" id="tab-estudos">
             <div class="fade-in">
               <h2 class="text-2xl font-bold mb-2">Centro de Estudos</h2>
-              <p class="text-white/50 mb-6">Escolha uma matéria para estudar com conteúdo completo.</p>
-              <div class="card-glass rounded-xl p-4 mb-4 flex flex-col sm:flex-row sm:items-center gap-4">
+              <p class="text-white/50 mb-6">Escolha um curso, avance pelas aulas e coloque seus conhecimentos à prova.</p>
+              <div id="study-overview" class="card-glass rounded-xl p-4 mb-4 flex flex-col sm:flex-row sm:items-center gap-4">
                 <div class="sm:mr-6">
-                  <p class="text-white/50 text-xs mb-1">Matérias estudadas</p>
+                  <p class="text-white/50 text-xs mb-1">Cursos certificados</p>
                   <p id="subjects-counter" class="text-2xl font-bold text-green-400">0 de 12</p>
                 </div>
                 <div id="studies-track" class="sm:flex-1"></div>
               </div>
-              <div id="subjects-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+              <div id="course-load-status" aria-live="polite"></div>
+              <div id="subjects-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
               <div id="study-content" class="hidden mt-6"></div>
             </div>
           </div>
@@ -618,6 +619,7 @@
     <!-- SUPABASE + SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js"></script>
+    <script src="course-content.js"></script>
     <script src="script.js"></script>
 
   </div>

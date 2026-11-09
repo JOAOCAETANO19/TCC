@@ -19,7 +19,8 @@ Plataforma educacional gamificada para estudantes de desenvolvimento de sistemas
 ## Recursos da interface
 
 - **Quiz de nivelamento com "Meu nivelamento":** no primeiro acesso o aluno responde 3 perguntas (nível atual, área de interesse e objetivo profissional); as respostas ficam visíveis no card **Meu nivelamento** da aba **Perfil**. Contas antigas seguem funcionando normalmente, sem repetir o quiz;
-- **Centro de Estudos ampliado:** as 12 matérias ganham nível e tempo estimado, seção **Erros comuns**, **Para se aprofundar** (com links externos) e um **teste rápido de conhecimento** de 3 perguntas com correção na hora (só no cliente). O painel mostra o progresso com o contador **"X de 12"**, o selo **✓** nas matérias já concluídas (as que geraram certificado ao clicar em **"Marcar como concluído"** — abrir a matéria dá +10 XP, mas não a marca como estudada) e a **trilha recomendada** pela área do quiz, com o destaque **"Comece por aqui"** na próxima matéria da sequência;
+- **Centro de Estudos:** 12 cursos, cada um com 3 videoaulas em sequência, objetivos, pequenas práticas, exemplos, erros comuns, links externos e um teste de fixação opcional. O aluno acompanha as aulas concluídas e recebe uma trilha recomendada pela área do nivelamento;
+- **Certificação por aproveitamento:** para emitir um novo certificado, é preciso marcar as 3 aulas, enviar uma resposta para a atividade prática (30 a 4.000 caracteres) e acertar ao menos **5 das 6 questões** da avaliação final (mínimo de 80%). A prova é corrigida no banco, pode ser refeita e apresenta feedback. A primeira aprovação emite o diploma e concede 30 XP; abrir uma matéria continua concedendo 10 XP uma vez. Progresso, atividade e tentativas são salvos por aluno. Certificados anteriores são preservados;
 - **Certificado visual:** diploma renderizado em canvas, com download em PNG e impressão em PDF;
 - **Briefing de projetos:** cada um dos 9 projetos práticos abre um briefing no formato usado no mercado, com contexto do cliente, tecnologias sugeridas, requisitos funcionais, entregáveis e critérios de aceite;
 - **Menu mobile:** em telas de até 768px a barra lateral vira uma gaveta acionada pelo botão de menu, com fundo escurecido, fechamento pelo `Esc`, por clique fora e ao escolher uma aba;
@@ -90,41 +91,50 @@ O script é idempotente para uma instalação nova e inclui tabelas, dados inici
    - revoga qualquer privilégio amplo do papel `anon` sobre `public.profiles`;
    - reconcede apenas as colunas expostas pelo portfólio público.
 
-Os arquivos incrementais são idempotentes. Os blocos das três primeiras migrações também estão no final de `database/schema.sql`, para instalações que preferirem reaplicar o script completo.
+5. **Obrigatório:** [`database/migracao-cursos-certificados.sql`](database/migracao-cursos-certificados.sql)
+   - execute no SQL Editor **depois das migrações anteriores e antes de publicar o novo frontend**;
+   - cria aulas concluídas, atividades, tentativas e as funções que corrigem a avaliação;
+   - desativa a emissão direta e o INSERT de certificados pelo cliente, sem remover diplomas antigos.
+
+Os arquivos incrementais são idempotentes. Para uma instalação nova, `database/schema.sql` já inclui a migração dos cursos. Se reaplicar migrações históricas, reaplique por último a migração de cursos. Sem ela, o novo Centro de Estudos exibe um aviso e não permite salvar aulas ou iniciar a avaliação; o banco antigo ainda precisa ser atualizado para bloquear a emissão direta.
 
 ## Estrutura
 
 ```text
 index.html                         interface e telas da aplicação
 style.css                          estilos complementares, diploma visual, menu mobile e briefing
-script.js                          estado, renderização, certificado visual, briefing e regras de interação
+script.js                          estado, renderização e regras de interação
+course-content.js                  videoaulas, objetivos e práticas dos 12 cursos
 supabase.js                        cliente Supabase e chamadas ao backend
-package.json                       dependência de testes (jsdom)
-package-lock.json                  versões fixadas das dependências
+package.json / package-lock.json   dependências e comandos de teste
 database/
-  schema.sql                       esquema, políticas e funções PostgreSQL
-  correcao-xp.sql                  correção incremental das funções de XP
+  schema.sql                       esquema completo, políticas e funções PostgreSQL
+  correcao-xp.sql                  correção incremental histórica de XP
   migracao-portfolio-avatar.sql    portfólio público e avatar
   migracao-bloqueio-usuarios.sql   bloqueio administrativo de contas
-  migracao-permissoes-anon.sql     reforço da restrição por coluna do papel anon
+  migracao-permissoes-anon.sql     restrição por coluna do papel anon
+  migracao-cursos-certificados.sql trilhas, avaliações e emissão de certificados
 docs/
   documentacao-tecnica.md          arquitetura, banco, segurança e fluxos
 tests/
   regressao.js                     verificações de regressão
   smoke-completo.js                jornada completa do aluno
-  verificacao-extra.js             menu mobile, certificado visual, painel admin, recuperação de senha e acessibilidade
+  verificacao-extra.js             menu, certificado visual, admin e acessibilidade
+  cursos-interface.js              estados e falhas da interface de cursos
+  cursos-banco.js                  regras, RLS e permissões em PostgreSQL (PGlite)
+  cursos-integracao.js             jornada da interface com o schema real (PGlite)
 ```
 
 ## Testes
 
-Os testes usam [jsdom](https://github.com/jsdom/jsdom) e não precisam de rede nem de um Supabase real — todas as integrações externas são substituídas por mocks.
+Os testes exigem Node.js 22.19 ou superior e usam [jsdom](https://github.com/jsdom/jsdom) e [PGlite](https://github.com/electric-sql/pglite). Depois de instalar as dependências, não precisam de rede nem de um projeto Supabase: as suítes de banco e integração executam PostgreSQL local em WebAssembly.
 
 ```bash
-npm install
-node tests/regressao.js         # regressão (157 verificações)
-node tests/smoke-completo.js    # jornada completa do aluno (47 verificações)
-node tests/verificacao-extra.js # menu mobile, certificado, painel admin, recuperação de senha e acessibilidade (70 verificações)
+npm ci
+npm test
 ```
+
+As suítes também podem ser executadas individualmente com `node tests/<nome-do-arquivo>.js`.
 
 ## Publicação
 
@@ -133,6 +143,8 @@ O site é publicado pelo GitHub Pages a partir da raiz da branch `main`. Para pu
 ## Segurança e limitações conhecidas
 
 A chave publicável do Supabase pode aparecer no navegador; a proteção dos dados depende das políticas RLS e das funções `SECURITY DEFINER` do banco. A conta de login do Supabase Auth só pode ser removida com a Admin API e, portanto, a exclusão de aluno no painel remove os dados acadêmicos, não a identidade Auth.
+
+A marcação das aulas é **manual**: o sistema não verifica se o vídeo foi assistido, e a atividade escrita não é corrigida automaticamente. Os vídeos são de terceiros e podem ficar indisponíveis; há links para abri-los no YouTube. A avaliação dificulta a emissão casual, mas não é uma prova supervisionada ou antifraude: o projeto é público e o gabarito da carga inicial está no SQL versionado. Para certificação de maior rigor, seria necessário manter um banco privado de questões e adotar mecanismos adicionais de verificação.
 
 ## Licença
 

@@ -26,9 +26,10 @@ Navegador
 - `index.html`: marcação da página inicial (landing), login, dashboard, estudos, certificados, projetos, portfólio e administração.
 - `style.css`: tema visual, diploma e componentes que não são cobertos pelo Tailwind.
 - `script.js`: estado da sessão, eventos, renderização, certificado visual e chamadas de negócio.
+- `course-content.js`: três videoaulas, objetivos e práticas para cada uma das 12 matérias.
 - `supabase.js`: inicialização do cliente Supabase e funções de acesso ao backend.
 
-Não há dependências locais nem transpiler. Os scripts são carregados na ordem: biblioteca Supabase, `supabase.js` e `script.js`.
+O frontend não tem etapa de build. Os scripts são carregados na ordem: biblioteca Supabase, `supabase.js`, `course-content.js` e `script.js`.
 
 ## 3. Modelo de dados
 
@@ -39,7 +40,12 @@ Não há dependências locais nem transpiler. Os scripts são carregados na orde
 | `projects` | catálogo dos nove projetos | `id` é a chave do catálogo |
 | `subject_progress` | matérias visualizadas (XP de exploração; não conta como concluída na interface) | chave composta `user_id + subject_id` |
 | `user_projects` | projetos concluídos | `user_id + project_id` |
-| `certificates` | exercícios concluídos e certificados emitidos | único por usuário e matéria |
+| `certificates` | certificados emitidos após aprovação (e certificados anteriores preservados) | único por usuário e matéria |
+| `course_catalog` | matérias certificáveis, título, quantidade de aulas e nota mínima | `subject_id` é a chave do catálogo |
+| `course_questions` | seis enunciados, alternativas, gabaritos e explicações por matéria | `subject_id + question_number`; sem leitura direta pelo cliente |
+| `course_lesson_progress` | aulas marcadas como assistidas | `user_id + subject_id + lesson_index` |
+| `course_exercises` | resposta da atividade prática | `user_id + subject_id`; resposta de 30 a 4.000 caracteres |
+| `course_assessment_attempts` | nota, aprovação e feedback de cada tentativa | `user_id` → `profiles`; `subject_id` → `course_catalog` |
 
 Fora das tabelas, o Supabase Storage tem o bucket privado `avatars`, que guarda as fotos de perfil em `avatars/<id do usuário>/avatar.jpg|png`; `profiles.avatar_url` registra o caminho do arquivo de cada aluno.
 
@@ -49,7 +55,11 @@ O diagrama lógico é:
 auth.users 1──1 profiles 1──N quiz_answers
                          1──N subject_progress
                          1──N certificates
+                         1──N course_lesson_progress ──N:1 course_catalog
+                         1──N course_exercises ───────N:1 course_catalog
+                         1──N course_assessment_attempts ─N:1 course_catalog
                          1──N user_projects N──1 projects
+course_catalog 1──N course_questions
 ```
 
 O script completo, incluindo carga inicial do catálogo, está em [`database/schema.sql`](../database/schema.sql).
@@ -77,14 +87,22 @@ XP nunca é calculado pelo JavaScript. As ações chamam funções PostgreSQL:
 
 - `award_quiz_xp`: registra respostas, trilha e objetivo e adiciona 50 XP;
 - `award_subject_view_xp`: registra a primeira visualização e adiciona 10 XP;
-- `award_exercise_xp`: emite um certificado e adiciona 30 XP apenas uma vez;
+- `submit_course_assessment`: corrige as respostas no banco, registra a tentativa e, na primeira aprovação, emite o certificado e adiciona 30 XP;
 - `award_project_xp`: registra o projeto e usa a recompensa do catálogo.
 
-Cada função usa uma chave única para impedir que a mesma atividade seja repetida para farmar XP. O nível é recalculado no servidor pela função `recalculate_level`.
+A unicidade em `subject_progress`, `certificates` e `user_projects` impede duplicar a recompensa dessas ações. O nível é recalculado no servidor pela função `recalculate_level`. A RPC antiga `award_exercise_xp` foi desativada.
 
-### Certificado visual
+### Centro de Estudos e certificado
 
-O registro em `certificates` continua sendo a fonte da verdade. O frontend apenas desenha um diploma em canvas a partir desses dados: nome do aluno, módulo, data, trilha, nível, XP e um código de verificação determinístico. O diploma pode ser aberto no perfil, na aba Certificados, no portfólio, no painel administrativo e automaticamente após concluir um exercício. Há ações de baixar PNG e imprimir/salvar PDF. A tela de login oferece um modelo identificado como MODELO para avaliação, sem gravar nada no banco.
+1. O catálogo do frontend (`course-content.js`) oferece três vídeos por matéria, com objetivos e pequenas atividades. `mark_course_lesson_complete` registra aulas em sequência; uma chave única impede duplicação.
+2. `save_course_exercise` exige todas as aulas e salva uma resposta de 30 a 4.000 caracteres. A solução não é corrigida automaticamente.
+3. `get_course_assessment` só libera a prova após aulas e atividade; devolve seis questões sem os campos de gabarito. `submit_course_assessment` valida todas as alternativas, corrige no PostgreSQL e salva a nota e o feedback. A aprovação exige pelo menos 80% (5 de 6); é permitido tentar novamente.
+4. A mesma transação da aprovação insere em `certificates` e concede 30 XP somente se o diploma ainda não existia. Títulos vêm do catálogo do banco, não do cliente. Certificados anteriores permanecem acessíveis sem XP adicional.
+5. O progresso é lido por usuário, com RLS; falhas não são tratadas como sucesso e o frontend oferece nova tentativa. Sem a migração, o curso continua visível, mas salvar progresso e iniciar a avaliação ficam bloqueados.
+
+O registro em `certificates` é a fonte da verdade. O frontend desenha o diploma em canvas com nome, módulo, data, trilha, nível, XP e um código determinístico; oferece download em PNG e impressão/PDF. Esse código não é uma verificação criptográfica. A tela de login oferece um MODELO sem gravação.
+
+As aulas são marcadas manualmente, sem confirmação do tempo assistido. Os vídeos são externos e têm link alternativo para o YouTube. A prova é formativa e não supervisionada; como o SQL com a carga inicial de gabaritos é versionado neste repositório público, não deve ser tratada como proteção antifraude ou certificação de alto risco.
 
 ### Administração
 
@@ -121,14 +139,16 @@ O bloco incremental correspondente (coluna `avatar_url`, grant da coluna ao `ano
 - O bucket `avatars` é privado: nenhuma foto tem URL pública e as políticas de `storage.objects` liberam a leitura anônima somente de fotos cujo dono publicou o portfólio (mesma regra de `portfolio_public`); a escrita é restrita à pasta do próprio usuário.
 - O upload de avatar é validado duas vezes: tipo e tamanho no cliente e limite de 2 MB/MIME (JPG/PNG) na configuração do bucket. URLs assinadas nunca são concatenadas no HTML sem escape, e a expiração ou falha delas degrada para o avatar de inicial sem quebrar as telas.
 - Alterações de XP, nível e papel administrativo são protegidas por trigger/RPC.
-- Funções privilegiadas revalidam `auth.uid()` e `is_admin` no banco.
+- `course_questions` não concede SELECT ao cliente; as tabelas de progresso têm SELECT restrito ao próprio aluno e não permitem escrita direta. As RPCs validam autenticação, bloqueio, curso, ordem, pré-requisitos e respostas.
+- O cliente não recebe INSERT em `certificates`, e a RPC antiga de emissão direta está desativada. As limitações da avaliação não supervisionada estão descritas acima.
+- Funções privilegiadas revalidam `auth.uid()` e, quando necessário, `is_admin` no banco.
 - A chave `service_role` não deve ser usada no frontend.
 - Exclusão acadêmica não exclui a identidade em `auth.users`, porque isso exigiria a Admin API em um ambiente seguro.
 
 ## 6. Instalação e configuração
 
 1. Crie um projeto Supabase.
-2. Execute `database/schema.sql` no SQL Editor. Se o banco já existia, execute também `database/correcao-xp.sql` e `database/migracao-portfolio-avatar.sql`.
+2. Em um banco novo, execute `database/schema.sql` no SQL Editor. Em um banco existente, aplique as migrações anteriores indicadas no README e, **por último e antes do frontend**, `database/migracao-cursos-certificados.sql`. Ela preserva certificados existentes e fecha a emissão direta.
 3. Ajuste `SUPABASE_URL` e `SUPABASE_ANON` em `supabase.js` quando necessário.
 4. Sirva a raiz com `python3 -m http.server 8080`.
 5. Abra `http://localhost:8080` e faça um cadastro.
@@ -149,4 +169,5 @@ Após um push, aguarde a conclusão do build do Pages e valide login, cadastro, 
 - Alterações de banco devem ser feitas primeiro em uma instância de teste e depois refletidas em `database/schema.sql`.
 - Mudanças de campos consumidos no JS devem atualizar o SQL e esta documentação na mesma alteração.
 - Não versionar senhas, tokens privados, dumps de usuários ou a chave `service_role`.
-- O catálogo inicial em `projects` é idempotente e pode ser reaplicado.
+- Os catálogos iniciais de projetos e cursos são idempotentes e podem ser reaplicados. Ao alterar uma trilha, mantenha alinhados `subjects`, `subjectContent`, `subjectExtras`, `course-content.js`, `course_catalog` e as seis questões da migração. Reaplique a migração de cursos por último ao usar scripts históricos.
+- Execute `npm ci && npm test`: as suítes usam jsdom e PGlite para cobrir interface, regras, RLS, instalação completa e integração sem um Supabase real.

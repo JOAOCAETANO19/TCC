@@ -1,5 +1,11 @@
 {
+  "scripts": {
+    "test": "node tests/regressao.js && node tests/smoke-completo.js && node tests/verificacao-extra.js && node tests/cursos-interface.js && node tests/cursos-banco.js && node tests/cursos-integracao.js"
+  },
   "dependencies": {
     "jsdom": "^30.0.1"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.15"
   }
 }

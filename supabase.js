@@ -131,11 +131,9 @@ async function fetchQuizAnswers(userId) {
 }
 
 // ============================================================
-//  XP — Estas 4 funções são os ÚNICOS jeitos de ganhar XP.
-//  Cada uma chama uma função no banco que decide sozinha quanto
-//  XP dar (o valor não vem do cliente) e recalcula o nível.
-//  Um usuário não consegue mais escrever xp/level direto na
-//  tabela profiles, nem pelo console do navegador — só por aqui.
+//  XP — Nivelamento, abertura de matéria, aprovação na avaliação
+//  e projeto concluído chamam funções no banco que calculam a
+//  recompensa e o nível. O cliente não escolhe o valor de XP.
 // ============================================================
 async function awardQuizXP(answers, track, goal) {
   const { error } = await db.rpc('award_quiz_xp', {
@@ -149,13 +147,8 @@ async function awardSubjectViewXP(subjectId) {
   if (error) throw new Error(error.message);
 }
 
-async function awardExerciseXP(subjectId, certTitle) {
-  const { error } = await db.rpc('award_exercise_xp', {
-    p_subject_id: subjectId, p_cert_title: certTitle
-  });
-  if (error) throw new Error(error.message);
-}
-
+// A emissão direta de certificados foi removida. A avaliação do curso é
+// corrigida pelo banco e somente uma aprovação pode emitir o certificado.
 async function awardProjectXP(projectId) {
   const { error } = await db.rpc('award_project_xp', { p_project_id: projectId });
   if (error) throw new Error(error.message);
@@ -172,6 +165,51 @@ async function fetchSubjectProgress(userId) {
 
   if (error) throw new Error(error.message);
   return data || [];
+}
+
+// ============================================================
+//  CURSOS — Progresso privado e avaliação corrigida no servidor
+// ============================================================
+async function fetchCourseProgress(userId) {
+  const [lessons, exercises, attempts] = await Promise.all([
+    db.from('course_lesson_progress').select('subject_id, lesson_index, completed_at').eq('user_id', userId),
+    db.from('course_exercises').select('subject_id, answer, submitted_at').eq('user_id', userId),
+    db.from('course_assessment_attempts')
+      .select('subject_id, correct_count, question_count, passed, feedback, attempted_at')
+      .eq('user_id', userId).order('attempted_at', { ascending: false })
+  ]);
+  for (const result of [lessons, exercises, attempts]) {
+    if (result.error) throw new Error(result.error.message);
+  }
+  return { lessons: lessons.data || [], exercises: exercises.data || [], attempts: attempts.data || [] };
+}
+
+async function markCourseLesson(subjectId, lessonIndex) {
+  const { error } = await db.rpc('mark_course_lesson_complete', {
+    p_subject_id: subjectId, p_lesson_index: lessonIndex
+  });
+  if (error) throw new Error(error.message);
+}
+
+async function saveCourseExercise(subjectId, answer) {
+  const { error } = await db.rpc('save_course_exercise', {
+    p_subject_id: subjectId, p_answer: answer
+  });
+  if (error) throw new Error(error.message);
+}
+
+async function getCourseAssessment(subjectId) {
+  const { data, error } = await db.rpc('get_course_assessment', { p_subject_id: subjectId });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+async function submitCourseAssessment(subjectId, answers) {
+  const { data, error } = await db.rpc('submit_course_assessment', {
+    p_subject_id: subjectId, p_answers: answers
+  });
+  if (error) throw new Error(error.message);
+  return data;
 }
 
 // ============================================================

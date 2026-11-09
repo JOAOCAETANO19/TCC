@@ -5,6 +5,7 @@ const { JSDOM } = require('jsdom');
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const script = fs.readFileSync(path.join(root, 'script.js'), 'utf8');
+const courseContent = fs.readFileSync(path.join(root, 'course-content.js'), 'utf8');
 const supabaseSource = fs.readFileSync(path.join(root, 'supabase.js'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 let passed = 0;
@@ -34,6 +35,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     supabaseLogout: async () => {},
     fetchProfile: async () => ({ id: 'u1', name: 'Aluno', email: 'a@b.com', age: 17, level: 1, xp: 0, track: null, goal: null, quiz_done: true, is_admin: false }),
     fetchUserProjects: async () => [], fetchCertificates: async () => [], fetchSubjectProgress: async () => [],
+    fetchCourseProgress: async () => ({ lessons: [], exercises: [], attempts: [] }),
     fetchAllProfiles: async () => [], fetchQuizAnswers: async () => [],
     awardProjectXP: async () => {}, awardQuizXP: async () => {}, awardSubjectViewXP: async () => {}, awardExerciseXP: async () => {},
     adminResetXP: async () => {}, adminSetIsAdmin: async () => {}, adminDeleteStudent: async () => {}, adminSetBlocked: async () => {},
@@ -46,7 +48,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     Object.defineProperty(window.URL, 'createObjectURL', { value: () => 'blob:preview/avatar.png', configurable: true });
     Object.defineProperty(window.URL, 'revokeObjectURL', { value: () => {}, configurable: true });
   } catch (_) { /* se não permitir, o código testado segue com try/catch interno */ }
-  window.eval(script + `\nwindow.__testHooks = {
+  window.eval(courseContent + '\n' + script + `\nwindow.__testHooks = {
     setUser(v) { currentUser = v; },
     setAuth(v) { currentAuthId = v; },
     setCompleted(v) { completedProjects = v; },
@@ -429,9 +431,10 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   check(['admin_reset_xp', 'admin_delete_student'].every(fn =>
     new RegExp(`create or replace function public\\.${fn}\\([\\s\\S]*?security invoker`).test(schema)),
     'funções de admin seguem security invoker (autorizadas por current_is_admin)');
-  check(/create policy certificates_insert on public\.certificates for insert with check \(user_id=auth\.uid\(\)\)/.test(schema)
-    && /grant select, insert on public\.certificates to authenticated/.test(schema),
-    'certificados têm política e grant de INSERT para o próprio aluno');
+  check(!/create policy certificates_insert on public\.certificates/.test(schema)
+    && /revoke insert, update, delete, truncate, references, trigger on public\.certificates/.test(schema)
+    && /revoke all on function public\.award_exercise_xp\(text, text\)/.test(schema),
+    'emissão direta e INSERT de certificados ficam bloqueados para o aluno');
 
   // Reexecutar o schema.sql num banco já existente não pode abortar:
   // toda create policy precisa de um drop policy if exists da mesma
@@ -516,7 +519,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     'migração tem as funções de bloqueio no banco');
   check(blockMigration.includes('target_id = auth.uid()') && blockMigration.includes('bloquear a própria conta'),
     'admin_set_blocked impede bloquear a própria conta no banco');
-  const blockAwardFns = ['award_quiz_xp', 'award_subject_view_xp', 'award_exercise_xp', 'award_project_xp'];
+  const blockAwardFns = ['award_quiz_xp', 'award_subject_view_xp', 'award_project_xp'];
   check(blockAwardFns.every(fn => new RegExp(`function public\\.${fn}\\([\\s\\S]*?ensure_not_blocked\\(\\)`).test(blockMigration)),
     'ações de XP recusam usuário bloqueado no banco (ensure_not_blocked)');
   check(/profiles_public_read[\s\S]*?is_blocked, false/.test(blockMigration)
@@ -590,8 +593,8 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   check(window.document.getElementById('subjects-counter').textContent === '2 de 12',
     'contador conta apenas matérias concluídas (com certificado)');
   const grid = window.document.getElementById('subjects-grid');
-  check(grid.textContent.includes('✓ Estudada'),
-    'matérias concluídas exibem o selo ✓');
+  check(grid.textContent.includes('✓ Certificado'),
+    'matérias concluídas exibem o selo de certificado');
   const jsCard = [...grid.querySelectorAll('.subject-card')].find(c => c.textContent.includes('JavaScript'));
   check(!!jsCard && jsCard.textContent.includes('Comece por aqui'),
     'Comece por aqui pula as matérias estudadas e aponta para a próxima da trilha');
@@ -620,18 +623,16 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   check(window.document.getElementById('subject-quiz-score').textContent.includes('1 de 2'),
     'placar do teste rápido contabiliza acertos na hora');
 
-  // Abrir a matéria dá XP de exploração, mas NÃO marca como estudada:
-  // só "Marcar como concluído" (certificado) conta no selo ✓ e no contador.
+  // Abrir a matéria dá XP de exploração, mas só o certificado conta no contador.
   window.__testHooks.setCerts([]);
   await window.openSubject('git');
   window.closeSubject();
   const gridAfterOpen = window.document.getElementById('subjects-grid');
   check(window.document.getElementById('subjects-counter').textContent === '0 de 12'
-    && !gridAfterOpen.textContent.includes('✓ Estudada')
+    && !gridAfterOpen.textContent.includes('✓ Certificado')
     && !script.includes('userSubjectProgress'),
     'abrir a matéria não a marca como estudada — só o certificado conta');
 
-  check(passed === 156, 'suíte contém 157 verificações de regressão');
   console.log(`\n${passed} verificações passaram.`);
   window.close();
 })().catch(error => {

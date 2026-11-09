@@ -28,18 +28,18 @@ const subjects = [
 ];
 
 const subjectContent = {
-  html:   { title:"HTML - HyperText Markup Language", summary:"HTML é a linguagem de marcação padrão para criar páginas web.", topics:["Tags e elementos","Estrutura básica (DOCTYPE, head, body)","Semântica (header, nav, main, footer)","Formulários e inputs","Tabelas e listas","Links e imagens","Atributos e classes"], example:`<!DOCTYPE html>\n<html>\n<head>\n  <title>Minha Página</title>\n</head>\n<body>\n  <h1>Olá, Mundo!</h1>\n  <p>Meu primeiro site.</p>\n</body>\n</html>`, exercise:"Crie uma página HTML com um cabeçalho, parágrafo, lista e um link para o Google.", video:"https://www.youtube.com/embed/Ejkb_YpuHWs" },
-  css:    { title:"CSS - Cascading Style Sheets", summary:"CSS é a linguagem que estiliza páginas web, controlando cores, fontes, layouts e animações.", topics:["Seletores e propriedades","Box Model (margin, padding, border)","Flexbox e Grid","Responsividade (media queries)","Animações e transições","Variáveis CSS","Pseudo-classes e pseudo-elementos"], example:`body {\n  font-family: Arial;\n  background: #1a1a2e;\n  color: white;\n}\n\n.card {\n  display: flex;\n  padding: 20px;\n  border-radius: 12px;\n  background: rgba(255,255,255,0.05);\n}`, exercise:"Estilize um card com Flexbox, borda arredondada e sombra.", video:"https://www.youtube.com/embed/GPK8A-A156o" },
-  js:     { title:"JavaScript - Linguagem da Web", summary:"JavaScript é a linguagem de programação que torna páginas web interativas e dinâmicas.", topics:["Variáveis (let, const, var)","Funções e Arrow Functions","DOM Manipulation","Eventos e Listeners","Arrays e Objetos","Promises e Async/Await","LocalStorage e Fetch API"], example:`const btn = document.querySelector('#meuBtn');\n\nbtn.addEventListener('click', () => {\n  alert('Clicou!');\n});\n\nconst soma = (a, b) => a + b;\nconsole.log(soma(2, 3)); // 5`, exercise:"Crie um contador que incrementa ao clicar em um botão e mostra o valor na tela.", video:"https://www.youtube.com/embed/i6Oi-YtXnAU" },
-  sql:    { title:"SQL - Structured Query Language", summary:"SQL é a linguagem padrão para gerenciar e consultar bancos de dados relacionais.", topics:["SELECT, INSERT, UPDATE, DELETE","WHERE e condições","JOIN (INNER, LEFT, RIGHT)","GROUP BY e ORDER BY","Funções agregadas (COUNT, SUM, AVG)","Subqueries","Índices e otimização"], example:`SELECT nome, idade\nFROM alunos\nWHERE curso = 'Desenvolvimento'\nORDER BY nome ASC;\n\nINSERT INTO alunos (nome, idade)\nVALUES ('João', 17);`, exercise:"Escreva uma query que retorne todos os alunos maiores de 16 anos ordenados por nome.", video:"https://www.youtube.com/embed/byHcYRpMgI4" },
-  python: { title:"Python - Linguagem Versátil", summary:"Python é uma linguagem poderosa e fácil de aprender, usada em web, dados, IA e automação.", topics:["Variáveis e tipos de dados","Estruturas condicionais (if/elif/else)","Loops (for, while)","Funções e módulos","Listas, dicionários e tuplas","Orientação a objetos","Bibliotecas populares (Flask, Pandas)"], example:`def saudacao(nome):\n    return f"Olá, {nome}!"\n\nalunos = ["Ana", "João", "Maria"]\nfor aluno in alunos:\n    print(saudacao(aluno))`, exercise:"Crie uma função que recebe uma lista de notas e retorna a média.", video:"https://www.youtube.com/embed/S9uPNppGsGo" },
-  java:   { title:"Java - Linguagem Corporativa", summary:"Java é uma das linguagens mais usadas no mundo corporativo, robusta e orientada a objetos.", topics:["Classes e objetos","Tipos primitivos e wrappers","Herança e polimorfismo","Interfaces e classes abstratas","Collections (List, Map, Set)","Exceções (try/catch)","Spring Boot (introdução)"], example:`public class Aluno {\n    private String nome;\n    private int idade;\n\n    public Aluno(String nome, int idade) {\n        this.nome = nome;\n        this.idade = idade;\n    }\n\n    public String getNome() {\n        return this.nome;\n    }\n}`, exercise:"Crie uma classe Carro com atributos marca, modelo e ano, e um método que exibe as informações.", video:"https://www.youtube.com/embed/grEKMHGYyns" },
-  poo:    { title:"POO - Programação Orientada a Objetos", summary:"POO é um paradigma que organiza código em objetos com atributos e comportamentos.", topics:["Classes e Objetos","Encapsulamento","Herança","Polimorfismo","Abstração","Interfaces","Princípios SOLID (introdução)"], example:`class Animal {\n  constructor(nome) {\n    this.nome = nome;\n  }\n  falar() {\n    return "...";\n  }\n}\n\nclass Cachorro extends Animal {\n  falar() {\n    return "Au au!";\n  }\n}`, exercise:"Crie uma hierarquia de classes: Forma → Retângulo e Círculo, cada um com método calcularArea().", video:"https://www.youtube.com/embed/QY0Kdg83orY" },
-  git:    { title:"Git & GitHub - Controle de Versão", summary:"Git permite versionar código e GitHub é a plataforma para colaboração e portfólio.", topics:["git init, add, commit","Branches e merge","git push e pull","Pull Requests","Conflitos e resolução","GitHub Pages",".gitignore e README"], example:`git init\ngit add .\ngit commit -m "primeiro commit"\ngit remote add origin https://github.com/user/repo.git\ngit push -u origin main`, exercise:"Inicialize um repositório, faça 3 commits diferentes e crie uma branch chamada 'feature'.", video:"https://www.youtube.com/embed/UBAX-13g8aw" },
-  redes:  { title:"Redes de Computadores", summary:"Redes conectam computadores permitindo comunicação e compartilhamento de recursos.", topics:["Modelo OSI e TCP/IP","IP, DNS e portas","HTTP e HTTPS","Roteadores e switches","Protocolos (FTP, SSH, SMTP)","Firewall e segurança","Wi-Fi e cabeamento"], example:`IP Local: 192.168.1.100\nMáscara: 255.255.255.0\nGateway: 192.168.1.1\nDNS: 8.8.8.8\n\nHTTP GET /api/dados → 200 OK`, exercise:"Explique a diferença entre IP público e privado e como funciona o NAT.", video:"https://www.youtube.com/embed/Tq4RFqdaKPM" },
-  apis:   { title:"APIs - Application Programming Interface", summary:"APIs permitem que sistemas se comuniquem entre si, essencial para apps modernos.", topics:["O que é uma API REST","Métodos HTTP (GET, POST, PUT, DELETE)","JSON e formato de dados","Headers e autenticação","Status codes (200, 404, 500)","Fetch API no JavaScript","Documentação (Swagger)"], example:`// Consumindo uma API\nfetch('https://api.exemplo.com/users')\n  .then(res => res.json())\n  .then(data => {\n    console.log(data);\n  })\n  .catch(err => console.error(err));`, exercise:"Consuma a API JSONPlaceholder e exiba uma lista de posts em uma página HTML.", video:"https://www.youtube.com/embed/vGuqKIRWosk" },
-  banco:  { title:"Banco de Dados", summary:"Bancos de dados armazenam e organizam informações de forma estruturada e eficiente.", topics:["Modelagem de dados (MER)","Banco relacional vs NoSQL","Normalização (1FN, 2FN, 3FN)","Chaves primárias e estrangeiras","Relacionamentos (1:1, 1:N, N:N)","MySQL, PostgreSQL, MongoDB","Transações e ACID"], example:`CREATE TABLE alunos (\n  id INT PRIMARY KEY AUTO_INCREMENT,\n  nome VARCHAR(100) NOT NULL,\n  email VARCHAR(100) UNIQUE,\n  curso_id INT,\n  FOREIGN KEY (curso_id) REFERENCES cursos(id)\n);`, exercise:"Modele um banco de dados para uma biblioteca com tabelas: livros, autores e empréstimos.", video:"https://www.youtube.com/embed/Ofktsne-utM" },
-  logica: { title:"Lógica de Programação", summary:"Base fundamental para qualquer linguagem. Ensina a pensar como um programador.", topics:["Algoritmos e fluxogramas","Variáveis e tipos de dados","Estruturas condicionais","Loops (repetição)","Vetores e matrizes","Funções e procedimentos","Debugging e resolução de problemas"], example:`// Algoritmo: Verificar se é par ou ímpar\nfuncao verificarParidade(numero):\n  se (numero % 2 == 0):\n    retornar "Par"\n  senao:\n    retornar "Ímpar"`, exercise:"Crie um algoritmo que receba 5 números e retorne o maior e o menor.", video:"https://www.youtube.com/embed/8mei6uVttho" }
+  html:   { title:"HTML - HyperText Markup Language", summary:"HTML é a linguagem de marcação padrão para criar páginas web.", topics:["Tags e elementos","Estrutura básica (DOCTYPE, head, body)","Semântica (header, nav, main, footer)","Formulários e inputs","Tabelas e listas","Links e imagens","Atributos e classes"], example:`<!DOCTYPE html>\n<html>\n<head>\n  <title>Minha Página</title>\n</head>\n<body>\n  <h1>Olá, Mundo!</h1>\n  <p>Meu primeiro site.</p>\n</body>\n</html>`, exercise:"Crie uma página HTML com um cabeçalho, parágrafo, lista e um link para o Google." },
+  css:    { title:"CSS - Cascading Style Sheets", summary:"CSS é a linguagem que estiliza páginas web, controlando cores, fontes, layouts e animações.", topics:["Seletores e propriedades","Box Model (margin, padding, border)","Flexbox e Grid","Responsividade (media queries)","Animações e transições","Variáveis CSS","Pseudo-classes e pseudo-elementos"], example:`body {\n  font-family: Arial;\n  background: #1a1a2e;\n  color: white;\n}\n\n.card {\n  display: flex;\n  padding: 20px;\n  border-radius: 12px;\n  background: rgba(255,255,255,0.05);\n}`, exercise:"Estilize um card com Flexbox, borda arredondada e sombra." },
+  js:     { title:"JavaScript - Linguagem da Web", summary:"JavaScript é a linguagem de programação que torna páginas web interativas e dinâmicas.", topics:["Variáveis (let, const, var)","Funções e Arrow Functions","DOM Manipulation","Eventos e Listeners","Arrays e Objetos","Promises e Async/Await","LocalStorage e Fetch API"], example:`const btn = document.querySelector('#meuBtn');\n\nbtn.addEventListener('click', () => {\n  alert('Clicou!');\n});\n\nconst soma = (a, b) => a + b;\nconsole.log(soma(2, 3)); // 5`, exercise:"Crie um contador que incrementa ao clicar em um botão e mostra o valor na tela." },
+  sql:    { title:"SQL - Structured Query Language", summary:"SQL é a linguagem padrão para gerenciar e consultar bancos de dados relacionais.", topics:["SELECT, INSERT, UPDATE, DELETE","WHERE e condições","JOIN (INNER, LEFT, RIGHT)","GROUP BY e ORDER BY","Funções agregadas (COUNT, SUM, AVG)","Subqueries","Índices e otimização"], example:`SELECT nome, idade\nFROM alunos\nWHERE curso = 'Desenvolvimento'\nORDER BY nome ASC;\n\nINSERT INTO alunos (nome, idade)\nVALUES ('João', 17);`, exercise:"Escreva uma query que retorne todos os alunos maiores de 16 anos ordenados por nome." },
+  python: { title:"Python - Linguagem Versátil", summary:"Python é uma linguagem poderosa e fácil de aprender, usada em web, dados, IA e automação.", topics:["Variáveis e tipos de dados","Estruturas condicionais (if/elif/else)","Loops (for, while)","Funções e módulos","Listas, dicionários e tuplas","Orientação a objetos","Bibliotecas populares (Flask, Pandas)"], example:`def saudacao(nome):\n    return f"Olá, {nome}!"\n\nalunos = ["Ana", "João", "Maria"]\nfor aluno in alunos:\n    print(saudacao(aluno))`, exercise:"Crie uma função que recebe uma lista de notas e retorna a média." },
+  java:   { title:"Java - Linguagem Corporativa", summary:"Java é uma das linguagens mais usadas no mundo corporativo, robusta e orientada a objetos.", topics:["Classes e objetos","Tipos primitivos e wrappers","Herança e polimorfismo","Interfaces e classes abstratas","Collections (List, Map, Set)","Exceções (try/catch)","Spring Boot (introdução)"], example:`public class Aluno {\n    private String nome;\n    private int idade;\n\n    public Aluno(String nome, int idade) {\n        this.nome = nome;\n        this.idade = idade;\n    }\n\n    public String getNome() {\n        return this.nome;\n    }\n}`, exercise:"Crie uma classe Carro com atributos marca, modelo e ano, e um método que exibe as informações." },
+  poo:    { title:"POO - Programação Orientada a Objetos", summary:"POO é um paradigma que organiza código em objetos com atributos e comportamentos.", topics:["Classes e Objetos","Encapsulamento","Herança","Polimorfismo","Abstração","Interfaces","Princípios SOLID (introdução)"], example:`class Animal {\n  constructor(nome) {\n    this.nome = nome;\n  }\n  falar() {\n    return "...";\n  }\n}\n\nclass Cachorro extends Animal {\n  falar() {\n    return "Au au!";\n  }\n}`, exercise:"Crie uma hierarquia de classes: Forma → Retângulo e Círculo, cada um com método calcularArea()." },
+  git:    { title:"Git & GitHub - Controle de Versão", summary:"Git permite versionar código e GitHub é a plataforma para colaboração e portfólio.", topics:["git init, add, commit","Branches e merge","git push e pull","Pull Requests","Conflitos e resolução","GitHub Pages",".gitignore e README"], example:`git init\ngit add .\ngit commit -m "primeiro commit"\ngit remote add origin https://github.com/user/repo.git\ngit push -u origin main`, exercise:"Inicialize um repositório, faça 3 commits diferentes e crie uma branch chamada 'feature'." },
+  redes:  { title:"Redes de Computadores", summary:"Redes conectam computadores permitindo comunicação e compartilhamento de recursos.", topics:["Modelo OSI e TCP/IP","IP, DNS e portas","HTTP e HTTPS","Roteadores e switches","Protocolos (FTP, SSH, SMTP)","Firewall e segurança","Wi-Fi e cabeamento"], example:`IP Local: 192.168.1.100\nMáscara: 255.255.255.0\nGateway: 192.168.1.1\nDNS: 8.8.8.8\n\nHTTP GET /api/dados → 200 OK`, exercise:"Explique a diferença entre IP público e privado e como funciona o NAT." },
+  apis:   { title:"APIs - Application Programming Interface", summary:"APIs permitem que sistemas se comuniquem entre si, essencial para apps modernos.", topics:["O que é uma API REST","Métodos HTTP (GET, POST, PUT, DELETE)","JSON e formato de dados","Headers e autenticação","Status codes (200, 404, 500)","Fetch API no JavaScript","Documentação (Swagger)"], example:`// Consumindo uma API\nfetch('https://api.exemplo.com/users')\n  .then(res => res.json())\n  .then(data => {\n    console.log(data);\n  })\n  .catch(err => console.error(err));`, exercise:"Consuma a API JSONPlaceholder e exiba uma lista de posts em uma página HTML." },
+  banco:  { title:"Banco de Dados", summary:"Bancos de dados armazenam e organizam informações de forma estruturada e eficiente.", topics:["Modelagem de dados (MER)","Banco relacional vs NoSQL","Normalização (1FN, 2FN, 3FN)","Chaves primárias e estrangeiras","Relacionamentos (1:1, 1:N, N:N)","MySQL, PostgreSQL, MongoDB","Transações e ACID"], example:`CREATE TABLE alunos (\n  id INT PRIMARY KEY AUTO_INCREMENT,\n  nome VARCHAR(100) NOT NULL,\n  email VARCHAR(100) UNIQUE,\n  curso_id INT,\n  FOREIGN KEY (curso_id) REFERENCES cursos(id)\n);`, exercise:"Modele um banco de dados para uma biblioteca com tabelas: livros, autores e empréstimos." },
+  logica: { title:"Lógica de Programação", summary:"Base fundamental para qualquer linguagem. Ensina a pensar como um programador.", topics:["Algoritmos e fluxogramas","Variáveis e tipos de dados","Estruturas condicionais","Loops (repetição)","Vetores e matrizes","Funções e procedimentos","Debugging e resolução de problemas"], example:`// Algoritmo: Verificar se é par ou ímpar\nfuncao verificarParidade(numero):\n  se (numero % 2 == 0):\n    retornar "Par"\n  senao:\n    retornar "Ímpar"`, exercise:"Crie um algoritmo que receba 5 números e retorne o maior e o menor." }
 };
 
 // ===== TRILHA RECOMENDADA POR ÁREA =====
@@ -527,6 +527,16 @@ let currentAvatarUrl = null;        // URL assinada da foto do usuário logado
 let pendingAvatarFile = null;       // arquivo escolhido aguardando confirmação na prévia
 let pendingAvatarObjectUrl = null;  // URL temporária (blob:) da prévia
 
+// Progresso de cursos pertence à sessão, nunca ao localStorage do navegador.
+let courseProgress = { lessons: [], exercises: [], attempts: [], loading: true, error: null };
+let courseSessionVersion = 0;
+let courseLoadVersion = 0;
+let activeSubjectId = null;
+let selectedLessonIndex = 1;
+let activeAssessment = null;
+const pendingCourseActions = new Set();
+const subjectQuizScores = {}; // fixação opcional; não é a avaliação certificadora
+
 const CERT_W = 1400;
 const CERT_H = 990;
 const CERT_ACCENTS = {
@@ -539,7 +549,7 @@ const CERT_ACCENTS = {
 // ===== CERTIFICADO VISUAL =====
 // O diploma é desenhado em canvas para a tela, o PNG e a impressão
 // ficarem iguais. Não substitui a tabela certificates: só apresenta
-// o que o banco já emitiu ao concluir um exercício.
+// o que o banco já emitiu após a aprovação no curso.
 
 function escapeHtml(str) {
   return String(str ?? '')
@@ -986,7 +996,7 @@ function renderCertificates() {
   if (!userCerts.length) {
     el.innerHTML = `
       <div class="card-glass rounded-xl p-6 md:col-span-2">
-        <p class="text-white/60 mb-3">Nenhum certificado ainda. Conclua um exercício no Centro de Estudos para emitir o diploma visual.</p>
+        <p class="text-white/60 mb-3">Nenhum certificado ainda. Conclua as aulas e a atividade prática e passe na avaliação de um curso para conquistar seu diploma.</p>
         <button type="button" onclick="switchTab('estudos')" class="btn-primary px-4 py-2 rounded-lg text-sm">Ir para o Centro de Estudos</button>
       </div>`;
     return;
@@ -1301,6 +1311,7 @@ function cancelPasswordRecovery() {
 // ===== AUTH — LOGOUT =====
 
 async function handleLogout() {
+  resetCourseSession();
   await supabaseLogout();
   currentUser       = null;
   currentAuthId     = null;
@@ -1346,22 +1357,40 @@ function rejectBlockedSession() {
 // ===== CARREGAR EXTRAS (projetos e certificados) =====
 
 async function loadUserExtras(userId) {
+  const session = courseSessionVersion;
+  const certsBeforeLoad = new Set(userCerts.map(cert => cert.subject_id));
   const [projs, certs, quizRows] = await Promise.all([
     fetchUserProjects(userId),
     fetchCertificates(userId),
     fetchQuizAnswers(userId)
   ]);
-  completedProjects   = projs.map(p => p.project_id);
-  userCerts           = certs;
-  userQuizRows        = quizRows || [];
+  if (session !== courseSessionVersion || userId !== currentAuthId) return;
+  completedProjects = projs.map(p => p.project_id);
+  // Uma aprovação pode ocorrer enquanto esta leitura ainda está em andamento.
+  // Não descarte o certificado recém-confirmado por uma resposta mais antiga.
+  const fetchedIds = new Set(certs.map(cert => cert.subject_id));
+  const issuedDuringLoad = userCerts.filter(cert => !certsBeforeLoad.has(cert.subject_id) && !fetchedIds.has(cert.subject_id));
+  userCerts = [...issuedDuringLoad, ...certs];
+  userQuizRows = quizRows || [];
 }
 
 // Projetos e certificados não devem impedir a entrada no app.
 async function loadUserExtrasSafe(userId) {
+  const session = courseSessionVersion;
   try {
     await loadUserExtras(userId);
+    if (session !== courseSessionVersion || userId !== currentAuthId) return;
     renderDashboard();
+    const studiesTab = document.getElementById('tab-estudos');
+    if (studiesTab && studiesTab.classList.contains('active')) {
+      if (activeSubjectId) {
+        // Não recria o player nem apaga respostas de uma avaliação em andamento.
+        if (!activeAssessment || !activeAssessment.questions) renderCourseAssessment(activeSubjectId);
+      } else renderSubjects();
+    }
+    tryOpenCertFromHash();
   } catch (e) {
+    if (session !== courseSessionVersion || userId !== currentAuthId) return;
     console.warn('Carga secundária indisponível:', e.message);
     showToast('Seu perfil abriu, mas projetos e certificados não puderam ser carregados. Tente novamente mais tarde.', 'error');
   }
@@ -1371,6 +1400,7 @@ async function loadUserExtrasSafe(userId) {
 // ===== APP ENTRY =====
 
 function enterApp() {
+  resetCourseSession();
   document.getElementById('boot-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'none';
   hideLanding();
@@ -1384,8 +1414,9 @@ function enterApp() {
   } else {
     renderDashboard();
   }
-  // A foto carrega em paralelo e nunca trava a entrada no app.
+  // Foto e progresso carregam em paralelo sem impedir a entrada no app.
   refreshCurrentAvatarSafe();
+  loadCourseProgressSafe(currentAuthId);
   lucide.createIcons();
   tryOpenCertFromHash();
 }
@@ -1770,32 +1801,115 @@ function renderCareers() {
 }
 
 
-// ===== RENDER: MATÉRIAS =====
+// ===== CENTRO DE ESTUDOS: CURSOS, PROGRESSO E AVALIAÇÃO =====
+
+function resetCourseSession() {
+  courseSessionVersion += 1;
+  courseLoadVersion += 1;
+  courseProgress = { lessons: [], exercises: [], attempts: [], loading: true, error: null };
+  activeSubjectId = null;
+  selectedLessonIndex = 1;
+  activeAssessment = null;
+  pendingCourseActions.clear();
+  Object.keys(subjectQuizScores).forEach(id => delete subjectQuizScores[id]);
+}
+
+async function loadCourseProgressSafe(userId) {
+  if (!userId) return;
+  const session = courseSessionVersion;
+  const request = ++courseLoadVersion;
+  courseProgress.loading = true;
+  courseProgress.error = null;
+  refreshStudyView();
+  try {
+    const data = await fetchCourseProgress(userId);
+    if (session !== courseSessionVersion || request !== courseLoadVersion || userId !== currentAuthId) return;
+    courseProgress = {
+      lessons: data.lessons || [], exercises: data.exercises || [], attempts: data.attempts || [],
+      loading: false, error: null
+    };
+  } catch (e) {
+    if (session !== courseSessionVersion || request !== courseLoadVersion || userId !== currentAuthId) return;
+    console.warn('Progresso dos cursos indisponível:', e.message);
+    courseProgress.loading = false;
+    courseProgress.error = 'Não foi possível carregar o progresso dos cursos.';
+  }
+  refreshStudyView();
+}
+
+function retryCourseProgress() {
+  loadCourseProgressSafe(currentAuthId);
+}
+
+function refreshStudyView() {
+  const tab = document.getElementById('tab-estudos');
+  if (!tab || !tab.classList.contains('active')) return;
+  if (activeSubjectId && !document.getElementById('study-content').classList.contains('hidden')) {
+    renderCourseLoadStatus();
+    renderCourseProgress(activeSubjectId);
+    renderCourseLessons(activeSubjectId);
+    renderCourseExercise(activeSubjectId);
+    renderCourseAssessment(activeSubjectId);
+  } else {
+    renderSubjects();
+  }
+}
+
+function renderCourseLoadStatus() {
+  const el = document.getElementById('course-load-status');
+  if (!el) return;
+  if (courseProgress.loading) {
+    el.innerHTML = '<p class="course-notice" role="status">Carregando seu progresso de estudos...</p>';
+  } else if (courseProgress.error) {
+    el.innerHTML = `<div class="course-notice course-notice-error" role="alert">
+      <span>Não foi possível carregar o progresso. As aulas podem ser consultadas, mas a conclusão e a avaliação estão indisponíveis. Se o problema persistir, peça ao administrador para conferir a migração dos cursos.</span>
+      <button type="button" class="btn-secondary px-3 py-2 rounded-lg text-sm" onclick="retryCourseProgress()">Tentar novamente</button>
+    </div>`;
+  } else {
+    el.innerHTML = '';
+  }
+}
+
+function courseReady() {
+  return !courseProgress.loading && !courseProgress.error;
+}
+
+function completedLessonSet(id) {
+  return new Set(courseProgress.lessons.filter(row => row.subject_id === id).map(row => Number(row.lesson_index)));
+}
+
+function courseExercise(id) {
+  return courseProgress.exercises.find(row => row.subject_id === id);
+}
+
+function latestCourseAttempt(id) {
+  return courseProgress.attempts.find(row => row.subject_id === id);
+}
+
+function courseCertificate(id) {
+  return userCerts.find(cert => cert.subject_id === id);
+}
 
 function recommendedTrack() {
   const track = (currentUser && currentUser.track) || '';
   return trackCurriculum[track] || trackCurriculum.default;
 }
 
-// Primeira matéria da trilha que o aluno ainda não concluiu — é ela que
-// recebe o destaque "Comece por aqui".
 function recommendedNextSubject(studiedSet) {
   const list = recommendedTrack();
   return list.find(id => !studiedSet.has(id)) || list[0];
 }
 
 function renderSubjects() {
+  activeSubjectId = null;
+  activeAssessment = null;
   document.getElementById('study-content').classList.add('hidden');
-  // "Estudada" = "concluída": só conta a matéria que gerou certificado
-  // (botão "Marcar como concluído"), não a que foi apenas aberta.
+  document.getElementById('study-overview').classList.remove('hidden');
   const studied = new Set((userCerts || []).map(c => c.subject_id));
   const doneCount = subjects.filter(s => studied.has(s.id)).length;
-
-  // Contador "X de 12" usando os certificados emitidos (matérias concluídas).
   const counter = document.getElementById('subjects-counter');
   if (counter) counter.textContent = `${doneCount} de ${subjects.length}`;
 
-  // Trilha recomendada pela área do quiz de nivelamento.
   const track = (currentUser && currentUser.track) || 'Explorando';
   const trackEl = document.getElementById('studies-track');
   if (trackEl) {
@@ -1803,200 +1917,408 @@ function renderSubjects() {
       <p class="text-sm"><span class="text-white/50">Trilha recomendada:</span> <span class="font-semibold text-green-400">${escapeHtml(track)}</span></p>
       <p class="text-xs text-white/40 mt-1">Siga na ordem sugerida e comece pela matéria com o destaque <span class="text-yellow-400 font-semibold">"Comece por aqui"</span>.</p>`;
   }
-
+  renderCourseLoadStatus();
   const nextId = recommendedNextSubject(studied);
   document.getElementById('subjects-grid').innerHTML = subjects.map(s => {
     const isStudied = studied.has(s.id);
     const extra = subjectExtras[s.id] || {};
+    const lessons = courseLessons[s.id] || [];
+    const done = completedLessonSet(s.id).size;
+    const progressLabel = courseReady() ? `${done}/${lessons.length} aulas concluídas` : `${lessons.length} videoaulas`;
+    const percentage = lessons.length ? Math.min(100, Math.round(done * 100 / lessons.length)) : 0;
     const isStart = s.id === nextId && !isStudied;
     return `
-      <div class="subject-card card-glass rounded-xl p-5 border ${s.color} text-center ${isStudied ? 'subject-studied' : ''}" onclick="openSubject('${s.id}')">
-        <div class="text-3xl mb-2">${s.icon}</div>
-        <p class="font-semibold text-sm">${s.name}</p>
-        <p class="text-white/40 text-xs mt-1">${escapeHtml(extra.level || '')}${extra.time ? ' • ' + escapeHtml(extra.time) : ''}</p>
-        ${isStudied ? '<p class="text-green-400 font-bold mt-1">✓ Estudada</p>' : ''}
-        ${isStart ? '<p class="mt-2"><span class="inline-block bg-yellow-400/15 text-yellow-300 text-xs font-semibold px-2 py-1 rounded">Comece por aqui</span></p>' : ''}
-      </div>`;
+      <button type="button" class="subject-card course-tile card-glass rounded-xl border ${s.color} ${isStudied ? 'subject-studied' : ''}" onclick="openSubject('${s.id}')">
+        <span class="course-tile-top"><span class="course-tile-icon" aria-hidden="true">${s.icon}</span>${isStudied ? '<span class="course-tile-badge">✓ Certificado</span>' : isStart ? '<span class="course-tile-badge course-tile-badge-start">Comece por aqui</span>' : ''}</span>
+        <span class="course-tile-title">${escapeHtml(s.name)}</span>
+        <span class="course-tile-meta">${escapeHtml(extra.level || 'Curso')} ${extra.time ? ' · ' + escapeHtml(extra.time) : ''}</span>
+        <span class="course-tile-progress"><span>${progressLabel}</span><span aria-hidden="true">${courseReady() ? percentage + '%' : ''}</span></span>
+        <span class="course-tile-track" aria-hidden="true"><span style="width:${percentage}%"></span></span>
+        <span class="course-tile-link">${done && !isStudied ? 'Continuar curso' : 'Explorar curso'} <span aria-hidden="true">→</span></span>
+      </button>`;
   }).join('');
   document.getElementById('subjects-grid').classList.remove('hidden');
 }
 
-// Placar do quiz de conhecimento (só no cliente, sem persistência).
-const subjectQuizScores = {};
-
+// Teste de fixação opcional: não vale nota e não emite certificados.
 function renderSubjectQuiz(id) {
-  const extra = subjectExtras[id];
-  const quiz = extra && extra.quiz;
+  const quiz = subjectExtras[id] && subjectExtras[id].quiz;
   const container = document.getElementById('subject-quiz');
   if (!container || !quiz || !quiz.length) return;
-
-  const score = subjectQuizScores[id] || { answered: 0, correct: 0 };
+  const state = subjectQuizScores[id] || { choices: {}, answered: 0, correct: 0 };
   container.innerHTML = `
-    <div class="mb-3 flex items-center justify-between">
+    <div class="mb-3 flex items-center justify-between gap-3">
       <h4 class="font-semibold text-cyan-400">🧪 Teste rápido de conhecimento</h4>
-      <span id="subject-quiz-score" class="text-xs text-white/50">${score.answered > 0 ? `Acertos: ${score.correct} de ${score.answered}` : ''}</span>
+      <span id="subject-quiz-score" class="text-xs text-white/50">${state.answered ? `Acertos: ${state.correct} de ${state.answered}` : ''}</span>
     </div>
-    <p class="text-white/40 text-xs mb-3">Responda e veja na hora se acertou. As respostas não são salvas.</p>
-    ${quiz.map((q, qi) => `
-      <div class="bg-white/5 rounded-lg p-4 mb-3">
+    <p class="text-white/50 text-sm mb-4">Use estas perguntas para praticar. Elas não valem nota e não substituem a avaliação final; o resultado não é salvo.</p>
+    ${quiz.map((q, qi) => {
+      const chosen = state.choices[qi];
+      return `<div class="bg-white/5 rounded-lg p-4 mb-3">
         <p class="font-semibold text-sm mb-2">${qi + 1}. ${escapeHtml(q.q)}</p>
         <div class="space-y-2">
-          ${q.options.map((o, oi) => `
-            <button id="sq-${id}-${qi}-${oi}" onclick="answerSubjectQuiz('${id}', ${qi}, ${oi})"
-              class="w-full text-left bg-white/10 rounded-lg px-3 py-2 text-sm hover:border-green-400/50 transition border border-white/10">
-              ${escapeHtml(o)}
-            </button>`).join('')}
+          ${q.options.map((o, oi) => {
+            const mark = chosen === undefined ? '' : oi === q.answer ? '✓ ' : oi === chosen ? '✗ ' : '';
+            const style = chosen === undefined ? '' : oi === q.answer ? 'border-green-400/60' : oi === chosen ? 'border-red-400/60' : 'opacity-50';
+            return `<button type="button" id="sq-${id}-${qi}-${oi}" onclick="answerSubjectQuiz('${id}', ${qi}, ${oi})"
+              class="w-full text-left bg-white/10 rounded-lg px-3 py-2 text-sm hover:border-green-400/50 transition border border-white/10 ${style}" ${chosen === undefined ? '' : 'disabled'}>${mark}${escapeHtml(o)}</button>`;
+          }).join('')}
         </div>
-      </div>`).join('')}
-  `;
+      </div>`;
+    }).join('')}`;
 }
 
 function answerSubjectQuiz(id, qIndex, oIndex) {
   const quiz = subjectExtras[id] && subjectExtras[id].quiz;
   const q = quiz && quiz[qIndex];
-  if (!q) return;
-
-  const score = subjectQuizScores[id] || (subjectQuizScores[id] = { answered: 0, correct: 0 });
-  const correct = oIndex === q.answer;
-  score.answered += 1;
-  if (correct) score.correct += 1;
-
-  for (let i = 0; i < q.options.length; i++) {
-    const btn = document.getElementById(`sq-${id}-${qIndex}-${i}`);
-    if (!btn) continue;
-    btn.disabled = true;
-    if (i === q.answer) {
-      btn.classList.add('border-green-400/60');
-      btn.innerHTML = '✓ ' + escapeHtml(q.options[i]);
-    } else if (i === oIndex) {
-      btn.classList.add('border-red-400/60');
-      btn.innerHTML = '✗ ' + escapeHtml(q.options[i]);
-    } else {
-      btn.classList.add('opacity-50');
-    }
-  }
-
-  const scoreEl = document.getElementById('subject-quiz-score');
-  if (scoreEl) scoreEl.textContent = `Acertos: ${score.correct} de ${score.answered}`;
+  if (!q || !Number.isInteger(oIndex) || oIndex < 0 || oIndex >= q.options.length) return;
+  const state = subjectQuizScores[id] || (subjectQuizScores[id] = { choices: {}, answered: 0, correct: 0 });
+  if (state.choices[qIndex] !== undefined) return;
+  state.choices[qIndex] = oIndex;
+  state.answered += 1;
+  if (oIndex === q.answer) state.correct += 1;
+  renderSubjectQuiz(id);
 }
 
 async function openSubject(id) {
   const content = subjectContent[id];
-  if (!content) return;
-
+  const lessons = courseLessons[id];
+  if (!content || !lessons || !lessons.length) return;
   const extra = subjectExtras[id] || {};
-  const mistakes = extra.mistakes || [];
-  const deepDive = extra.deepDive || [];
-
+  const subject = subjects.find(s => s.id === id);
+  const completed = completedLessonSet(id);
+  activeSubjectId = id;
+  activeAssessment = null;
+  selectedLessonIndex = lessons.findIndex((_, index) => !completed.has(index + 1)) + 1 || 1;
   document.getElementById('subjects-grid').classList.add('hidden');
+  document.getElementById('study-overview').classList.add('hidden');
+  document.getElementById('main-content').scrollTop = 0;
   const el = document.getElementById('study-content');
   el.classList.remove('hidden');
   el.innerHTML = `
-    <button onclick="closeSubject()" class="btn-secondary mb-4 px-4 py-2 rounded-lg text-sm">← Voltar</button>
-    <div class="card-glass rounded-xl p-6 mb-4">
-      <h3 class="text-xl font-bold text-green-400 mb-2">${content.title}</h3>
-      ${extra.level ? `<p class="text-xs text-white/40 mb-3">📈 Nível: <span class="text-white/70">${escapeHtml(extra.level)}</span>${extra.time ? ' &nbsp;•&nbsp; ⏱️ Tempo estimado: <span class="text-white/70">' + escapeHtml(extra.time) + '</span>' : ''}</p>` : ''}
-      <p class="text-white/70 mb-4">${content.summary}</p>
-      <h4 class="font-semibold mb-2">📚 Tópicos Principais:</h4>
-      <ul class="text-white/60 text-sm space-y-1 mb-4">${content.topics.map(t => `<li>• ${t}</li>`).join('')}</ul>
-    </div>
-    <div class="card-glass rounded-xl p-6 mb-4">
-      <h4 class="font-semibold mb-2 text-yellow-400">💻 Exemplo Prático:</h4>
-      <pre class="bg-black/40 rounded-lg p-4 text-sm text-green-300 overflow-x-auto font-mono">${content.example}</pre>
-    </div>
-    <div class="card-glass rounded-xl p-6 mb-4">
-      <h4 class="font-semibold mb-2 text-red-400">⚠️ Erros comuns:</h4>
-      <ul class="text-white/60 text-sm space-y-1">${mistakes.map(m => `<li>• ${escapeHtml(m)}</li>`).join('')}</ul>
-    </div>
-    <div class="card-glass rounded-xl p-6 mb-4">
-      <h4 class="font-semibold mb-2 text-purple-400">🎯 Exercício:</h4>
-      <p class="text-white/70 text-sm">${content.exercise}</p>
-      <button onclick="completeExercise('${id}')" class="btn-primary mt-3 px-4 py-2 rounded-lg text-sm">
-        Marcar como concluído (+30 XP)
-      </button>
-    </div>
-    <div class="card-glass rounded-xl p-6 mb-4">
-      <h4 class="font-semibold mb-3 text-blue-400">🎬 Vídeo de Apoio:</h4>
-      <div class="aspect-video rounded-lg overflow-hidden bg-black/30">
-        <iframe src="${content.video}" class="w-full h-full" frameborder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowfullscreen></iframe>
+    <button type="button" onclick="closeSubject()" class="course-back">← <span>Voltar para os cursos</span></button>
+    <section class="course-hero card-glass rounded-xl">
+      <div class="course-hero-copy">
+        <p class="course-eyebrow">CENTRO DE ESTUDOS <span>/</span> ${escapeHtml(subject ? subject.name : id)}</p>
+        <h3>${escapeHtml(content.title)}</h3>
+        <p>${escapeHtml(content.summary)}</p>
+        <div class="course-meta"><span>◈ ${escapeHtml(extra.level || 'Curso')}</span><span>◷ ${escapeHtml(extra.time || 'No seu ritmo')}</span><span>▶ ${lessons.length} videoaulas</span></div>
       </div>
+      <div id="course-progress-summary" class="course-progress-summary"></div>
+    </section>
+    <div class="course-layout">
+      <section class="course-panel card-glass rounded-xl" aria-labelledby="course-lessons-title">
+        <div class="course-section-heading"><div><p class="course-section-kicker">ETAPA 01</p><h4 id="course-lessons-title">Aulas do curso</h4><p>Assista em sequência e pratique em cada etapa.</p></div><span class="course-step-icon" aria-hidden="true">▶</span></div>
+        <div id="course-lessons"></div>
+      </section>
+      <aside class="course-sidebar">
+        <div class="course-panel card-glass rounded-xl course-requirements">
+          <p class="course-section-kicker">SUA CONQUISTA</p><h4>Como obter o certificado</h4>
+          <ol><li><span>1</span><div><strong>Avance nas aulas</strong><small>Marque as ${lessons.length} videoaulas em sequência.</small></div></li><li><span>2</span><div><strong>Pratique</strong><small>Envie sua solução da atividade.</small></div></li><li><span>3</span><div><strong>Faça a avaliação</strong><small>Acerte pelo menos 80% das 6 questões.</small></div></li></ol>
+          <p class="course-reward">✦ Certificado + 30 XP na primeira aprovação</p>
+        </div>
+        <div class="course-panel card-glass rounded-xl">
+          <p class="course-section-kicker">NESTE CURSO</p><h4>Tópicos abordados</h4>
+          <ul class="course-topics">${content.topics.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>
+        </div>
+      </aside>
     </div>
-    <div class="card-glass rounded-xl p-6 mb-4">
-      <h4 class="font-semibold mb-3 text-pink-400">📖 Para se aprofundar:</h4>
-      <ul class="space-y-2 text-sm">
-        ${deepDive.map(d => `<li><a href="${escapeHtml(d.url)}" target="_blank" rel="noopener noreferrer" class="text-green-400 hover:underline">↗ ${escapeHtml(d.label)}</a></li>`).join('')}
-      </ul>
-    </div>
-    <div class="card-glass rounded-xl p-6">
-      <div id="subject-quiz"></div>
-    </div>
-  `;
-
+    <section class="course-panel card-glass rounded-xl course-block" aria-labelledby="course-exercise-title">
+      <div class="course-section-heading"><div><p class="course-section-kicker">ETAPA 02</p><h4 id="course-exercise-title">Atividade prática</h4><p>Coloque em prática o que você aprendeu nas aulas.</p></div><span class="course-step-icon" aria-hidden="true">⌘</span></div>
+      <div id="course-exercise"></div>
+    </section>
+    <section class="course-panel card-glass rounded-xl course-block" aria-labelledby="course-assessment-title">
+      <div class="course-section-heading"><div><p class="course-section-kicker">ETAPA 03</p><h4 id="course-assessment-title">Avaliação final</h4><p>Mostre o que aprendeu para conquistar o certificado.</p></div><span class="course-step-icon" aria-hidden="true">✦</span></div>
+      <div id="course-assessment" aria-live="polite"></div>
+    </section>
+    <details class="course-panel card-glass rounded-xl course-block course-resources">
+      <summary>📚 Material complementar e teste de fixação</summary>
+      <div class="course-resource-body">
+        <h4>Exemplo prático</h4>
+        <pre class="course-code">${escapeHtml(content.example.replace(/\\n/g, '\n'))}</pre>
+        <h4>Erros comuns</h4>
+        <ul>${(extra.mistakes || []).map(m => `<li>${escapeHtml(m)}</li>`).join('')}</ul>
+        <h4>Para se aprofundar</h4>
+        <ul>${(extra.deepDive || []).map(d => `<li><a href="${escapeHtml(d.url)}" target="_blank" rel="noopener noreferrer">↗ ${escapeHtml(d.label)}</a></li>`).join('')}</ul>
+        <div id="subject-quiz" class="course-practice-quiz"></div>
+      </div>
+    </details>`;
+  renderCourseProgress(id);
+  renderCourseLessons(id);
+  renderCourseExercise(id);
+  renderCourseAssessment(id);
   renderSubjectQuiz(id);
 
-  // +10 XP por abrir o conteúdo — calculado e salvo no banco (award_subject_view_xp),
-  // não somado aqui no cliente. Abrir a matéria NÃO a marca como estudada:
-  // o selo ✓ e o contador "X de 12" só avançam com "Marcar como concluído".
+  const userId = currentAuthId;
+  const session = courseSessionVersion;
   try {
     await awardSubjectViewXP(id);
-    currentUser = await fetchProfile(currentAuthId);
+    const profile = await fetchProfile(userId);
+    if (session !== courseSessionVersion || userId !== currentAuthId) return;
+    currentUser = profile;
+    renderDashboard();
   } catch (e) {
-    console.warn('Erro ao salvar progresso:', e.message);
-    showToast('Não foi possível registrar o progresso desta matéria.', 'error');
+    if (session !== courseSessionVersion || userId !== currentAuthId) return;
+    console.warn('Erro ao registrar visualização:', e.message);
+    showToast('Não foi possível registrar a abertura desta matéria.', 'error');
   }
+}
 
-  renderDashboard();
+function renderCourseProgress(id) {
+  const el = document.getElementById('course-progress-summary');
+  const lessons = courseLessons[id];
+  if (!el || !lessons) return;
+  const count = completedLessonSet(id).size;
+  const percent = Math.min(100, Math.round(count * 100 / lessons.length));
+  el.innerHTML = `<div class="course-progress-top"><span>SEU PROGRESSO</span><strong>${courseReady() ? percent + '%' : '—'}</strong></div>
+    <div class="course-progress-track" role="progressbar" aria-label="Aulas concluídas" aria-valuemin="0" aria-valuemax="${lessons.length}" aria-valuenow="${count}"><span style="width:${percent}%"></span></div>
+    <p>${courseReady() ? `${count} de ${lessons.length} aulas concluídas` : 'Aguardando progresso'}</p>`;
+}
+
+function renderCourseLessons(id) {
+  const el = document.getElementById('course-lessons');
+  const lessons = courseLessons[id];
+  if (!el || !lessons) return;
+  const completed = completedLessonSet(id);
+  const index = Math.max(1, Math.min(selectedLessonIndex, lessons.length));
+  const lesson = lessons[index - 1];
+  const done = completed.has(index);
+  const previousDone = index === 1 || completed.has(index - 1);
+  const locked = !courseReady() || !previousDone;
+  const pending = pendingCourseActions.has('lesson:' + id);
+  const youtubeUrl = 'https://www.youtube.com/watch?v=' + encodeURIComponent(lesson.videoId);
+  el.innerHTML = `
+    <div class="course-lesson-list" aria-label="Lista de aulas">
+      ${lessons.map((item, i) => `<button type="button" class="course-lesson-tab ${i + 1 === index ? 'is-active' : ''}" ${i + 1 === index ? 'aria-current="step"' : ''} onclick="selectCourseLesson('${id}', ${i + 1})">
+        <span class="course-lesson-number">${completed.has(i + 1) ? '✓' : String(i + 1).padStart(2, '0')}</span><span><strong>${escapeHtml(item.title)}</strong><small>${completed.has(i + 1) ? 'Aula concluída' : 'Videoaula ' + (i + 1)}</small></span></button>`).join('')}
+    </div>
+    <div class="course-player">
+      <div class="course-video-wrap"><iframe src="https://www.youtube.com/embed/${encodeURIComponent(lesson.videoId)}" title="Videoaula ${index}: ${escapeHtml(lesson.title)}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>
+      <div class="course-player-copy"><p class="course-section-kicker">AULA ${String(index).padStart(2, '0')} DE ${String(lessons.length).padStart(2, '0')}</p><h5>${escapeHtml(lesson.title)}</h5><p>${escapeHtml(lesson.focus)}</p>
+        <div class="course-practice-tip"><strong>Experimente</strong><span>${escapeHtml(lesson.practice)}</span></div>
+        <p class="course-video-note">Vídeo de terceiros. Se não abrir aqui, <a href="${youtubeUrl}" target="_blank" rel="noopener noreferrer">assista no YouTube ↗</a>.</p>
+        <div class="course-lesson-action"><button type="button" id="course-lesson-complete" class="${done ? 'btn-secondary' : 'btn-primary'} px-4 py-2.5 rounded-lg text-sm" onclick="completeCourseLesson('${id}', ${index})" ${done || locked || pending ? 'disabled' : ''}>${done ? '✓ Aula concluída' : pending ? 'Salvando...' : 'Marcar aula como assistida →'}</button>
+          <span>${!previousDone ? 'Conclua a aula anterior primeiro.' : 'A marcação é manual; o tempo de vídeo não é verificado.'}</span></div>
+      </div>
+    </div>`;
+}
+
+function selectCourseLesson(id, index) {
+  if (activeSubjectId !== id || !courseLessons[id] || !Number.isInteger(index) || index < 1 || index > courseLessons[id].length) return;
+  selectedLessonIndex = index;
+  renderCourseLessons(id);
+}
+
+async function completeCourseLesson(id, index) {
+  if (!courseReady() || activeSubjectId !== id || !courseLessons[id] || !Number.isInteger(index) || index < 1 || index > courseLessons[id].length) return;
+  const completed = completedLessonSet(id);
+  if (completed.has(index) || (index > 1 && !completed.has(index - 1))) return;
+  const key = 'lesson:' + id;
+  if (pendingCourseActions.has(key)) return;
+  const session = courseSessionVersion;
+  const userId = currentAuthId;
+  pendingCourseActions.add(key);
+  renderCourseLessons(id);
+  try {
+    await markCourseLesson(id, index);
+    if (session !== courseSessionVersion || userId !== currentAuthId) return;
+    courseProgress.lessons.push({ subject_id: id, lesson_index: index });
+    if (activeSubjectId === id && selectedLessonIndex === index && index < courseLessons[id].length) selectedLessonIndex = index + 1;
+    showToast('Aula registrada! Seu progresso foi salvo.', 'success');
+  } catch (e) {
+    if (session === courseSessionVersion && userId === currentAuthId) showToast('Não foi possível salvar a aula: ' + e.message, 'error');
+  } finally {
+    if (session === courseSessionVersion && userId === currentAuthId) {
+      pendingCourseActions.delete(key);
+      if (activeSubjectId === id) {
+        renderCourseProgress(id); renderCourseLessons(id); renderCourseExercise(id); renderCourseAssessment(id);
+      }
+    }
+  }
+}
+
+function renderCourseExercise(id) {
+  const el = document.getElementById('course-exercise');
+  const content = subjectContent[id];
+  if (!el || !content) return;
+  const previous = document.getElementById('course-exercise-answer');
+  const draft = previous && previous.dataset.subject === id ? previous.value : null;
+  const saved = courseExercise(id);
+  const lessonsDone = completedLessonSet(id).size === courseLessons[id].length;
+  const locked = !courseReady() || !lessonsDone;
+  const pending = pendingCourseActions.has('exercise:' + id);
+  el.innerHTML = `
+    <div class="course-exercise-brief"><span>DESAFIO</span><p>${escapeHtml(content.exercise)}</p></div>
+    <label class="course-field-label" for="course-exercise-answer">Sua solução ou explicação</label>
+    <textarea id="course-exercise-answer" data-subject="${id}" rows="6" maxlength="4000" ${locked || pending ? 'disabled' : ''} aria-describedby="course-exercise-help" placeholder="Cole seu código ou descreva os passos da sua solução...">${escapeHtml(draft !== null ? draft : (saved ? saved.answer : ''))}</textarea>
+    <p id="course-exercise-help" class="course-field-help">Mínimo de 30 caracteres. Sua resposta é salva, mas não é corrigida automaticamente.</p>
+    <div class="course-action-row"><button type="button" id="course-exercise-save" class="btn-primary px-4 py-2.5 rounded-lg text-sm" onclick="submitCourseExercise('${id}')" ${locked || pending ? 'disabled' : ''}>${pending ? 'Salvando...' : saved ? 'Atualizar atividade' : 'Salvar atividade'}</button>
+      <span>${!courseReady() ? 'Aguardando o progresso.' : !lessonsDone ? 'Conclua as aulas para liberar a atividade.' : saved ? '✓ Atividade salva' : 'A atividade libera a avaliação final.'}</span></div>`;
+}
+
+async function submitCourseExercise(id) {
+  if (!courseReady() || activeSubjectId !== id || completedLessonSet(id).size !== courseLessons[id].length) return;
+  const input = document.getElementById('course-exercise-answer');
+  const answer = input ? input.value.trim() : '';
+  const length = Array.from(answer).length;
+  if (length < 30 || length > 4000) {
+    showToast('Escreva uma solução entre 30 e 4000 caracteres.', 'error');
+    if (input) input.focus();
+    return;
+  }
+  const key = 'exercise:' + id;
+  if (pendingCourseActions.has(key)) return;
+  const session = courseSessionVersion;
+  const userId = currentAuthId;
+  pendingCourseActions.add(key);
+  renderCourseExercise(id);
+  try {
+    await saveCourseExercise(id, answer);
+    if (session !== courseSessionVersion || userId !== currentAuthId) return;
+    courseProgress.exercises = courseProgress.exercises.filter(row => row.subject_id !== id);
+    courseProgress.exercises.push({ subject_id: id, answer, submitted_at: new Date().toISOString() });
+    showToast('Atividade salva! A avaliação final está liberada.', 'success');
+  } catch (e) {
+    if (session === courseSessionVersion && userId === currentAuthId) showToast('Não foi possível salvar a atividade: ' + e.message, 'error');
+  } finally {
+    if (session === courseSessionVersion && userId === currentAuthId) {
+      pendingCourseActions.delete(key);
+      if (activeSubjectId === id) { renderCourseExercise(id); renderCourseAssessment(id); }
+    }
+  }
+}
+
+function renderAssessmentFeedback(feedback) {
+  if (!Array.isArray(feedback) || !feedback.length) return '';
+  return `<div class="course-feedback"><h5>Revise sua tentativa</h5>${feedback.map(item => `<div class="course-feedback-item ${item.correct ? 'is-correct' : 'is-incorrect'}"><strong>${item.correct ? '✓' : '✗'} Questão ${Number(item.id)} · ${item.correct ? 'Correta' : 'Revise este conteúdo'}</strong>${item.question ? `<p class="course-feedback-question">${escapeHtml(item.question)}</p>` : ''}<p>${escapeHtml(item.explanation)}</p></div>`).join('')}</div>`;
+}
+
+function renderCourseAssessment(id) {
+  const el = document.getElementById('course-assessment');
+  if (!el) return;
+  const ready = courseReady();
+  const lessonsDone = completedLessonSet(id).size === courseLessons[id].length;
+  const exerciseDone = !!courseExercise(id);
+  const cert = courseCertificate(id);
+  const attempt = latestCourseAttempt(id);
+  const assessment = activeAssessment && activeAssessment.subjectId === id ? activeAssessment : null;
+  const previous = attempt ? `<p class="course-last-attempt">Última tentativa: <strong>${Number(attempt.correct_count)} de ${Number(attempt.question_count)} acertos</strong> · ${attempt.passed ? 'Aprovado' : 'Ainda não aprovado'}</p>` : '';
+  const certButton = cert ? `<button type="button" onclick="openCourseCertificate('${id}')" class="btn-secondary px-4 py-2.5 rounded-lg text-sm">🏅 Abrir certificado</button>` : '';
+  if (!ready || !lessonsDone || !exerciseDone) {
+    el.innerHTML = `<div class="course-locked"><span aria-hidden="true">🔒</span><div><strong>Avaliação bloqueada</strong><p>${!ready ? 'O progresso precisa estar disponível para iniciar a avaliação.' : !lessonsDone ? `Conclua as ${courseLessons[id].length} aulas e entregue a atividade prática para desbloquear.` : 'Salve sua atividade prática para desbloquear.'}</p>${cert ? '<p>Seu certificado já emitido continua disponível.</p>' : ''}</div></div>${certButton ? '<div class="mt-4">' + certButton + '</div>' : ''}`;
+    return;
+  }
+  if (assessment && assessment.result) {
+    const result = assessment.result;
+    el.innerHTML = `<div class="course-result ${result.passed ? 'is-passed' : 'is-failed'}" role="status">
+        <div><p class="course-section-kicker">RESULTADO DA AVALIAÇÃO</p><h5>${result.passed ? 'Você foi aprovado!' : 'Continue estudando e tente novamente'}</h5><p>${Number(result.correct_count)} de ${Number(result.question_count)} acertos · ${Number(result.score_percent)}% de aproveitamento. Mínimo: ${Number(result.minimum_percent)}%.</p></div><strong>${Number(result.score_percent)}%</strong>
+      </div>
+      ${renderAssessmentFeedback(result.feedback)}
+      <div class="course-assessment-actions">${result.passed ? certButton : ''}<button type="button" class="btn-secondary px-4 py-2.5 rounded-lg text-sm" onclick="startCourseAssessment('${id}')">${result.passed ? 'Refazer avaliação' : 'Tentar novamente'}</button></div>`;
+    return;
+  }
+  if (assessment && assessment.questions) {
+    el.innerHTML = `<form id="course-assessment-form" onsubmit="event.preventDefault(); submitCourseAssessmentUI('${id}')">
+      <p class="course-assessment-intro">Responda às ${assessment.questions.length} questões. São necessários pelo menos ${Number(assessment.minimum_percent)}% de acertos; você pode tentar novamente.</p>
+      ${assessment.questions.map((q, qi) => `<fieldset class="course-question"><legend>${qi + 1}. ${escapeHtml(q.question)}</legend><div class="course-choices">${q.options.map((option, oi) => `<label class="course-choice"><input type="radio" name="assessment-${id}-${Number(q.id)}" value="${oi}" ${oi === 0 ? 'required' : ''}><span>${escapeHtml(option)}</span></label>`).join('')}</div></fieldset>`).join('')}
+      <p id="course-assessment-validation" class="course-validation" role="alert"></p>
+      <button type="submit" id="course-assessment-submit" class="btn-primary px-5 py-3 rounded-lg text-sm" ${pendingCourseActions.has('assessment:' + id) ? 'disabled' : ''}>${pendingCourseActions.has('assessment:' + id) ? 'Corrigindo...' : 'Enviar para correção'}</button></form>`;
+    return;
+  }
+  el.innerHTML = `<div class="course-assessment-ready"><div><strong>Pronto para testar seus conhecimentos?</strong><p>São 6 questões. Acerte pelo menos 80% (5 de 6) para ser aprovado. Você pode refazer a avaliação.</p>${previous}</div><span aria-hidden="true">✦</span></div>
+    ${cert && !attempt ? '<p class="course-field-help">Seu certificado emitido anteriormente foi preservado. Você também pode fazer a nova avaliação.</p>' : ''}
+    ${attempt && Array.isArray(attempt.feedback) ? `<details class="course-review-details"><summary>Ver feedback da última tentativa</summary>${renderAssessmentFeedback(attempt.feedback)}</details>` : ''}
+    <div class="course-assessment-actions"><button type="button" id="course-assessment-start" class="btn-primary px-5 py-3 rounded-lg text-sm" onclick="startCourseAssessment('${id}')" ${pendingCourseActions.has('assessment-load:' + id) ? 'disabled' : ''}>${pendingCourseActions.has('assessment-load:' + id) ? 'Carregando...' : 'Iniciar avaliação →'}</button>${certButton}</div>`;
+}
+
+async function startCourseAssessment(id) {
+  if (!courseReady() || activeSubjectId !== id || completedLessonSet(id).size !== courseLessons[id].length || !courseExercise(id)) return;
+  const key = 'assessment-load:' + id;
+  if (pendingCourseActions.has(key)) return;
+  const session = courseSessionVersion;
+  const userId = currentAuthId;
+  pendingCourseActions.add(key);
+  activeAssessment = null;
+  renderCourseAssessment(id);
+  try {
+    const data = await getCourseAssessment(id);
+    if (session !== courseSessionVersion || userId !== currentAuthId) return;
+    if (!data || !Array.isArray(data.questions) || data.questions.length !== 6 ||
+      !data.questions.every(q => Number.isInteger(q.id) && typeof q.question === 'string' && Array.isArray(q.options) && q.options.length >= 2)) {
+      throw new Error('A avaliação recebida é inválida.');
+    }
+    if (activeSubjectId === id) activeAssessment = { subjectId: id, questions: data.questions, minimum_percent: data.minimum_percent };
+  } catch (e) {
+    if (session === courseSessionVersion && userId === currentAuthId) showToast('Não foi possível carregar a avaliação: ' + e.message, 'error');
+  } finally {
+    if (session === courseSessionVersion && userId === currentAuthId) {
+      pendingCourseActions.delete(key);
+      if (activeSubjectId === id) renderCourseAssessment(id);
+    }
+  }
+}
+
+async function submitCourseAssessmentUI(id) {
+  const assessment = activeAssessment;
+  if (!courseReady() || activeSubjectId !== id || !assessment || assessment.subjectId !== id || !assessment.questions || assessment.result) return;
+  const answers = assessment.questions.map(q => {
+    const selected = document.querySelector(`input[name="assessment-${id}-${Number(q.id)}"]:checked`);
+    return selected ? Number(selected.value) : null;
+  });
+  if (answers.some(answer => answer === null)) {
+    const validation = document.getElementById('course-assessment-validation');
+    if (validation) validation.textContent = 'Responda todas as questões antes de enviar.';
+    return;
+  }
+  const key = 'assessment:' + id;
+  if (pendingCourseActions.has(key)) return;
+  const session = courseSessionVersion;
+  const userId = currentAuthId;
+  pendingCourseActions.add(key);
+  const btn = document.getElementById('course-assessment-submit');
+  if (btn) { btn.disabled = true; btn.textContent = 'Corrigindo...'; }
+  try {
+    const result = await submitCourseAssessment(id, answers);
+    if (session !== courseSessionVersion || userId !== currentAuthId) return;
+    courseProgress.attempts.unshift({ subject_id: id, ...result, attempted_at: new Date().toISOString() });
+    if (result.certificate) {
+      userCerts = userCerts.filter(cert => cert.subject_id !== id);
+      userCerts.unshift(result.certificate);
+    }
+    if (activeSubjectId === id) {
+      activeAssessment = { subjectId: id, result };
+      renderCourseAssessment(id);
+    }
+    if (result.passed) {
+      showToast(result.issued_now ? 'Aprovado! Certificado emitido e +30 XP.' : 'Aprovado! Seu certificado continua disponível.', 'success');
+      // A emissão já foi confirmada: não retenha o resultado enquanto o
+      // perfil atualiza, nem transforme uma falha nessa leitura em reprovação.
+      fetchProfile(userId).then(profile => {
+        if (session === courseSessionVersion && userId === currentAuthId) { currentUser = profile; renderDashboard(); }
+      }).catch(() => {
+        if (session === courseSessionVersion && userId === currentAuthId) showToast('A aprovação foi salva, mas o XP não pôde ser atualizado na tela.', 'error');
+      });
+    }
+  } catch (e) {
+    if (session === courseSessionVersion && userId === currentAuthId) showToast('Não foi possível corrigir a avaliação: ' + e.message, 'error');
+  } finally {
+    if (session === courseSessionVersion && userId === currentAuthId) {
+      pendingCourseActions.delete(key);
+      if (activeSubjectId === id) {
+        if (activeAssessment && activeAssessment.result) renderCourseAssessment(id);
+        else if (btn && btn.isConnected) { btn.disabled = false; btn.textContent = 'Enviar para correção'; }
+      }
+    }
+  }
+}
+
+function openCourseCertificate(id) {
+  const cert = courseCertificate(id);
+  if (cert) openCertificate(cert);
 }
 
 function closeSubject() {
-  // Re-renderiza o grid para atualizar o contador "X de 12" e o selo ✓
-  // com as matérias concluídas desde a última renderização.
   renderSubjects();
-}
-
-async function completeExercise(id) {
-  const subj = subjects.find(s => s.id === id);
-  const certTitle = subj ? subj.name + ' - Básico' : id + ' - Básico';
-  const btn = event && event.target;
-
-  const markDone = () => {
-    if (!btn) return;
-    btn.textContent = '✅ Concluído!';
-    btn.disabled = true;
-    btn.classList.add('opacity-50');
-  };
-
-  const existing = userCerts.find(c => c.subject_id === id);
-  if (existing) {
-    markDone();
-    openCertificate(existing);
-    showToast('Certificado já emitido para este módulo.', 'success');
-    return;
-  }
-
-  try {
-    // +30 XP, progresso e certificado — tudo em uma função só no banco
-    // (award_exercise_xp), que também impede repetir o mesmo exercício
-    // pra farmar XP de novo.
-    await awardExerciseXP(id, certTitle);
-    currentUser = await fetchProfile(currentAuthId);
-    userCerts   = await fetchCertificates(currentAuthId);
-  } catch (e) {
-    console.warn('Erro ao concluir exercício:', e.message);
-    showToast('Não foi possível emitir o certificado: ' + e.message, 'error');
-    return;
-  }
-
-  renderDashboard();
-  markDone();
-
-  const issued = userCerts.find(c => c.subject_id === id);
-  if (issued) {
-    openCertificate(issued);
-    showToast('Certificado visual emitido! +30 XP', 'success');
-  }
 }
 
 

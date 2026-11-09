@@ -26,6 +26,7 @@ const { JSDOM } = require('jsdom');
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const script = fs.readFileSync(path.join(root, 'script.js'), 'utf8');
+const courseContent = fs.readFileSync(path.join(root, 'course-content.js'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 
 let passed = 0;
@@ -101,6 +102,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     fetchUserProjects: async (id) => id === 'u2' ? [{ project_id: 1, projects: { name: 'Calculadora', level: 'Iniciante' } }] : [],
     fetchCertificates: async (id) => id === 'u2' ? [{ subject_id: 'html', title: 'HTML - Básico', issued_at: '2026-08-19T12:00:00.000Z' }] : [],
     fetchSubjectProgress: async () => [],
+    fetchCourseProgress: async () => ({ lessons: [], exercises: [], attempts: [] }),
     fetchAllProfiles: async () => [{ ...mainProfile }, { ...bruno }],
     fetchQuizAnswers: async (id) => id === 'u2' ? [{ question: 1, answer: 'Iniciante total' }] : [],
     awardProjectXP: async (id) => { if (failProjects.has(id)) throw new Error('rede caiu'); },
@@ -113,7 +115,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     setPortfolioPublic: async () => {},
     uploadAvatar: async () => 'u1/avatar.jpg', removeAvatar: async () => {}, fetchAvatarSignedUrl: async () => null
   });
-  window.eval(script + `\nwindow.__testHooks = {
+  window.eval(courseContent + '\n' + script + `\nwindow.__testHooks = {
     getCompleted() { return completedProjects.slice(); },
     getLastCertModel() { return lastCertModel; }
   };`);
