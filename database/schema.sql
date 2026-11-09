@@ -189,15 +189,8 @@ $$;
 
 create or replace function public.award_exercise_xp(p_subject_id text, p_cert_title text)
 returns void language plpgsql security definer set search_path = public as $$
-declare uid uuid := auth.uid();
 begin
-  if uid is null then raise exception 'Não autenticado'; end if;
-  perform public.ensure_not_blocked();
-  insert into public.certificates(user_id, subject_id, title) values(uid,p_subject_id,p_cert_title)
-    on conflict (user_id, subject_id) do nothing;
-  if found then
-    update public.profiles set xp=xp+30, level=public.recalculate_level(xp+30) where id=uid;
-  end if;
+  raise exception 'A emissão direta foi desativada. Conclua as aulas e a avaliação do curso.';
 end;
 $$;
 
@@ -274,18 +267,17 @@ drop policy if exists projects_user_select on public.user_projects;
 create policy projects_user_select on public.user_projects for select using ((user_id=auth.uid() or public.current_is_admin()) and not public.current_is_blocked());
 drop policy if exists certificates_select on public.certificates;
 create policy certificates_select on public.certificates for select using ((user_id=auth.uid() or public.current_is_admin()) and not public.current_is_blocked());
--- award_exercise_xp insere o certificado do próprio aluno. Sem esta
--- política (e sem o grant de INSERT abaixo) o RLS barra a escrita e o
--- exercício nunca emite certificado nem concede os 30 XP.
+-- Certificados só podem ser emitidos pela avaliação no servidor.
 drop policy if exists certificates_insert on public.certificates;
-create policy certificates_insert on public.certificates for insert with check (user_id=auth.uid());
+-- INSERT direto permanece desativado; somente a avaliação emite certificados.
+revoke insert on public.certificates from public, anon, authenticated;
 
 -- RPCs são expostos ao cliente, mas a autorização ocorre dentro das funções.
 grant usage on schema public to anon, authenticated;
 grant select on public.projects to anon, authenticated;
 grant select, insert, update on public.profiles, public.quiz_answers to authenticated;
 grant select on public.subject_progress, public.user_projects to authenticated;
-grant select, insert on public.certificates to authenticated;
+grant select on public.certificates to authenticated;
 grant execute on all functions in schema public to authenticated;
 
 -- ============================================================
@@ -447,8 +439,8 @@ create policy avatars_public_read on storage.objects
 --      que é como as funções SECURITY DEFINER se identificam;
 --   2. as 4 funções award_* viraram SECURITY DEFINER com
 --      search_path fixo em public (evita sequestro de search_path);
---   3. certificates ganhou a política certificates_insert e o
---      grant de INSERT para o papel authenticated.
+--   3. A emissão direta foi substituída pela avaliação no servidor;
+--      INSERT em certificates não é concedido ao cliente.
 --
 -- As funções admin_* seguem SECURITY INVOKER de propósito: elas
 -- se autorizam por current_is_admin() e o trigger já abre exceção
@@ -489,3 +481,336 @@ create policy avatars_public_read on storage.objects
 -- ============================================================
 
 alter table public.profiles add column if not exists is_blocked boolean not null default false;
+
+
+-- CENTRO DE ESTUDOS: versão atual (mesmo conteúdo da migração incremental).
+-- Pratica.dev: trilhas, atividades, avaliação e emissão de certificados.
+-- Execute DEPOIS das migrações anteriores e ANTES de publicar o novo frontend.
+-- Idempotente. Preserva certificados e XP já existentes.
+-- A conclusão de aulas é uma declaração do aluno, não medição do player.
+
+create table if not exists public.course_catalog (
+  subject_id text primary key,
+  certificate_title text not null,
+  lesson_count integer not null check (lesson_count > 0),
+  pass_percent integer not null check (pass_percent between 1 and 100)
+);
+
+create table if not exists public.course_questions (
+  subject_id text not null references public.course_catalog(subject_id),
+  question_number integer not null check (question_number > 0),
+  prompt text not null,
+  options jsonb not null check (jsonb_typeof(options) = 'array' and jsonb_array_length(options) >= 2),
+  correct_index integer not null check (correct_index >= 0 and correct_index < jsonb_array_length(options)),
+  explanation text not null,
+  primary key (subject_id, question_number)
+);
+
+create table if not exists public.course_lesson_progress (
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  subject_id text not null references public.course_catalog(subject_id),
+  lesson_index integer not null check (lesson_index > 0),
+  completed_at timestamptz not null default now(),
+  primary key (user_id, subject_id, lesson_index)
+);
+
+create table if not exists public.course_exercises (
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  subject_id text not null references public.course_catalog(subject_id),
+  answer text not null check (char_length(btrim(answer)) between 30 and 4000),
+  submitted_at timestamptz not null default now(),
+  primary key (user_id, subject_id)
+);
+
+create table if not exists public.course_assessment_attempts (
+  id bigint generated by default as identity primary key,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  subject_id text not null references public.course_catalog(subject_id),
+  correct_count integer not null check (correct_count >= 0),
+  question_count integer not null check (question_count > 0 and correct_count <= question_count),
+  passed boolean not null,
+  feedback jsonb not null,
+  attempted_at timestamptz not null default now()
+);
+create index if not exists course_attempts_user_subject_idx
+  on public.course_assessment_attempts(user_id, subject_id, attempted_at desc);
+
+insert into public.course_catalog(subject_id, certificate_title, lesson_count, pass_percent) values
+  ('html', 'HTML - Básico', 3, 80),
+  ('css', 'CSS - Básico', 3, 80),
+  ('js', 'JavaScript - Básico', 3, 80),
+  ('sql', 'SQL - Básico', 3, 80),
+  ('python', 'Python - Básico', 3, 80),
+  ('java', 'Java - Básico', 3, 80),
+  ('poo', 'POO - Básico', 3, 80),
+  ('git', 'Git/GitHub - Básico', 3, 80),
+  ('redes', 'Redes - Básico', 3, 80),
+  ('apis', 'APIs - Básico', 3, 80),
+  ('banco', 'Banco de Dados - Básico', 3, 80),
+  ('logica', 'Lógica - Básico', 3, 80)
+on conflict (subject_id) do update set
+  certificate_title = excluded.certificate_title,
+  lesson_count = excluded.lesson_count,
+  pass_percent = excluded.pass_percent;
+
+-- Gabaritos ficam na tabela sem acesso direto de anon/authenticated. A RPC
+-- get_course_assessment envia somente enunciados e alternativas ao cliente.
+insert into public.course_questions(subject_id, question_number, prompt, options, correct_index, explanation) values
+  ('html', 1, 'Qual elemento identifica a navegação principal de uma página?', '["<section>", "<nav>", "<strong>", "<span>"]'::jsonb, 1, 'Elementos semânticos comunicam a função de uma região, ajudando tecnologias assistivas.'),
+  ('html', 2, 'Como associar um rótulo ao campo de id "email"?', '["Usar apenas um placeholder.", "Colocar o texto dentro de um <div>.", "Usar <label for=\"email\"> com o campo de id correspondente.", "Definir class=\"email\" em qualquer elemento."]'::jsonb, 2, 'Rótulos associados tornam o campo identificável e facilitam o foco e a acessibilidade.'),
+  ('html', 3, 'Uma imagem informa o conteúdo de um gráfico. O que deve estar em alt?', '["Uma descrição concisa da informação apresentada.", "O nome do arquivo, obrigatoriamente.", "Nenhum texto em qualquer imagem.", "Uma lista de palavras-chave sem relação com o gráfico."]'::jsonb, 0, 'O texto alternativo deve cumprir a função da imagem para quem não pode vê-la.'),
+  ('html', 4, 'Qual declaração coloca o navegador no modo padrão de HTML5?', '["<html5>", "<meta html=\"5\">", "<doctype version=\"5\">", "<!DOCTYPE html>"]'::jsonb, 3, 'A declaração de tipo de documento deve aparecer no início do arquivo HTML.'),
+  ('html', 5, 'Qual atributo torna um campo de formulário obrigatório na validação nativa?', '["optional", "required", "target", "alt"]'::jsonb, 1, 'A validação nativa ajuda, mas não substitui a validação dos dados no servidor.'),
+  ('html', 6, 'Como criar um link para outra página?', '["<a href=\"/sobre\">Sobre</a>", "<link src=\"/sobre\">Sobre</link>", "<p url=\"/sobre\">Sobre</p>", "<a alt=\"/sobre\">Sobre</a>"]'::jsonb, 0, 'O elemento de âncora usa um atributo para indicar o destino da navegação.'),
+  ('css', 1, 'Com box-sizing: border-box, o que está incluído na largura definida?', '["Apenas o conteúdo.", "Somente as margens.", "Conteúdo, padding e bordas.", "Conteúdo e margens externas."]'::jsonb, 2, 'O modelo de caixas distingue a largura da caixa das margens externas.'),
+  ('css', 2, 'Em um contêiner flex com direção padrão, qual propriedade distribui itens no eixo principal?', '["align-items", "justify-content", "font-size", "z-index"]'::jsonb, 1, 'Flexbox tem propriedades diferentes para alinhamento no eixo principal e no transversal.'),
+  ('css', 3, 'Como aplicar um estilo somente em telas de até 600 pixels?', '["@media (max-width: 600px) { ... }", "@font-face (600px) { ... }", "@media (min-width: 600px) { ... }", "screen = 600px { ... }"]'::jsonb, 0, 'Media queries permitem aplicar regras conforme características da tela.'),
+  ('css', 4, 'Qual seletor normalmente tem maior especificidade?', '["p", ".aviso", "div p", "#aviso"]'::jsonb, 3, 'IDs, classes e seletores de elemento contribuem com pesos diferentes à especificidade.'),
+  ('css', 5, 'Qual propriedade cria espaço entre o conteúdo de um elemento e sua borda?', '["margin", "display", "padding", "position"]'::jsonb, 2, 'O espaçamento interno faz parte da caixa; a margem fica fora da borda.'),
+  ('css', 6, 'Qual recurso CSS é apropriado para organizar itens em linhas e colunas?', '["CSS Grid", "text-decoration", "opacity", "font-weight"]'::jsonb, 0, 'Um layout bidimensional precisa controlar linhas e colunas conjuntamente.'),
+  ('js', 1, 'O que const impede após declarar uma referência a um objeto?', '["Alterar qualquer propriedade do objeto.", "Reatribuir a variável a outra referência.", "Ler as propriedades.", "Criar métodos no objeto."]'::jsonb, 1, 'Uma variável constante impede reatribuição, mas não torna um objeto automaticamente imutável.'),
+  ('js', 2, 'Qual operador compara valor e tipo sem conversão implícita?', '["=", "==", "!=", "==="]'::jsonb, 3, 'A comparação estrita evita coerções automáticas entre tipos diferentes.'),
+  ('js', 3, 'Como executar uma função quando um botão é clicado?', '["botao.addEventListener(\"click\", funcao)", "botao.value(\"click\")", "document.write(\"click\", funcao)", "botao.querySelector(\"click\")"]'::jsonb, 0, 'Um ouvinte de evento registra uma função para responder a uma interação.'),
+  ('js', 4, 'Em uma resposta de fetch, qual verificação ajuda a identificar um status HTTP de erro?', '["response.length", "response.name", "response.ok", "response.style"]'::jsonb, 2, 'Uma requisição pode chegar ao servidor e ainda receber um status HTTP de erro.'),
+  ('js', 5, 'Qual método cria um novo array apenas com os elementos que passam em uma condição?', '["forEach", "filter", "join", "push"]'::jsonb, 1, 'Métodos de array têm propósitos distintos: selecionar, transformar e percorrer.'),
+  ('js', 6, 'Onde await pode ser usado diretamente dentro de uma função?', '["Em qualquer função comum.", "Somente em uma função construtora.", "Apenas dentro de um for.", "Em uma função declarada async."]'::jsonb, 3, 'Operações assíncronas permitem aguardar uma Promise sem bloquear a página inteira.'),
+  ('sql', 1, 'Qual cláusula filtra linhas antes do agrupamento?', '["WHERE", "ORDER BY", "HAVING", "LIMIT"]'::jsonb, 0, 'O filtro de linhas individuais acontece antes das agregações.'),
+  ('sql', 2, 'Para contar alunos por curso, qual combinação é adequada?', '["ORDER BY curso, AVG(*)", "SELECT DISTINCT COUNT sem FROM", "COUNT(*) com GROUP BY curso", "DELETE com GROUP BY curso"]'::jsonb, 2, 'Uma agregação pode produzir um resultado para cada grupo de linhas.'),
+  ('sql', 3, 'O que retorna um INNER JOIN entre duas tabelas?', '["Todas as linhas da primeira tabela, com ou sem correspondência.", "Apenas linhas com correspondência na condição de junção.", "Todas as combinações sem condição.", "Somente linhas sem correspondência."]'::jsonb, 1, 'A condição de junção determina quais linhas podem ser relacionadas.'),
+  ('sql', 4, 'Por que incluir WHERE em um UPDATE destinado a um único aluno?', '["Para criar a tabela.", "Para ordenar o resultado.", "Para apagar linhas duplicadas automaticamente.", "Para limitar quais linhas serão alteradas."]'::jsonb, 3, 'Sem um filtro adequado, uma alteração pode afetar mais registros do que o esperado.'),
+  ('sql', 5, 'Qual cláusula filtra grupos depois de um GROUP BY?', '["HAVING", "VALUES", "FROM", "SET"]'::jsonb, 0, 'Filtros de grupos agregados são avaliados depois da formação dos grupos.'),
+  ('sql', 6, 'O que um LEFT JOIN preserva, mesmo sem correspondência na tabela da direita?', '["Apenas as linhas da direita.", "Nenhuma linha sem correspondência.", "As linhas da tabela da esquerda.", "Somente linhas com valores idênticos em todas as colunas."]'::jsonb, 2, 'Uma junção externa pode manter registros de um dos lados sem par correspondente.'),
+  ('python', 1, 'Em Python, como um bloco de código é delimitado normalmente?', '["Por chaves obrigatórias.", "Por indentação consistente.", "Pelo ponto e vírgula.", "Por tags HTML."]'::jsonb, 1, 'Espaços no início da linha fazem parte da estrutura dos blocos em Python.'),
+  ('python', 2, 'O que a instrução return faz em uma função?', '["Sempre imprime o resultado na tela.", "Reinicia o programa.", "Adiciona um item à lista.", "Devolve um valor ao código que chamou a função."]'::jsonb, 3, 'Retornar um valor e exibi-lo no console são ações diferentes.'),
+  ('python', 3, 'Qual expressão adiciona a nota 8 ao final de uma lista chamada notas?', '["notas.append(8)", "notas.add = 8", "notas + print(8)", "notas.insertar(8)"]'::jsonb, 0, 'Listas são mutáveis e possuem métodos para acrescentar elementos.'),
+  ('python', 4, 'O que len([]) retorna?', '["None", "1", "0", "Uma exceção sempre."]'::jsonb, 2, 'O tamanho de uma coleção vazia é útil para tratar casos de borda.'),
+  ('python', 5, 'Como acessar a chave "nome" de um dicionário aluno?', '["aluno.nome()", "aluno[\"nome\"]", "aluno(0)", "aluno->nome"]'::jsonb, 1, 'Dicionários associam chaves a valores; a chave deve existir ou ser tratada.'),
+  ('python', 6, 'Qual construção percorre os valores de uma lista notas?', '["if nota in notas:", "while notas as nota:", "switch nota in notas:", "for nota in notas:"]'::jsonb, 3, 'O laço for percorre cada elemento de um iterável.'),
+  ('java', 1, 'Qual é a assinatura convencional do ponto de entrada de um programa Java?', '["public static void main(String[] args)", "private int main()", "void start()", "class main(String args)"]'::jsonb, 0, 'A JVM procura uma assinatura específica para iniciar uma aplicação Java convencional.'),
+  ('java', 2, 'Como criar uma instância da classe Carro?', '["Carro c = class Carro;", "Carro c = new Carro();", "Carro c = Carro.class();", "new class = Carro;"]'::jsonb, 1, 'Uma classe descreve um tipo e uma instância é criada a partir dela.'),
+  ('java', 3, 'O modificador private em um atributo indica que ele:', '["É acessível por qualquer classe sem restrição.", "Só pode ser usado em arquivos HTML.", "Tem acesso restrito à própria classe.", "É automaticamente uma constante."]'::jsonb, 2, 'Modificadores de acesso ajudam a proteger o estado interno de um objeto.'),
+  ('java', 4, 'Para que serve um bloco catch?', '["Criar automaticamente uma classe.", "Repetir o programa para sempre.", "Declarar um atributo.", "Tratar uma exceção lançada no bloco associado."]'::jsonb, 3, 'O tratamento de exceções permite reagir a falhas previstas durante a execução.'),
+  ('java', 5, 'Em Java, qual é o resultado de 5 / 2 quando ambos os operandos são int?', '["2", "2.5", "3", "Sempre ocorre erro de compilação."]'::jsonb, 0, 'O tipo dos operandos influencia o resultado de uma divisão.'),
+  ('java', 6, 'Para comparar o conteúdo de duas strings em Java, qual opção é apropriada?', '["Usar apenas o operador +.", "Usar equals, cuidando de referências nulas.", "Comparar somente o tamanho.", "Usar o operador de atribuição =."]'::jsonb, 1, 'Identidade de referência e igualdade de conteúdo não são a mesma coisa.'),
+  ('poo', 1, 'O que representa uma classe?', '["Um único valor numérico.", "A execução de um servidor.", "Um modelo que descreve atributos e comportamentos de objetos.", "Um arquivo de imagem."]'::jsonb, 2, 'Uma classe descreve características compartilhadas pelas instâncias criadas a partir dela.'),
+  ('poo', 2, 'Qual situação exemplifica encapsulamento?', '["Expor todos os atributos para qualquer alteração.", "Proteger o estado interno e fornecer operações controladas.", "Copiar o código da classe para cada arquivo.", "Usar apenas funções globais."]'::jsonb, 1, 'Encapsular envolve controlar o acesso e preservar regras do estado interno.'),
+  ('poo', 3, 'Herança costuma ser apropriada quando a relação entre os tipos é:', '["\"é um tipo de\" e respeita o comportamento esperado.", "Apenas \"usa um serviço\".", "Sempre muitos-para-muitos.", "Sempre uma dependência temporária."]'::jsonb, 0, 'A relação entre uma especialização e seu tipo base deve fazer sentido no domínio.'),
+  ('poo', 4, 'O que é polimorfismo?', '["Tornar toda variável pública.", "Ter várias cópias do mesmo arquivo.", "Impedir que métodos sejam sobrescritos.", "Permitir comportamentos diferentes por uma interface comum."]'::jsonb, 3, 'Uma mesma operação pode assumir comportamentos específicos em tipos compatíveis.'),
+  ('poo', 5, 'Quando composição pode ser preferível à herança?', '["Quando não existem objetos.", "Quando todo relacionamento é \"é um\".", "Quando um objeto é formado por outros e precisa delegar responsabilidades.", "Quando não se deseja organizar responsabilidades."]'::jsonb, 2, 'Composição modela uma relação de colaboração ou de possuir componentes.'),
+  ('poo', 6, 'O que é sobrescrita de método?', '["Criar um método sem corpo.", "Uma subclasse oferecer implementação própria para um método herdado.", "Apagar todos os métodos da classe base.", "Declarar duas variáveis de mesmo nome."]'::jsonb, 1, 'A implementação de uma operação pode variar em uma especialização.'),
+  ('git', 1, 'Qual comando registra no histórico local as alterações que estão na área de preparação?', '["git commit", "git push", "git status", "git clone"]'::jsonb, 0, 'Preparar alterações e registrar um snapshot no histórico são etapas distintas.'),
+  ('git', 2, 'O que uma branch permite fazer?', '["Excluir todo o histórico remoto.", "Salvar senhas com segurança no repositório.", "Isolar uma linha de trabalho antes de integrá-la.", "Substituir o GitHub por um banco de dados."]'::jsonb, 2, 'Branches permitem desenvolver alterações de forma independente.'),
+  ('git', 3, 'Ao ocorrer um conflito de merge, qual é a ação adequada?', '["Ignorar os arquivos em conflito e fazer push.", "Revisar as diferenças, resolver os arquivos e registrar a resolução.", "Apagar o repositório.", "Executar git init novamente."]'::jsonb, 1, 'Conflitos exigem uma decisão sobre como combinar as mudanças concorrentes.'),
+  ('git', 4, 'Qual é a finalidade de um pull request?', '["Apagar automaticamente todas as branches.", "Executar git add no computador de outra pessoa.", "Impedir a revisão de código.", "Propor alterações para discussão e integração."]'::jsonb, 3, 'A revisão de alterações é parte importante de um fluxo colaborativo.'),
+  ('git', 5, 'Qual comando envia commits locais a um repositório remoto?', '["git status", "git push", "git log", "git diff"]'::jsonb, 1, 'Sincronizar com um remoto é diferente de criar um commit local.'),
+  ('git', 6, 'Um arquivo contém uma chave secreta. Qual é a boa prática?', '["Não versioná-lo e usar configuração segura fora do repositório.", "Publicá-lo em uma branch pública.", "Incluí-lo no README.", "Renomeá-lo e fazer commit normalmente."]'::jsonb, 0, 'Segredos não devem ser publicados; se vazarem, precisam ser revogados ou trocados.'),
+  ('redes', 1, 'Qual é a função principal do DNS?', '["Criptografar todos os dados.", "Atribuir memória ao navegador.", "Traduzir nomes de domínio em endereços.", "Substituir a conexão de rede."]'::jsonb, 2, 'Computadores usam endereços de rede, enquanto pessoas normalmente usam nomes.'),
+  ('redes', 2, 'O que HTTPS adiciona à comunicação HTTP?', '["Uma garantia de que qualquer site é confiável.", "Uma camada TLS para proteger a comunicação.", "A eliminação de qualquer necessidade de autenticação.", "Um endereço IP fixo."]'::jsonb, 1, 'Criptografia em trânsito não torna automaticamente confiável o conteúdo de um site.'),
+  ('redes', 3, 'Qual endereço é reservado para uso privado em redes locais?', '["192.168.1.10", "8.8.8.8", "1.1.1.1", "93.184.216.34"]'::jsonb, 0, 'Faixas privadas são usadas em redes internas e não são roteadas diretamente na internet pública.'),
+  ('redes', 4, 'Qual característica está associada ao TCP?', '["Não usa portas.", "É o mesmo que DNS.", "Nunca verifica dados recebidos.", "Oferece entrega ordenada e confiável de um fluxo de bytes."]'::jsonb, 3, 'Protocolos de transporte oferecem propriedades diferentes para comunicação.'),
+  ('redes', 5, 'Para que serve uma porta de rede?', '["Substituir o nome de domínio.", "Identificar um serviço ou processo em um dispositivo.", "Aumentar fisicamente a velocidade da rede.", "Criar uma nova placa de rede."]'::jsonb, 1, 'Um endereço identifica o destino na rede e a porta ajuda a encaminhar ao serviço.'),
+  ('redes', 6, 'Em uma rede doméstica, o NAT costuma permitir:', '["Trocar DNS por HTML.", "Eliminar a necessidade de roteador.", "Compartilhar um endereço público entre dispositivos privados.", "Criptografar automaticamente todo o tráfego."]'::jsonb, 2, 'A tradução de endereços permite relacionar conexões da rede privada ao endereço público.'),
+  ('apis', 1, 'Qual método HTTP é normalmente usado para consultar um recurso sem alterá-lo?', '["POST", "DELETE", "GET", "PATCH"]'::jsonb, 2, 'Métodos HTTP comunicam a intenção da operação sobre um recurso.'),
+  ('apis', 2, 'Qual status costuma indicar que um recurso foi criado com sucesso?', '["404", "201", "500", "403"]'::jsonb, 1, 'A família 2xx indica sucesso; alguns códigos são mais específicos.'),
+  ('apis', 3, 'Uma API retorna 404. O que isso geralmente indica?', '["O recurso solicitado não foi encontrado.", "A criação foi concluída.", "O servidor retornou uma página garantidamente segura.", "A resposta sempre contém uma lista vazia."]'::jsonb, 0, 'A família 4xx aponta problemas relacionados à requisição ou ao recurso solicitado.'),
+  ('apis', 4, 'Qual exemplo é um objeto JSON válido?', '["{nome: Ana}", "{''nome'': ''Ana''}", "<nome>Ana</nome>", "{\"nome\":\"Ana\"}"]'::jsonb, 3, 'JSON usa sintaxe própria, incluindo aspas duplas em nomes e strings.'),
+  ('apis', 5, 'Ao usar fetch, por que verificar response.ok antes de processar o resultado?', '["Para converter automaticamente qualquer resposta em HTML.", "Porque status HTTP de erro não necessariamente rejeitam a Promise de fetch.", "Porque fetch não consegue acessar APIs.", "Para deixar a chave secreta visível."]'::jsonb, 1, 'Falhas de rede e respostas HTTP com erro são situações distintas no fetch.'),
+  ('apis', 6, 'Como proteger uma chave secreta de uma API em um site público?', '["Colocá-la no JavaScript enviado ao navegador.", "Incluí-la em um link público.", "Mantê-la no backend e controlar o acesso.", "Guardá-la em um comentário HTML."]'::jsonb, 2, 'Tudo o que é entregue ao navegador pode ser inspecionado pelo usuário.'),
+  ('banco', 1, 'Qual é o papel de uma chave primária?', '["Identificar cada registro de forma única.", "Guardar obrigatoriamente uma senha.", "Ordenar automaticamente todas as consultas.", "Duplicar os valores de outra tabela."]'::jsonb, 0, 'Uma tabela precisa de uma forma estável de identificar seus registros.'),
+  ('banco', 2, 'Qual estrutura normalmente representa uma relação muitos-para-muitos?', '["Uma única coluna de texto com todos os nomes.", "Uma tabela de associação com chaves para as duas entidades.", "A exclusão de uma das entidades.", "Uma imagem do diagrama."]'::jsonb, 1, 'Uma entidade associativa pode guardar cada vínculo entre dois registros.'),
+  ('banco', 3, 'Em uma relação um-para-muitos entre curso e aluno, onde costuma ficar a chave estrangeira?', '["Em cada curso, apontando para todos os alunos ao mesmo tempo.", "Somente no nome do curso.", "Em cada aluno, apontando para seu curso.", "Em um arquivo CSS."]'::jsonb, 2, 'A chave estrangeira normalmente fica no lado que pode possuir várias linhas.'),
+  ('banco', 4, 'Qual é um objetivo da normalização?', '["Duplicar dados deliberadamente em todas as tabelas.", "Eliminar a necessidade de chaves.", "Garantir que qualquer consulta seja instantânea.", "Reduzir redundâncias e anomalias de atualização."]'::jsonb, 3, 'A organização dos dados ajuda a evitar inconsistências durante alterações.'),
+  ('banco', 5, 'Qual restrição impede valores repetidos em uma coluna que deve ser única?', '["UNIQUE", "ORDER BY", "LEFT JOIN", "LIMIT"]'::jsonb, 0, 'Restrições no banco reforçam regras de integridade independentemente do frontend.'),
+  ('banco', 6, 'Qual propriedade de uma transação significa que tudo acontece ou nada acontece?', '["Disponibilidade", "Atomicidade", "Formatação", "Cardinalidade"]'::jsonb, 1, 'Uma transação pode agrupar operações que devem ter sucesso ou falhar em conjunto.'),
+  ('logica', 1, 'O que é um algoritmo?', '["Uma linguagem obrigatoriamente visual.", "Um computador físico.", "Uma sequência de passos para resolver um problema.", "Um erro de compilação."]'::jsonb, 2, 'Planejar passos claros ajuda a resolver problemas independentemente da linguagem.'),
+  ('logica', 2, 'Qual estrutura escolhe caminhos com base em uma condição?', '["Um comentário.", "Uma condição se/senão.", "Uma declaração de texto.", "Um arquivo de imagem."]'::jsonb, 1, 'Uma decisão direciona o fluxo conforme uma expressão seja verdadeira ou falsa.'),
+  ('logica', 3, 'Se n % 2 é igual a zero, o que podemos concluir sobre um inteiro n?', '["Ele é par.", "Ele é sempre positivo.", "Ele é obrigatoriamente zero.", "Ele é ímpar."]'::jsonb, 0, 'O operador de resto ajuda a verificar divisibilidade.'),
+  ('logica', 4, 'Um laço executa para i = 1, 2, 3, 4 e 5. Quantas iterações ocorrem?', '["4", "6", "Infinitas", "5"]'::jsonb, 3, 'Verifique o valor inicial, a condição de parada e a atualização do contador.'),
+  ('logica', 5, 'Para somar valores lidos em um laço, qual estratégia é adequada?', '["Reiniciar a soma em zero a cada repetição.", "Usar um acumulador inicializado antes do laço.", "Ignorar todos os valores lidos.", "Trocar a soma por uma comparação de texto."]'::jsonb, 1, 'Um acumulador mantém o resultado parcial entre as repetições.'),
+  ('logica', 6, 'Ao procurar o maior valor de uma lista, qual caso de borda precisa ser tratado?', '["A lista ter apenas números positivos.", "O usuário gostar de matemática.", "A lista estar vazia.", "O programa ter um nome."]'::jsonb, 2, 'Antes de acessar um primeiro elemento, verifique se a coleção contém dados.')
+on conflict (subject_id, question_number) do update set
+  prompt = excluded.prompt, options = excluded.options,
+  correct_index = excluded.correct_index, explanation = excluded.explanation;
+
+alter table public.course_catalog enable row level security;
+alter table public.course_questions enable row level security;
+alter table public.course_lesson_progress enable row level security;
+alter table public.course_exercises enable row level security;
+alter table public.course_assessment_attempts enable row level security;
+
+-- O catálogo e, principalmente, os gabaritos não têm acesso direto ao cliente.
+revoke all on public.course_catalog, public.course_questions from public, anon, authenticated;
+revoke all on public.course_lesson_progress, public.course_exercises, public.course_assessment_attempts from public, anon, authenticated;
+grant select on public.course_lesson_progress, public.course_exercises, public.course_assessment_attempts to authenticated;
+
+drop policy if exists course_lesson_progress_select on public.course_lesson_progress;
+create policy course_lesson_progress_select on public.course_lesson_progress
+  for select to authenticated using (user_id = auth.uid() and not public.current_is_blocked());
+drop policy if exists course_exercises_select on public.course_exercises;
+create policy course_exercises_select on public.course_exercises
+  for select to authenticated using (user_id = auth.uid() and not public.current_is_blocked());
+drop policy if exists course_attempts_select on public.course_assessment_attempts;
+create policy course_attempts_select on public.course_assessment_attempts
+  for select to authenticated using (user_id = auth.uid() and not public.current_is_blocked());
+
+-- Fecha os dois caminhos antigos que permitiam gerar certificados sem prova.
+drop policy if exists certificates_insert on public.certificates;
+revoke insert, update, delete, truncate, references, trigger on public.certificates from public, anon, authenticated;
+revoke insert (id, user_id, subject_id, title, issued_at) on public.certificates from public, anon, authenticated;
+create or replace function public.award_exercise_xp(p_subject_id text, p_cert_title text)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  raise exception 'A emissão direta foi desativada. Conclua as aulas e a avaliação do curso.';
+end;
+$$;
+revoke all on function public.award_exercise_xp(text, text) from public, anon, authenticated;
+
+-- O XP de exploração continua limitado à primeira abertura de uma matéria real.
+create or replace function public.award_subject_view_xp(p_subject_id text)
+returns void language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid();
+begin
+  if uid is null then raise exception 'Não autenticado'; end if;
+  perform public.ensure_not_blocked();
+  if not exists (select 1 from public.course_catalog where subject_id = p_subject_id) then
+    raise exception 'Curso inexistente';
+  end if;
+  insert into public.subject_progress(user_id, subject_id) values (uid, p_subject_id)
+    on conflict (user_id, subject_id) do nothing;
+  if found then
+    update public.profiles set xp = xp + 10, level = public.recalculate_level(xp + 10) where id = uid;
+  end if;
+end;
+$$;
+revoke all on function public.award_subject_view_xp(text) from public, anon;
+grant execute on function public.award_subject_view_xp(text) to authenticated;
+
+create or replace function public.mark_course_lesson_complete(p_subject_id text, p_lesson_index integer)
+returns void language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid(); total_lessons integer;
+begin
+  if uid is null then raise exception 'Não autenticado'; end if;
+  perform public.ensure_not_blocked();
+  select lesson_count into total_lessons from public.course_catalog where subject_id = p_subject_id;
+  if not found then raise exception 'Curso inexistente'; end if;
+  if p_lesson_index is null or p_lesson_index < 1 or p_lesson_index > total_lessons then
+    raise exception 'Aula inválida';
+  end if;
+  if p_lesson_index > 1 and not exists (
+    select 1 from public.course_lesson_progress
+    where user_id = uid and subject_id = p_subject_id and lesson_index = p_lesson_index - 1
+  ) then raise exception 'Conclua a aula anterior primeiro'; end if;
+  insert into public.course_lesson_progress(user_id, subject_id, lesson_index)
+    values (uid, p_subject_id, p_lesson_index) on conflict do nothing;
+end;
+$$;
+
+create or replace function public.save_course_exercise(p_subject_id text, p_answer text)
+returns void language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid(); total_lessons integer;
+begin
+  if uid is null then raise exception 'Não autenticado'; end if;
+  perform public.ensure_not_blocked();
+  select lesson_count into total_lessons from public.course_catalog where subject_id = p_subject_id;
+  if not found then raise exception 'Curso inexistente'; end if;
+  if (select count(*) from public.course_lesson_progress where user_id = uid and subject_id = p_subject_id) <> total_lessons then
+    raise exception 'Conclua todas as aulas antes da atividade prática';
+  end if;
+  if p_answer is null or char_length(btrim(p_answer)) not between 30 and 4000 then
+    raise exception 'A atividade deve ter entre 30 e 4000 caracteres';
+  end if;
+  insert into public.course_exercises(user_id, subject_id, answer, submitted_at)
+    values (uid, p_subject_id, btrim(p_answer), now())
+    on conflict (user_id, subject_id) do update set answer = excluded.answer, submitted_at = excluded.submitted_at;
+end;
+$$;
+
+create or replace function public.get_course_assessment(p_subject_id text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid(); total_lessons integer; min_score integer; questions jsonb;
+begin
+  if uid is null then raise exception 'Não autenticado'; end if;
+  perform public.ensure_not_blocked();
+  select lesson_count, pass_percent into total_lessons, min_score from public.course_catalog where subject_id = p_subject_id;
+  if not found then raise exception 'Curso inexistente'; end if;
+  if (select count(*) from public.course_lesson_progress where user_id = uid and subject_id = p_subject_id) <> total_lessons
+    or not exists (select 1 from public.course_exercises where user_id = uid and subject_id = p_subject_id) then
+    raise exception 'Conclua as aulas e entregue a atividade prática antes da avaliação';
+  end if;
+  select coalesce(jsonb_agg(jsonb_build_object('id', question_number, 'question', prompt, 'options', options) order by question_number), '[]'::jsonb)
+    into questions from public.course_questions where subject_id = p_subject_id;
+  if jsonb_array_length(questions) <> 6 then raise exception 'Avaliação indisponível para este curso'; end if;
+  return jsonb_build_object('minimum_percent', min_score, 'questions', questions);
+end;
+$$;
+
+create or replace function public.submit_course_assessment(p_subject_id text, p_answers jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  uid uuid := auth.uid();
+  total_lessons integer; min_score integer; cert_title text;
+  q record; answer_value jsonb; answer_index integer;
+  correct_count integer := 0; total_questions integer := 0;
+  feedback jsonb := '[]'::jsonb; passed boolean; issued_now boolean := false;
+  cert public.certificates%rowtype;
+begin
+  if uid is null then raise exception 'Não autenticado'; end if;
+  perform public.ensure_not_blocked();
+  select lesson_count, pass_percent, certificate_title into total_lessons, min_score, cert_title
+    from public.course_catalog where subject_id = p_subject_id;
+  if not found then raise exception 'Curso inexistente'; end if;
+  if (select count(*) from public.course_lesson_progress where user_id = uid and subject_id = p_subject_id) <> total_lessons
+    or not exists (select 1 from public.course_exercises where user_id = uid and subject_id = p_subject_id) then
+    raise exception 'Conclua as aulas e entregue a atividade prática antes da avaliação';
+  end if;
+  if p_answers is null or jsonb_typeof(p_answers) is distinct from 'array' then
+    raise exception 'Responda todas as questões da avaliação';
+  end if;
+  select count(*) into total_questions from public.course_questions where subject_id = p_subject_id;
+  if total_questions <> 6 or jsonb_array_length(p_answers) <> total_questions then
+    raise exception 'Responda todas as questões da avaliação';
+  end if;
+  for q in select * from public.course_questions where subject_id = p_subject_id order by question_number loop
+    answer_value := p_answers -> (q.question_number - 1);
+    if answer_value is null or jsonb_typeof(answer_value) <> 'number'
+      or (answer_value #>> '{}') !~ '^[0-9]$' then
+      raise exception 'Alternativa inválida';
+    end if;
+    answer_index := (answer_value #>> '{}')::integer;
+    if answer_index >= jsonb_array_length(q.options) then raise exception 'Alternativa inválida'; end if;
+    if answer_index = q.correct_index then correct_count := correct_count + 1; end if;
+    feedback := feedback || jsonb_build_array(jsonb_build_object(
+      'id', q.question_number, 'question', q.prompt,
+      'correct', answer_index = q.correct_index, 'explanation', q.explanation
+    ));
+  end loop;
+  passed := correct_count * 100 >= total_questions * min_score;
+  insert into public.course_assessment_attempts(user_id, subject_id, correct_count, question_count, passed, feedback)
+    values (uid, p_subject_id, correct_count, total_questions, passed, feedback);
+  if passed then
+    insert into public.certificates(user_id, subject_id, title) values (uid, p_subject_id, cert_title)
+      on conflict (user_id, subject_id) do nothing returning * into cert;
+    issued_now := found;
+    if issued_now then
+      update public.profiles set xp = xp + 30, level = public.recalculate_level(xp + 30) where id = uid;
+    else
+      select * into cert from public.certificates where user_id = uid and subject_id = p_subject_id;
+    end if;
+  end if;
+  return jsonb_build_object(
+    'correct_count', correct_count, 'question_count', total_questions,
+    'score_percent', round(correct_count * 100.0 / total_questions)::integer,
+    'minimum_percent', min_score, 'passed', passed, 'issued_now', issued_now,
+    'feedback', feedback, 'certificate', case when passed then to_jsonb(cert) else null end
+  );
+end;
+$$;
+
+revoke all on function public.mark_course_lesson_complete(text, integer) from public, anon;
+revoke all on function public.save_course_exercise(text, text) from public, anon;
+revoke all on function public.get_course_assessment(text) from public, anon;
+revoke all on function public.submit_course_assessment(text, jsonb) from public, anon;
+grant execute on function public.mark_course_lesson_complete(text, integer) to authenticated;
+grant execute on function public.save_course_exercise(text, text) to authenticated;
+grant execute on function public.get_course_assessment(text) to authenticated;
+grant execute on function public.submit_course_assessment(text, jsonb) to authenticated;

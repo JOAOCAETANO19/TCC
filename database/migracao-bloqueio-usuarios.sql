@@ -77,15 +77,8 @@ $$;
 
 create or replace function public.award_exercise_xp(p_subject_id text, p_cert_title text)
 returns void language plpgsql security definer set search_path = public as $$
-declare uid uuid := auth.uid();
 begin
-  if uid is null then raise exception 'Não autenticado'; end if;
-  perform public.ensure_not_blocked();
-  insert into public.certificates(user_id, subject_id, title) values(uid,p_subject_id,p_cert_title)
-    on conflict (user_id, subject_id) do nothing;
-  if found then
-    update public.profiles set xp=xp+30, level=public.recalculate_level(xp+30) where id=uid;
-  end if;
+  raise exception 'A emissão direta foi desativada. Conclua as aulas e a avaliação do curso.';
 end;
 $$;
 
@@ -151,7 +144,8 @@ create policy projects_user_select on public.user_projects for select using ((us
 drop policy if exists certificates_select on public.certificates;
 create policy certificates_select on public.certificates for select using ((user_id=auth.uid() or public.current_is_admin()) and not public.current_is_blocked());
 drop policy if exists certificates_insert on public.certificates;
-create policy certificates_insert on public.certificates for insert with check (user_id=auth.uid() and not public.current_is_blocked());
+-- INSERT direto permanece desativado; somente a avaliação emite certificados.
+revoke insert on public.certificates from public, anon, authenticated;
 
 -- ============================================================
 -- PORTFÓLIO PÚBLICO: bloqueados não aparecem (perfil, projetos,
@@ -191,3 +185,6 @@ create policy avatars_owner_read on storage.objects
       or (storage.foldername(name))[1] in (select id::text from public.profiles where portfolio_public = true and not coalesce(is_blocked, false))
     )
   );
+
+-- Nunca reativar a emissão direta de certificados ao reaplicar este arquivo.
+revoke all on function public.award_exercise_xp(text, text) from public, anon, authenticated;

@@ -15,6 +15,7 @@ const { JSDOM } = require('jsdom');
 const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const script = fs.readFileSync(path.join(root, 'script.js'), 'utf8');
+const courseContent = fs.readFileSync(path.join(root, 'course-content.js'), 'utf8');
 
 let passed = 0;
 function check(condition, description) {
@@ -54,6 +55,10 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   const subjectProgressRows = [];
   let certs = [];
   let completedProjects = [];
+  const lessons = [];
+  const exercises = [];
+  const attempts = [];
+  const examQuestions = Array.from({ length: 6 }, (_, i) => ({ id: i + 1, question: `Questão ${i + 1}?`, options: ['Correta', 'Incorreta', 'Outra', 'Nenhuma'] }));
 
   Object.assign(window, {
     getSession: async () => null,
@@ -76,11 +81,23 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
         profile.xp += 10;
       }
     },
-    awardExerciseXP: async (id, title) => {
-      if (!certs.find(c => c.subject_id === id)) {
-        certs.push({ subject_id: id, title, issued_at: new Date().toISOString() });
-        profile.xp += 30;
-      }
+    fetchCourseProgress: async () => ({ lessons: lessons.slice(), exercises: exercises.slice(), attempts: attempts.slice() }),
+    markCourseLesson: async (id, index) => {
+      if (index > 1 && !lessons.some(row => row.subject_id === id && row.lesson_index === index - 1)) throw new Error('Conclua a aula anterior');
+      if (!lessons.some(row => row.subject_id === id && row.lesson_index === index)) lessons.push({ subject_id: id, lesson_index: index });
+    },
+    saveCourseExercise: async (id, answer) => { exercises.push({ subject_id: id, answer }); },
+    getCourseAssessment: async () => ({ minimum_percent: 80, questions: examQuestions }),
+    submitCourseAssessment: async (id, answers) => {
+      const correct = answers.filter(answer => answer === 0).length;
+      const passed = correct >= 5;
+      const issued = passed && !certs.some(c => c.subject_id === id);
+      if (issued) { certs.push({ subject_id: id, title: 'HTML - Básico', issued_at: new Date().toISOString() }); profile.xp += 30; }
+      const result = { correct_count: correct, question_count: 6, score_percent: Math.round(correct * 100 / 6), minimum_percent: 80, passed, issued_now: issued,
+        feedback: answers.map((answer, i) => ({ id: i + 1, correct: answer === 0, explanation: 'Revise o conteúdo.' })),
+        certificate: passed ? certs.find(c => c.subject_id === id) : null };
+      attempts.unshift({ subject_id: id, ...result });
+      return result;
     },
     awardProjectXP: async (id) => {
       if (!completedProjects.includes(id)) { completedProjects.push(id); profile.xp += 100; }
@@ -94,7 +111,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     Object.defineProperty(window.URL, 'createObjectURL', { value: () => 'blob:preview/avatar.png', configurable: true });
     Object.defineProperty(window.URL, 'revokeObjectURL', { value: () => {}, configurable: true });
   } catch (_) {}
-  window.eval(script + `\nwindow.__testHooks = {
+  window.eval(courseContent + '\n' + script + `\nwindow.__testHooks = {
     setUser(v) { currentUser = v; },
     setAuth(v) { currentAuthId = v; },
     getQuizRows() { return userQuizRows.slice(); },
@@ -166,7 +183,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   const study = window.document.getElementById('study-content');
   check(!window.document.getElementById('subjects-grid').classList.contains('hidden') === false, 'abrir matéria esconde o grid e mostra o conteúdo');
   check(study.textContent.includes('HTML - HyperText Markup Language'), 'matéria aberta mostra o título');
-  check(study.textContent.includes('Nível:') && study.textContent.includes('Tempo estimado:'), 'matéria aberta mostra nível e tempo');
+  check(study.textContent.includes('Iniciante') && study.textContent.includes('1 semana'), 'matéria aberta mostra nível e tempo');
   check(study.textContent.includes('Erros comuns'), 'matéria aberta tem a seção Erros comuns');
   check(study.textContent.includes('Para se aprofundar') && study.querySelector('a[target="_blank"]'), 'matéria aberta tem links externos para se aprofundar');
   check(window.document.getElementById('subject-quiz').querySelectorAll('button').length === 9, 'quiz por matéria tem 3 perguntas (3 opções cada)');
@@ -179,17 +196,32 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   check(window.document.getElementById('subjects-counter').textContent === '0 de 12', 'abrir a matéria não a marca como estudada');
 
   // ============================================================
-  // 7. CONCLUIR EXERCÍCIO → certificado + XP
+  // 7. AULAS → ATIVIDADE → AVALIAÇÃO → certificado + XP
   // ============================================================
-  const exerciseBtn = window.document.querySelector('#study-content button[onclick*="completeExercise"]');
-  await window.completeExercise('html');
-  await tick();
-  check(certs.some(c => c.subject_id === 'html'), 'concluir exercício emite certificado');
-  check(profile.xp >= 90, 'XP soma o exercício (+30) e a matéria (+10)');
+  check(study.textContent.includes('Avaliação bloqueada') && !certs.length, 'certificado e avaliação começam bloqueados');
+  check(study.querySelectorAll('.course-lesson-tab').length === 3 && study.querySelector('iframe[title]'), 'curso tem três videoaulas acessíveis');
+  await window.completeCourseLesson('html', 2);
+  check(lessons.length === 0, 'não é possível marcar a segunda aula antes da primeira');
+  for (let i = 1; i <= 3; i++) await window.completeCourseLesson('html', i);
+  check(lessons.length === 3 && study.textContent.includes('3 de 3 aulas concluídas'), 'as três aulas são salvas em sequência');
+  check(study.textContent.includes('Salve sua atividade prática'), 'avaliação aguarda a atividade');
+  window.document.getElementById('course-exercise-answer').value = 'Uma solução prática com mais de trinta caracteres para o desafio.';
+  await window.submitCourseExercise('html');
+  check(exercises.length === 1 && study.textContent.includes('Iniciar avaliação'), 'atividade salva libera a avaliação');
+  await window.startCourseAssessment('html');
+  check(study.querySelectorAll('.course-question').length === 6, 'avaliação contém seis questões');
+  for (let i = 1; i <= 6; i++) study.querySelector(`input[name="assessment-html-${i}"][value="${i <= 2 ? 1 : 0}"]`).checked = true;
+  await window.submitCourseAssessmentUI('html');
+  check(!certs.length && study.textContent.includes('Continue estudando'), '4 de 6 reprova e não emite certificado');
+  await window.startCourseAssessment('html');
+  for (let i = 1; i <= 6; i++) study.querySelector(`input[name="assessment-html-${i}"][value="${i === 1 ? 1 : 0}"]`).checked = true;
+  await window.submitCourseAssessmentUI('html');
+  check(certs.some(c => c.subject_id === 'html') && study.textContent.includes('Você foi aprovado'), '5 de 6 emite o certificado');
+  check(profile.xp === 90, 'XP soma nivelamento, abertura e primeira aprovação');
 
   window.closeSubject();
   check(window.document.getElementById('subjects-counter').textContent === '1 de 12', 'voltar atualiza o contador para 1 de 12');
-  check(window.document.getElementById('subjects-grid').textContent.includes('✓ Estudada'), 'matéria concluída ganha o selo ✓');
+  check(window.document.getElementById('subjects-grid').textContent.includes('✓ Certificado'), 'curso concluído ganha o selo de certificado');
 
   // ============================================================
   // 8. PROJETOS → briefing e conclusão
@@ -226,7 +258,6 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   check(window.document.getElementById('landing-screen').style.display === 'block', 'logout volta para a página inicial');
   check(window.document.getElementById('main-app').classList.contains('hidden'), 'app principal fica oculto após logout');
 
-  check(passed === 46, 'smoke-completo contém 47 verificações');
   console.log(`\n${passed} verificações passaram.`);
   window.close();
 })().catch(error => {

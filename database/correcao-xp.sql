@@ -29,8 +29,7 @@
 --      bloqueado — ele nunca é 'postgres'.
 --   2. As 4 funções award_* viram SECURITY DEFINER com
 --      search_path fixo em public (evita sequestro de search_path).
---   3. certificates ganha a política certificates_insert e o
---      grant de INSERT para o papel authenticated.
+--   3. A emissão direta foi substituída pela avaliação no servidor.
 --
 -- As funções admin_* seguem SECURITY INVOKER de propósito: elas
 -- se autorizam por current_is_admin() e o trigger já abre exceção
@@ -98,14 +97,8 @@ $$;
 
 create or replace function public.award_exercise_xp(p_subject_id text, p_cert_title text)
 returns void language plpgsql security definer set search_path = public as $$
-declare uid uuid := auth.uid();
 begin
-  if uid is null then raise exception 'Não autenticado'; end if;
-  insert into public.certificates(user_id, subject_id, title) values(uid,p_subject_id,p_cert_title)
-    on conflict (user_id, subject_id) do nothing;
-  if found then
-    update public.profiles set xp=xp+30, level=public.recalculate_level(xp+30) where id=uid;
-  end if;
+  raise exception 'A emissão direta foi desativada. Conclua as aulas e a avaliação do curso.';
 end;
 $$;
 
@@ -121,17 +114,21 @@ begin
 end;
 $$;
 
--- 3) O RLS de certificates deixa o próprio aluno emitir o próprio
---    certificado (necessário para o award_exercise_xp funcionar).
+-- 3) O fluxo antigo de emissão direta foi desativado. A migração
+--    de cursos valida a avaliação antes de emitir um certificado.
 drop policy if exists certificates_insert on public.certificates;
-create policy certificates_insert on public.certificates for insert with check (user_id=auth.uid());
+-- INSERT direto permanece desativado; somente a avaliação emite certificados.
+revoke insert on public.certificates from public, anon, authenticated;
 
--- Regarante o acesso do cliente às RPCs e ao INSERT em certificates.
+-- Regarante acesso às RPCs atuais sem reabrir o fluxo antigo.
 grant execute on all functions in schema public to authenticated;
-grant select, insert on public.certificates to authenticated;
+grant select on public.certificates to authenticated;
 
 -- Fim da correção. Para conferir, rode como administrador:
 --   select proname, prosecdef from pg_proc
 --   where proname like 'award%' or proname = 'protect_profile_fields';
 -- Todas devem retornar prosecdef = true (security definer), exceto
 -- protect_profile_fields (que é um trigger e não precisa).
+
+-- Não reative a RPC antiga ao reaplicar esta correção histórica.
+revoke all on function public.award_exercise_xp(text, text) from public, anon, authenticated;
