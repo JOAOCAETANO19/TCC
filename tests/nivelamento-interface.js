@@ -62,6 +62,7 @@ function check(value, message) { assert.ok(value, message); checks++; console.lo
     answers: () => quizAnswers.slice(),
     phase: () => quizPhase,
     setRows: rows => { userQuizRows = rows; },
+    questions: () => quizQuestions,
     recommended: () => recommendedTrack()
   };`);
   const el = id => w.document.getElementById(id);
@@ -74,7 +75,10 @@ function check(value, message) { assert.ok(value, message); checks++; console.lo
   const answer = async (step, option) => { w.selectQuizAnswer(step, option); await w.nextQuizStep(); };
   try {
     await tick(); await login();
-    check(modalOpen() && text().includes('Sobre você') && text().includes('Desafios rápidos'), 'novo usuário recebe apresentação com perfil e desafios');
+    check(modalOpen() && text().includes('Sobre você') && text().includes('Desafios rápidos') && text().includes('sem escrever código'), 'novo usuário recebe apresentação com perfil e desafios básicos');
+    const technical = w.__quizTest.questions().slice(4);
+    check(technical.length === 6 && technical.every(q => !q.code && q.options.length === 4 && q.options[3] === 'Ainda não sei' && q.correct >= 0 && q.correct < 3 && q.explanation), 'seis desafios são conceituais e têm opção de dúvida e explicação');
+    check(technical.map(q => q.subject).join(',') === 'logica,html,css,js,git,sql', 'desafios cobrem os seis fundamentos que orientam recomendações');
     check(text().includes('não é uma prova') && text().includes('Continuar depois') && text().includes('salvas ao finalizar') && text().includes('administradores autorizados'), 'introdução explica o caráter formativo, a gravação e quem acessa as respostas');
     check(el('quiz-modal').getAttribute('aria-modal') === 'true' && el('quiz-modal').getAttribute('aria-labelledby') === 'quiz-dialog-title', 'diálogo tem rótulo acessível');
     w.document.dispatchEvent(new w.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
@@ -99,9 +103,11 @@ function check(value, message) { assert.ok(value, message); checks++; console.lo
     check(el('quiz-option-1-0').checked, 'voltar e avançar mantém a seleção seguinte');
     w.selectQuizAnswer(0, 2);
     check(el('quiz-option-1-0').checked, 'resposta fora da etapa atual é ignorada');
-    await w.nextQuizStep(); await answer(2, 0); await answer(3, 0); await answer(4, 0);
-    check(el('quiz-steps').innerHTML.includes('&lt;nav&gt;') && !el('quiz-steps').querySelector('nav'), 'alternativas de código aparecem escapadas');
-    await answer(5, 1); await answer(6, 0); await answer(7, 2); await answer(8, 2);
+    await w.nextQuizStep(); await answer(2, 0); await answer(3, 0);
+    check(text().includes('Uma pessoa de 20 anos pode entrar?') && !el('quiz-steps').querySelector('pre'), 'primeiro desafio usa uma situação simples sem exigir leitura de código');
+    await answer(4, 0);
+    check(text().includes('Para que serve o HTML em uma página?') && text().includes('Ainda não sei'), 'desafio de HTML pergunta um conceito inicial e permite não saber');
+    await answer(5, 0); await answer(6, 0); await answer(7, 2); await answer(8, 0);
     w.selectQuizAnswer(9, 3);
     check(text().includes('10 de 10') && el('quiz-option-9-3').checked, 'último desafio aceita Ainda não sei');
 
@@ -118,11 +124,14 @@ function check(value, message) { assert.ok(value, message); checks++; console.lo
     saveGate = null;
     slowProfile = deferred();
     await w.nextQuizStep();
-    check(text().includes('3/6') && text().includes('1 resposta ficou') && text().includes('Revise seus desafios'), 'resultado separa acertos, dúvidas e explicações');
-    check(text().includes('Resposta correta: 5') && text().includes('Como 2 é maior ou igual'), 'feedback mostra resposta correta e motivo');
+    check(text().includes('3/6') && text().includes('1 resposta ficou') && text().includes('Revise seus desafios') && text().includes('Você já reconhece alguns conceitos'), 'resultado interpreta os acertos e separa dúvidas e explicações');
+    check(text().includes('Resposta correta: Sim, porque tem 18 anos ou mais') && text().includes('Como 20 é maior que 18'), 'feedback mostra resposta correta e explica a regra');
+    check(text().includes('não mede experiência prática ou conhecimento avançado'), 'resultado não afirma medir conhecimentos avançados');
     const recommendations = [...el('quiz-steps').querySelectorAll('.quiz-recommendation-list button')].map(button => button.textContent);
     check(recommendations.length === 3 && recommendations[0].includes('CSS') && recommendations[1].includes('Lógica') && recommendations[2].includes('SQL'), 'recomendações priorizam lacunas e área escolhida');
     check(profiles.u1.quiz_done && profiles.u1.xp === 50 && w.__quizTest.rows().length === 10, 'conclusão salva dez respostas e concede a recompensa uma vez');
+    check(saved.u1.slice(0, 4).every(row => !row.answer.startsWith('[v2] ')) && saved.u1.slice(4).every(row => row.answer.startsWith('[v2] ')), 'respostas básicas têm versão explícita sem alterar o perfil');
+    check(!text().includes('[v2]'), 'marcador interno não aparece no resultado');
     check(w.__quizTest.phase() === 'result', 'resultado aparece sem esperar a leitura lenta do perfil');
     delayedRows.resolve(); delayedRows = null;
     await tick(); await tick();
@@ -139,12 +148,52 @@ function check(value, message) { assert.ok(value, message); checks++; console.lo
     check(!modalOpen() && subjectOpened === 'css' && el('tab-estudos').classList.contains('active'), 'sugestão abre diretamente o curso escolhido');
 
     w.switchTab('perfil'); w.showQuiz(); w.startQuiz();
-    const allCorrect = [0, 0, 0, 1, 2, 1, 1, 2, 2, 1];
+    const allCorrect = [0, 0, 0, 1, 1, 0, 1, 2, 0, 2];
     for (let i = 0; i < allCorrect.length; i++) await answer(i, allCorrect[i]);
     await tick();
-    check(text().includes('6/6') && profiles.u1.xp === 50, 'refazer pode mudar o resultado sem adicionar XP no fluxo');
+    check(text().includes('6/6') && text().includes('Você identificou os conceitos iniciais') && profiles.u1.xp === 50, 'refazer interpreta todos os acertos sem adicionar XP no fluxo');
     w.closeQuiz();
     check(el('prof-nivelamento').textContent.includes('6 de 6 acertos'), 'Perfil passa a mostrar o resultado mais recente');
+    check(el('prof-nivelamento').textContent.includes('Para que serve o HTML em uma página?') && !el('prof-nivelamento').textContent.includes('[v2]'), 'Perfil exibe as perguntas básicas sem o marcador interno');
+    w.renderStudentDetailModal(saved.u1, [], []);
+    check(el('admin-detail-content').textContent.includes('Para que serve o HTML em uma página?') && !el('admin-detail-content').textContent.includes('[v2]'), 'painel administrativo também exibe a versão e a resposta legíveis');
+
+    // O diagnóstico de dez perguntas publicado anteriormente continua legível
+    // e usa seus próprios gabaritos, enunciados e recomendações.
+    const previousAnswers = ['Iniciante total', 'Front-end', 'Estágio em 6 meses', '3 a 5 horas', '2', '<nav>', 'A cor do texto dos itens', '3', 'Uma versão das alterações preparadas no repositório local', 'Ainda não sei'];
+    const previousRows = previousAnswers.map((answer, i) => ({ question: i + 1, answer }));
+    const savesBeforeReading = saveCalls;
+    w.__quizTest.setRows(previousRows); w.renderNivelamento();
+    check(el('prof-nivelamento').textContent.includes('3 de 6 acertos') && el('prof-nivelamento').textContent.includes('Qual elemento HTML identifica uma área de navegação?'), 'diagnóstico anterior mantém pontuação e enunciados originais no Perfil');
+    check(el('prof-nivelamento').innerHTML.includes('&lt;nav&gt;') && !el('prof-nivelamento').querySelector('nav'), 'respostas anteriores com HTML continuam escapadas');
+    w.showQuizResultFromProfile();
+    check(text().includes('Qual será o valor final de pontos?') && text().includes('Resposta correta: 5') && text().includes('let pontos = 2;') && !text().includes('Uma pessoa de 20 anos'), 'resultado anterior preserva a pergunta, o código e o gabarito originais');
+    check(w.__quizTest.recommended()[0] === 'css' && saveCalls === savesBeforeReading && profiles.u1.xp === 50, 'revisar resultado anterior mantém recomendações sem gravar ou alterar XP');
+    w.closeQuiz();
+    w.renderStudentDetailModal(previousRows, [], []);
+    check(el('admin-detail-content').textContent.includes('Qual elemento HTML identifica uma área de navegação?') && !el('admin-detail-content').querySelector('nav'), 'admin vê os enunciados antigos e respostas escapadas');
+
+    const previousUnknown = previousRows.map((row, i) => i < 4 ? row : { ...row, answer: 'Ainda não sei' });
+    w.__quizTest.setRows(previousUnknown); w.renderNivelamento();
+    w.showQuizResultFromProfile();
+    check(text().includes('0/6') && text().includes('6 respostas ficaram') && text().includes('Qual será o valor final de pontos?'), 'se todas as respostas antigas forem Ainda não sei, continuam na versão anterior');
+    w.closeQuiz();
+
+    w.showQuiz(); w.startQuiz();
+    const allUnknown = [0, 0, 0, 1, 3, 3, 3, 3, 3, 3];
+    for (let i = 0; i < allUnknown.length; i++) await answer(i, allUnknown[i]);
+    check(text().includes('0/6') && text().includes('6 respostas ficaram') && text().includes('Vamos começar pelo básico') && text().includes('Uma pessoa de 20 anos'), 'sem acertos, o resultado acolhe o iniciante e usa os desafios básicos');
+    check(saved.u1.slice(4).every(row => row.answer === '[v2] Ainda não sei') && profiles.u1.xp === 50, 'versão é preservada mesmo sem acertos e sem duplicar XP');
+    w.closeQuiz();
+    w.showQuizResultFromProfile();
+    check(text().includes('Uma pessoa de 20 anos') && !text().includes('[v2]'), 'resultado básico com todas as dúvidas pode ser reaberto sem marcador');
+    w.closeQuiz();
+
+    const mixedRows = saved.u1.map(row => ({ ...row }));
+    mixedRows[5].answer = 'Ainda não sei';
+    w.__quizTest.setRows(mixedRows); w.renderNivelamento();
+    check(!el('prof-nivelamento').textContent.includes('de 6 acertos') && w.__quizTest.recommended()[0] === 'html', 'respostas incompletas ou de versões misturadas não geram pontuação inventada');
+    w.__quizTest.setRows(saved.u1.map(row => ({ ...row }))); w.renderNivelamento();
 
     // Um retorno atrasado de outro login não pode exibir resultados na sessão atual.
     w.showQuiz(); w.startQuiz();
@@ -163,6 +212,10 @@ function check(value, message) { assert.ok(value, message); checks++; console.lo
     w.__quizTest.setRows([{ question: 1, answer: '<img src=x onerror=alert(1)>' }]);
     w.renderNivelamento();
     check(el('prof-nivelamento').textContent.includes('<img src=x onerror=alert(1)>') && !el('prof-nivelamento').querySelector('img'), 'respostas armazenadas são exibidas sem executar HTML');
+    const markedInjection = [{ question: 'Pergunta 5', answer: '[v2] <img src=x onerror=alert(1)>' }];
+    w.__quizTest.setRows(markedInjection); w.renderNivelamento(); w.renderStudentDetailModal(markedInjection, [], []);
+    check(el('prof-nivelamento').textContent.includes('Uma pessoa de 20 anos') && el('prof-nivelamento').textContent.includes('<img src=x onerror=alert(1)>') && !el('prof-nivelamento').querySelector('img') && !el('prof-nivelamento').textContent.includes('[v2]'), 'resposta versionada com identificador antigo é exibida escapada no Perfil');
+    check(!el('admin-detail-content').querySelector('img') && !el('admin-detail-content').textContent.includes('[v2]'), 'admin também escapa resposta versionada');
     console.log(`\n${checks} verificações da interface de nivelamento passaram.`);
   } finally {
     w.close();

@@ -145,7 +145,7 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   window.selectQuizAnswer(0, 0);
   window.nextQuizStep();
   check(window.document.getElementById('quiz-steps').textContent.includes('2 de 10'), 'responder avança para a segunda pergunta');
-  const choices = [0, 0, 1, 2, 1, 1, 2, 2, 1];
+  const choices = [0, 0, 1, 1, 0, 1, 2, 0, 2];
   for (let step = 1; step < 10; step++) {
     window.selectQuizAnswer(step, choices[step - 1]);
     await window.nextQuizStep();

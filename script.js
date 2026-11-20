@@ -1436,10 +1436,11 @@ function enterApp() {
 
 // ===== NIVELAMENTO INICIAL =====
 // Os três primeiros IDs e seus textos preservam o formato do quiz anterior.
-// As perguntas seguintes são um diagnóstico formativo, não uma prova ou um
-// requisito para os certificados. O gabarito é público no próprio frontend.
+// O diagnóstico é formativo, não é requisito para certificados e seu gabarito
+// é público. O marcador identifica a versão das perguntas em respostas salvas.
 const QUIZ_UNKNOWN = 'Ainda não sei';
-const quizQuestions = [
+const QUIZ_BASIC_ANSWER_PREFIX = '[v2] ';
+const quizProfileQuestions = [
   {
     q: 'Qual seu nível atual?', help: 'Escolha a opção que melhor descreve sua experiência hoje.',
     options: ['Iniciante total', 'Já sei o básico', 'Intermediário'],
@@ -1459,7 +1460,13 @@ const quizQuestions = [
     q: 'Quanto tempo você pode estudar por semana?', help: 'Uma estimativa já ajuda. Você pode ajustar sua rotina depois.',
     options: ['Até 2 horas', '3 a 5 horas', '6 a 10 horas', 'Mais de 10 horas', 'Ainda estou organizando minha rotina'],
     descriptions: ['Quero começar com passos pequenos.', 'Consigo separar alguns momentos na semana.', 'Tenho uma rotina regular de estudos.', 'Posso me dedicar com mais intensidade.', 'Ainda preciso descobrir o melhor ritmo.']
-  },
+  }
+];
+
+// Mantida para exibir corretamente a pergunta, o gabarito e as recomendações
+// de quem respondeu ao diagnóstico anterior, inclusive quando não sabia nada.
+const quizPreviousQuestions = [
+  ...quizProfileQuestions,
   {
     q: 'Qual será o valor final de pontos?', help: 'Leia o trecho e acompanhe o que acontece quando a condição é verdadeira.',
     code: 'let pontos = 2;\nif (pontos >= 2) {\n  pontos = pontos + 3;\n}',
@@ -1491,6 +1498,43 @@ const quizQuestions = [
     q: 'Qual consulta lista produtos com preço maior que 100?', help: 'A cláusula WHERE filtra as linhas retornadas.',
     options: ['SELECT * FROM produtos WHERE preco < 100;', 'SELECT * FROM produtos WHERE preco > 100;', 'SELECT * FROM produtos ORDER BY preco;', QUIZ_UNKNOWN], correct: 1, subject: 'sql',
     explanation: 'WHERE preco > 100 seleciona somente as linhas em que o preço é maior que 100. ORDER BY apenas ordena o resultado.'
+  }
+];
+
+// Perguntas conceituais e situações simples para quem está começando do zero.
+const quizQuestions = [
+  ...quizProfileQuestions,
+  {
+    q: 'Um aplicativo libera o acesso para quem tem 18 anos ou mais. Uma pessoa de 20 anos pode entrar?',
+    help: 'Compare a idade da pessoa com a regra do aplicativo.',
+    options: ['Não, porque tem menos de 18 anos', 'Sim, porque tem 18 anos ou mais', 'Só se tiver exatamente 18 anos', QUIZ_UNKNOWN], correct: 1, subject: 'logica',
+    explanation: 'Como 20 é maior que 18, a pessoa atende à regra e pode entrar. Na programação, condições ajudam a tomar decisões assim.'
+  },
+  {
+    q: 'Para que serve o HTML em uma página?', help: 'Pense no conteúdo que aparece na tela.',
+    options: ['Organizar conteúdos, como títulos e textos', 'Mudar as cores e fontes da página', 'Guardar o histórico de um projeto', QUIZ_UNKNOWN], correct: 0, subject: 'html',
+    explanation: 'HTML organiza a estrutura e o conteúdo da página, como títulos, textos e imagens. O CSS costuma cuidar da aparência.'
+  },
+  {
+    q: 'Qual tecnologia costuma mudar as cores e fontes de uma página?', help: 'Pense na aparência de um site.',
+    options: ['HTML', 'CSS', 'SQL', QUIZ_UNKNOWN], correct: 1, subject: 'css',
+    explanation: 'CSS cuida da aparência da página, como cores, fontes e espaçamentos.'
+  },
+  {
+    q: 'Qual linguagem é usada para programar o que acontece ao clicar em um botão de um site?',
+    help: 'Pense no que pode tornar uma página interativa.',
+    options: ['HTML', 'CSS', 'JavaScript', QUIZ_UNKNOWN], correct: 2, subject: 'js',
+    explanation: 'JavaScript pode programar interações na página, como executar uma ação quando alguém clica em um botão.'
+  },
+  {
+    q: 'Para que serve o Git em um projeto?', help: 'Pense em como acompanhar mudanças nos arquivos.',
+    options: ['Guardar versões das alterações do projeto', 'Escolher as cores de um site', 'Abrir páginas na internet', QUIZ_UNKNOWN], correct: 0, subject: 'git',
+    explanation: 'O Git registra versões das alterações por meio de commits, ajudando a acompanhar o histórico do projeto.'
+  },
+  {
+    q: 'Para que o SQL é usado?', help: 'Pense nas informações guardadas por um aplicativo.',
+    options: ['Criar imagens para um site', 'Alterar cores e fontes da página', 'Consultar e organizar dados em um banco de dados', QUIZ_UNKNOWN], correct: 2, subject: 'sql',
+    explanation: 'SQL é uma linguagem usada para consultar, adicionar e modificar informações em bancos de dados relacionais.'
   }
 ];
 
@@ -1528,7 +1572,7 @@ function renderQuizIntro() {
       <p>Conte sobre seus objetivos e experimente alguns desafios. Suas respostas ajudam a indicar por onde começar no Centro de Estudos.</p>
       <div class="quiz-intro-grid">
         <div><span class="quiz-intro-number">04</span><strong>Sobre você</strong><small>Interesses, objetivo e rotina</small></div>
-        <div><span class="quiz-intro-number">06</span><strong>Desafios rápidos</strong><small>Fundamentos de programação</small></div>
+        <div><span class="quiz-intro-number">06</span><strong>Desafios rápidos</strong><small>Conceitos básicos, sem escrever código</small></div>
       </div>
       <div class="quiz-intro-note"><span aria-hidden="true">✦</span><p><strong>Sem pressão.</strong> Isto não é uma prova. Se ainda não souber uma resposta, pode escolher “Ainda não sei”.</p></div>
       <div class="quiz-intro-actions">
@@ -1634,6 +1678,12 @@ async function finishQuiz() {
   const session = courseSessionVersion;
   const run = quizRunVersion;
   const answers = quizAnswers.slice();
+  // O banco guarda apenas o número e o texto da resposta. Marcar as seis
+  // respostas novas mantém a versão inequívoca até quando todas são "Ainda
+  // não sei", sem migrar nem sobrescrever o histórico de quem já respondeu.
+  const storedAnswers = answers.map((answer, index) =>
+    index >= quizProfileQuestions.length ? QUIZ_BASIC_ANSWER_PREFIX + answer : answer
+  );
   const track = answers[1];
   const goal = answers[2];
   quizSubmitting = true;
@@ -1645,7 +1695,7 @@ async function finishQuiz() {
   document.getElementById('quiz-error').textContent = '';
 
   try {
-    await awardQuizXP(answers, track, goal);
+    await awardQuizXP(storedAnswers, track, goal);
   } catch (e) {
     if (session !== courseSessionVersion || run !== quizRunVersion || uid !== currentAuthId) return;
     quizSubmitting = false;
@@ -1665,8 +1715,8 @@ async function finishQuiz() {
   quizSubmitting = false;
   document.getElementById('quiz-close').disabled = false;
   currentUser = { ...currentUser, track, goal, quiz_done: true };
-  userQuizRows = answers.map((answer, i) => ({ question: i + 1, answer }));
-  quizAnswers = answers;
+  userQuizRows = storedAnswers.map((answer, i) => ({ question: i + 1, answer }));
+  quizAnswers = storedAnswers;
   quizPhase = 'result';
   const revision = ++quizProfileRevision;
   renderQuizResult();
@@ -1696,11 +1746,27 @@ function quizAnswersFromRows(rows) {
   return answers;
 }
 
+function isBasicQuizAnswer(answer) {
+  return typeof answer === 'string' && answer.startsWith(QUIZ_BASIC_ANSWER_PREFIX);
+}
+
+function quizAnswerText(question, answer) {
+  return quizQuestionIndex(question) >= quizProfileQuestions.length && isBasicQuizAnswer(answer)
+    ? answer.slice(QUIZ_BASIC_ANSWER_PREFIX.length) : answer;
+}
+
 function quizDiagnostic(answers) {
-  const technical = quizQuestions.slice(4);
-  if (!technical.every((q, i) => q.options.includes(answers[i + 4]))) return null;
+  const start = quizProfileQuestions.length;
+  const technicalAnswers = answers.slice(start);
+  if (technicalAnswers.length !== quizQuestions.length - start) return null;
+  const isBasic = technicalAnswers.every(isBasicQuizAnswer);
+  const isPrevious = technicalAnswers.every(answer => typeof answer === 'string' && !isBasicQuizAnswer(answer));
+  // Respostas de versões diferentes ou incompletas não recebem uma nota inventada.
+  if (!isBasic && !isPrevious) return null;
+  const technical = (isBasic ? quizQuestions : quizPreviousQuestions).slice(start);
+  if (!technical.every((q, i) => q.options.includes(quizAnswerText(i + start + 1, technicalAnswers[i])))) return null;
   return technical.map((q, i) => {
-    const answer = answers[i + 4];
+    const answer = quizAnswerText(i + start + 1, technicalAnswers[i]);
     return { question: q, answer, correct: answer === q.options[q.correct], unknown: answer === QUIZ_UNKNOWN };
   });
 }
@@ -1728,20 +1794,23 @@ function renderQuizResult() {
   const correct = diagnostic.filter(item => item.correct).length;
   const unknown = diagnostic.filter(item => item.unknown).length;
   const recommendations = quizTrackOrder(quizAnswers, quizAnswers[1]).slice(0, 3);
-  const title = correct === diagnostic.length ? 'Uma ótima base para continuar.' : 'Todo começo é um ponto de partida.';
+  const title = correct === 0 ? 'Vamos começar pelo básico.'
+    : correct === diagnostic.length ? 'Você identificou os conceitos iniciais.'
+    : correct <= 3 ? 'Você já reconhece alguns conceitos.'
+    : 'Você reconhece boa parte dos conceitos iniciais.';
   const review = diagnostic.map(item => {
     const q = item.question;
     const badge = item.correct ? 'Acertou' : item.unknown ? 'Ainda não sei' : 'Para revisar';
     return `<details class="quiz-review-item">
       <summary><span>${escapeHtml(q.q)}</span><span class="quiz-review-badge ${item.correct ? 'is-correct' : 'is-review'}">${badge}</span></summary>
-      <div><p><strong>Sua resposta:</strong> ${escapeHtml(item.answer)}</p>
+      <div>${q.code ? `<pre class="quiz-code"><code>${escapeHtml(q.code)}</code></pre>` : ''}<p><strong>Sua resposta:</strong> ${escapeHtml(item.answer)}</p>
         ${item.correct ? '' : `<p><strong>Resposta correta:</strong> ${escapeHtml(q.options[q.correct])}</p>`}
         <p>${escapeHtml(q.explanation)}</p></div>
     </details>`;
   }).join('');
   document.getElementById('quiz-steps').innerHTML = `
     <div class="quiz-result">
-      <div class="quiz-result-heading"><div><p class="quiz-step-number">DIAGNÓSTICO CONCLUÍDO</p><h3 id="quiz-result-title" tabindex="-1">${title}</h3><p>Suas respostas foram salvas. Use este resultado como um guia para aprender, não como uma nota final.</p></div><div class="quiz-score"><strong>${correct}<span>/${diagnostic.length}</span></strong><small>acertos</small></div></div>
+      <div class="quiz-result-heading"><div><p class="quiz-step-number">DIAGNÓSTICO CONCLUÍDO</p><h3 id="quiz-result-title" tabindex="-1">${title}</h3><p>Suas respostas foram salvas. Este resultado indica por onde começar, mas não mede experiência prática ou conhecimento avançado.</p></div><div class="quiz-score"><strong>${correct}<span>/${diagnostic.length}</span></strong><small>acertos</small></div></div>
       ${unknown ? `<p class="quiz-result-caption">${unknown} ${unknown === 1 ? 'resposta ficou' : 'respostas ficaram'} como “Ainda não sei”. Tudo bem: elas também ajudam a indicar o que estudar.</p>` : ''}
       <div class="quiz-result-meta"><span><small>ÁREA DE INTERESSE</small><strong>${escapeHtml(quizAnswers[1])}</strong></span><span><small>SEU RITMO</small><strong>${escapeHtml(quizAnswers[3])}</strong></span></div>
       <p class="quiz-pace-tip">${escapeHtml(quizPaceTips[quizAnswers[3]] || 'Siga no seu ritmo e reserve um momento para praticar.')}</p>
@@ -1963,8 +2032,8 @@ function renderNivelamento() {
     : '<p class="quiz-profile-legacy">Suas respostas anteriores foram mantidas. Faça o diagnóstico ampliado para receber sugestões por conhecimento.</p>';
   const answers = rows.map(r => `
     <div class="bg-white/5 rounded-lg p-3 mb-2 text-sm">
-      <p class="text-white/40 text-xs mb-1">${escapeHtml(quizQuestionLabel(r.question))}</p>
-      <p>${escapeHtml(r.answer)}</p>
+      <p class="text-white/40 text-xs mb-1">${escapeHtml(quizQuestionLabel(r.question, r.answer))}</p>
+      <p>${escapeHtml(quizAnswerText(r.question, r.answer))}</p>
     </div>`).join('');
 
   el.innerHTML = `${summary}<details class="quiz-profile-answers"><summary>Ver minhas respostas</summary>${answers}</details>
@@ -3223,10 +3292,9 @@ async function adminHandleToggleBlock(id, nome, isCurrentlyBlocked) {
 
 // ===== ADMIN: DETALHES DE UM ALUNO (quiz, projetos, certificados) =====
 
-// O banco guarda só o número da pergunta ("question" é um inteiro 1..N,
-// mas contas antigas podem ter o texto "Pergunta N"). Aqui a gente
-// recupera o texto real usando o mesmo array quizQuestions que monta o
-// quiz — assim a resposta aparece com a pergunta, não só um número.
+// O banco guarda o número da pergunta (contas antigas podem ter o texto
+// "Pergunta N") e a resposta. O marcador das questões básicas permite exibir
+// o enunciado correspondente à versão que cada pessoa realmente respondeu.
 function quizQuestionIndex(question) {
   const s = String(question == null ? '' : question);
   const named = /Pergunta\s*(\d+)/i.exec(s);
@@ -3235,9 +3303,13 @@ function quizQuestionIndex(question) {
   return Number.isInteger(n) && n > 0 ? n - 1 : -1;
 }
 
-function quizQuestionLabel(question) {
+function quizQuestionLabel(question, answer) {
   const idx = quizQuestionIndex(question);
-  if (idx >= 0 && quizQuestions[idx]) return quizQuestions[idx].q;
+  if (idx >= 0 && quizQuestions[idx]) {
+    const questions = idx >= quizProfileQuestions.length && !isBasicQuizAnswer(answer)
+      ? quizPreviousQuestions : quizQuestions;
+    return questions[idx].q;
+  }
   return question;
 }
 
@@ -3278,8 +3350,8 @@ function renderStudentDetailModal(quizRows, projRows, certRows) {
   const quizHtml = quizRows.length
     ? quizRows.map(q => `
         <div class="bg-white/5 rounded-lg p-3 mb-2 text-sm">
-          <p class="text-white/40 text-xs mb-1">${escapeHtml(quizQuestionLabel(q.question))}</p>
-          <p>${escapeHtml(q.answer)}</p>
+          <p class="text-white/40 text-xs mb-1">${escapeHtml(quizQuestionLabel(q.question, q.answer))}</p>
+          <p>${escapeHtml(quizAnswerText(q.question, q.answer))}</p>
         </div>
       `).join('')
     : '<p class="text-white/40 text-sm">Quiz não realizado.</p>';
