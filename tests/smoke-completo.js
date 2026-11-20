@@ -239,9 +239,10 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   check(!window.document.getElementById('briefing-modal').classList.contains('hidden'), 'briefing abre ao clicar em Ver briefing');
   check(window.document.getElementById('briefing-body').textContent.includes('Contexto do cliente'), 'briefing mostra o contexto do cliente');
   window.closeBriefing();
-  const projBtn = window.document.querySelector('#projects-grid button[onclick*="startProject(1,"]');
-  await window.startProject(1, 'Calculadora', projBtn);
-  check(completedProjects.includes(1), 'concluir projeto atualiza o estado local após confirmação');
+  check(window.document.getElementById('projects-grid').textContent.includes('Abrir laboratório'), 'projetos disponíveis exibem acesso ao laboratório');
+  const projBtn = window.document.querySelector('#projects-grid button[onclick*="startProject(5,"]');
+  await window.startProject(5, 'Sistema de Login', projBtn);
+  check(completedProjects.includes(5), 'conclusão manual atualiza o estado local após confirmação');
 
   // ============================================================
   // 9. CERTIFICADOS

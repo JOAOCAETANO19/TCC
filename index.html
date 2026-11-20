@@ -474,11 +474,63 @@
 
           <!-- PROJETOS -->
           <div class="tab-content" id="tab-projetos">
-            <div class="fade-in">
+            <div id="projects-overview" class="fade-in">
               <h2 class="text-2xl font-bold mb-2">Projetos Práticos</h2>
-              <p class="text-white/50 mb-6">Desenvolva projetos reais para seu portfólio.</p>
+              <p class="text-white/50 mb-6">Pratique no laboratório ou explore os briefings para criar seu portfólio.</p>
               <div id="projects-grid" class="space-y-6"></div>
             </div>
+            <section id="project-lab" class="project-lab hidden" aria-labelledby="project-lab-title">
+              <button type="button" class="lab-back" onclick="closeProjectLab()">← Voltar aos projetos</button>
+              <div class="lab-hero">
+                <div><p class="lab-eyebrow">LABORATÓRIO DE PROJETOS</p><h2 id="project-lab-title" tabindex="-1"></h2><p id="project-lab-intro"></p></div>
+                <span class="lab-badge">HTML + CSS + JS</span>
+              </div>
+              <details class="lab-instructions" open>
+                <summary>O que você precisa fazer</summary>
+                <p id="project-lab-goal"></p>
+                <ul id="project-lab-requirements"></ul>
+                <p class="lab-instructions-note" id="project-lab-contract"></p>
+              </details>
+              <div class="lab-workspace">
+                <div class="lab-column">
+                  <div class="lab-panel lab-editor-panel">
+                    <div class="lab-panel-heading"><div><p class="lab-eyebrow">SEU CÓDIGO</p><h3>Editor</h3></div><span id="project-lab-save" class="lab-save-status" role="status">Salvo neste navegador</span></div>
+                    <div class="lab-tabs" role="tablist" aria-label="Arquivos do projeto">
+                      <button type="button" role="tab" id="lab-tab-html" aria-controls="lab-panel-html" aria-selected="true" onclick="selectProjectLabTab('html')">HTML</button>
+                      <button type="button" role="tab" id="lab-tab-css" aria-controls="lab-panel-css" aria-selected="false" tabindex="-1" onclick="selectProjectLabTab('css')">CSS</button>
+                      <button type="button" role="tab" id="lab-tab-js" aria-controls="lab-panel-js" aria-selected="false" tabindex="-1" onclick="selectProjectLabTab('js')">JavaScript</button>
+                    </div>
+                    <div id="lab-panel-html" role="tabpanel" aria-labelledby="lab-tab-html" class="lab-editor-pane"><label class="lab-sr-only" for="lab-code-html">Código HTML</label><textarea id="lab-code-html" class="lab-code" spellcheck="false" maxlength="50000"></textarea></div>
+                    <div id="lab-panel-css" role="tabpanel" aria-labelledby="lab-tab-css" class="lab-editor-pane" hidden><label class="lab-sr-only" for="lab-code-css">Código CSS</label><textarea id="lab-code-css" class="lab-code" spellcheck="false" maxlength="50000"></textarea></div>
+                    <div id="lab-panel-js" role="tabpanel" aria-labelledby="lab-tab-js" class="lab-editor-pane" hidden><label class="lab-sr-only" for="lab-code-js">Código JavaScript</label><textarea id="lab-code-js" class="lab-code" spellcheck="false" maxlength="50000"></textarea></div>
+                    <div class="lab-editor-actions">
+                      <button type="button" class="lab-button lab-button-primary" onclick="runProjectLabPreview()">▶ Executar projeto</button>
+                      <button type="button" class="lab-button lab-button-subtle" onclick="resetProjectLabDraft()">Restaurar código inicial</button>
+                    </div>
+                    <p class="lab-hint">Rascunho salvo apenas neste navegador e dispositivo. Não coloque senhas nem dados pessoais no código.</p>
+                    <p class="lab-hint">Escreva o JavaScript na aba própria: scripts no HTML e bibliotecas externas não são executados.</p>
+                  </div>
+                </div>
+                <div class="lab-column">
+                  <div class="lab-panel lab-preview-panel">
+                    <div class="lab-panel-heading"><div><p class="lab-eyebrow">VEJA O RESULTADO</p><h3>Prévia</h3></div><span class="lab-preview-label">Ambiente isolado</span></div>
+                    <iframe id="project-lab-preview" title="Prévia do projeto" sandbox="allow-scripts allow-forms" referrerpolicy="no-referrer"></iframe>
+                    <p id="project-lab-preview-status" class="lab-hint" role="status">Clique em Executar projeto para atualizar a prévia.</p>
+                  </div>
+                  <div class="lab-panel lab-tests-panel">
+                    <div class="lab-panel-heading"><div><p class="lab-eyebrow">PASSO A PASSO</p><h3>Testes do projeto</h3></div></div>
+                    <p class="lab-hint">Os testes conferem apenas alguns requisitos no seu navegador. Eles não comprovam autoria, qualidade integral nem impedem manipulação.</p>
+                    <div class="lab-test-actions">
+                      <button type="button" id="project-lab-test" class="lab-button lab-button-primary" onclick="testProjectLab()">Testar projeto</button>
+                      <button type="button" id="project-lab-complete" class="lab-button lab-button-subtle" onclick="completeProjectLab()" disabled>Concluir projeto</button>
+                    </div>
+                    <p id="project-lab-test-status" class="lab-test-status" role="status" aria-live="polite">Execute os testes para ver o que falta.</p>
+                    <ul id="project-lab-results" class="lab-results" aria-label="Resultados dos testes"></ul>
+                  </div>
+                </div>
+              </div>
+              <div id="project-lab-test-slot" class="lab-test-slot" aria-hidden="true"></div>
+            </section>
           </div>
 
           <!-- PORTFÓLIO -->
@@ -627,6 +679,7 @@
     <script src="supabase.js"></script>
     <script src="course-content.js"></script>
     <script src="script.js"></script>
+    <script src="project-labs.js"></script>
 
   </div>
 </body>

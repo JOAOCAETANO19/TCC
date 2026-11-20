@@ -8,6 +8,7 @@ Plataforma educacional gamificada para estudantes de desenvolvimento de sistemas
 - **Sistema publicado no GitHub Pages:** [joaocaetano19.github.io/TCC](https://joaocaetano19.github.io/TCC/)
 - **Modelo do certificado visual:** na tela de login, use **Ver modelo do certificado visual** (não grava dados no banco)
 - **Briefing dos projetos:** aba **Projetos** → botão **Ver briefing** em qualquer card
+- **Laboratórios:** aba **Projetos** → **Abrir laboratório** na Calculadora, Lista de Tarefas, Relógio Digital, Dashboard Analytics ou Quiz Interativo
 - **Menu mobile:** abra o sistema em uma tela de até 768px e use o botão de menu no topo
 - **Portfólio público:** na aba **Portfólio**, use **Publicar portfólio** e compartilhe o link `https://joaocaetano19.github.io/TCC/#publico/<id>` — ele abre a visão pública do portfólio sem exigir login
 - **Foto de perfil:** na aba **Perfil**, use **Alterar foto** (JPG ou PNG, até 2 MB), confira a prévia e salve; a foto aparece no topo, no portfólio e na visão pública — visitantes anônimos só a veem se o portfólio estiver público
@@ -23,6 +24,7 @@ Plataforma educacional gamificada para estudantes de desenvolvimento de sistemas
 - **Certificação por aproveitamento:** para emitir um novo certificado, é preciso marcar as 3 aulas, enviar uma resposta para a atividade prática (30 a 4.000 caracteres) e acertar ao menos **5 das 6 questões** da avaliação final (mínimo de 80%). A prova é corrigida no banco, pode ser refeita e apresenta feedback. A primeira aprovação emite o diploma e concede 30 XP; abrir uma matéria continua concedendo 10 XP uma vez. Progresso, atividade e tentativas são salvos por aluno. Certificados anteriores são preservados;
 - **Certificado visual:** diploma renderizado em canvas, com download em PNG e impressão em PDF;
 - **Briefing de projetos:** cada um dos 9 projetos práticos abre um briefing no formato usado no mercado, com contexto do cliente, tecnologias sugeridas, requisitos funcionais, entregáveis e critérios de aceite;
+- **Laboratórios de projetos:** cinco projetos que funcionam no navegador têm editor HTML/CSS/JavaScript, prévia isolada, testes locais por requisito e rascunho salvo no dispositivo. Os outros quatro continuam com conclusão manual identificada na interface;
 - **Menu mobile:** em telas de até 768px a barra lateral vira uma gaveta acionada pelo botão de menu, com fundo escurecido, fechamento pelo `Esc`, por clique fora e ao escolher uma aba;
 - **Portfólio digital:** reúne XP, projetos concluídos e certificados do aluno;
 - **Portfólio público:** o aluno publica ou torna privado o portfólio na aba Portfólio e copia o link `#publico/<id>`, que abre uma visão pública sem login com apenas os dados autorizados;
@@ -30,6 +32,17 @@ Plataforma educacional gamificada para estudantes de desenvolvimento de sistemas
 - **Recuperação de senha:** o link **Esqueci minha senha** na tela de login envia um e-mail com o link de redefinição (Supabase Auth); ao abrir o link, o aluno cai direto na tela de nova senha, troca a senha e entra com ela;
 - **Acessibilidade e desempenho:** os modais são diálogos acessíveis (`role="dialog"`, `aria-modal`, rótulo, foco que entra no modal e volta para o botão de origem, fechamento por `Esc` no modal mais acima), o CSS respeita `prefers-reduced-motion` para quem prefere menos animações e o `<head>` faz `preconnect`/`dns-prefetch` dos CDNs (Tailwind, jsDelivr e Google Fonts);
 - **Feedback visível de falhas:** erros de gravação (quiz, progresso, foto, projeto, portfólio) aparecem como toast, não só no console.
+
+## Como praticar nos laboratórios
+
+1. Na aba **Projetos**, abra um dos cinco laboratórios. Cada um começa com HTML e CSS de apoio e JavaScript incompleto; leia os requisitos e mantenha os IDs e atributos indicados para que os testes encontrem os elementos.
+2. Edite os arquivos nas abas e clique em **Executar projeto** para atualizar a prévia. Escreva o JavaScript na aba própria: scripts colocados no HTML e bibliotecas externas não são executados.
+3. Clique em **Testar projeto** e corrija os itens indicados. Quando todos passarem, **Concluir projeto** registra a conclusão e a recompensa no Supabase. Alterar o código após o teste exige uma nova execução dos testes.
+4. O código e os dados da prévia ficam apenas neste navegador e dispositivo, separados por conta e projeto; limpar os dados do navegador os apaga. Sair da conta não os remove, e outra pessoa com acesso ao dispositivo pode inspecioná-los. Não inclua senhas ou dados pessoais. **Restaurar código inicial** substitui o rascunho depois de uma confirmação, mas não apaga os dados da prévia.
+
+A Lista de Tarefas e o Quiz usam `localStorage.getItem`/`setItem` virtualizados na prévia. O Dashboard usa `LAB.buscarDashboard(periodo)` com dados de exemplo, e o Quiz usa `LAB.perguntas` e `LAB.tempoPorPergunta`; não há consulta a uma API real. A prévia e os testes são ambientes separados: os testes não alteram os dados usados na prévia. Projetos concluídos anteriormente e XP existente são preservados; é possível abrir um projeto concluído para praticar novamente sem ganhar XP duplicado. Sistema de Login, E-commerce, Rede Social e Chat em Tempo Real mantêm **conclusão manual**.
+
+Os testes são exercícios formativos feitos no próprio navegador e cobrem apenas os casos apresentados. Eles não comprovam autoria, qualidade integral ou segurança do projeto. A RPC de XP existente não avalia código e pode ser chamada diretamente por um usuário autenticado; a regra no banco impede recompensa duplicada, não manipulação da conclusão. Não é necessária migração de banco para os laboratórios.
 
 ## Tecnologias
 
@@ -74,7 +87,11 @@ set is_admin = true
 where email = 'administrador@exemplo.com';
 ```
 
-O script é idempotente para uma instalação nova e inclui tabelas, dados iniciais, índices, RLS, triggers, funções RPC e o bucket de Storage utilizados pela aplicação. Para uma instalação existente, execute:
+O script inclui tabelas, dados iniciais, índices, RLS, triggers, funções RPC e o bucket de Storage utilizados pela aplicação.
+
+> **Atenção:** o esquema versionado ainda não reproduz integralmente as proteções de bloqueio de conta existentes na instância atual. Em teste local, uma conta bloqueada conseguiu alterar sua própria flag `is_blocked`. Reaplicar `schema.sql` ou o histórico `correcao-xp.sql` pode substituir proteções mais recentes. Revise e corrija essas diferenças antes de criar outro banco ou reaplicar scripts em uma instalação existente. Os laboratórios não exigem migração.
+
+Para uma instalação existente, a sequência histórica de migrações é:
 
 1. [`database/correcao-xp.sql`](database/correcao-xp.sql)
    - corrige as funções de premiação do XP;
@@ -101,7 +118,7 @@ O script é idempotente para uma instalação nova e inclui tabelas, dados inici
    - amplia o armazenamento para dez respostas e registra a recompensa de forma idempotente, sem excluir respostas antigas nem alterar o XP existente;
    - mantém compatibilidade com o formulário antigo de três perguntas.
 
-Os arquivos incrementais são idempotentes. Para uma instalação nova, `database/schema.sql` já inclui as duas migrações. Se reaplicar scripts históricos, reaplique ao final as migrações de cursos e de nivelamento. Sem a migração dos cursos, o Centro de Estudos não permite salvar aulas ou iniciar a avaliação; sem a migração do nivelamento, o diagnóstico ampliado não conseguirá salvar todas as respostas.
+Os arquivos incrementais usam comandos idempotentes, mas uma versão histórica ainda pode substituir funções ou políticas mais recentes: não os reaplique sem a revisão de segurança mencionada acima. `database/schema.sql` inclui as migrações de cursos e nivelamento, além da limitação de bloqueio já mencionada. Sem a migração dos cursos, o Centro de Estudos não permite salvar aulas ou iniciar a avaliação; sem a migração do nivelamento, o diagnóstico ampliado não conseguirá salvar todas as respostas.
 
 ## Estrutura
 
@@ -109,6 +126,7 @@ Os arquivos incrementais são idempotentes. Para uma instalação nova, `databas
 index.html                         interface e telas da aplicação
 style.css                          estilos complementares, diploma visual, menu mobile e briefing
 script.js                          estado, renderização e regras de interação
+project-labs.js                    desafios, prévia isolada, testes e rascunhos locais
 course-content.js                  videoaulas, objetivos e práticas dos 12 cursos
 supabase.js                        cliente Supabase e chamadas ao backend
 package.json / package-lock.json   dependências e comandos de teste
@@ -131,7 +149,10 @@ tests/
   cursos-integracao.js             jornada da interface com o schema real (PGlite)
   nivelamento-interface.js         navegação, feedback, falhas e sessões do diagnóstico
   nivelamento-banco.js             migração, legado, permissões e XP no PostgreSQL
-  nivelamento-integracao.js        diagnóstico do navegador ao banco real (PGlite)
+  nivelamento-integracao.js        diagnóstico da interface ao banco local (PGlite)
+  projetos-laboratorio.js          requisitos, rascunhos, sessões e feedback dos laboratórios
+  projetos-integracao.js           fluxo de projetos e RPC de XP em banco local (PGlite)
+  fixtures/projetos-solucoes.js    soluções de referência usadas nos testes
 ```
 
 ## Testes
@@ -143,7 +164,7 @@ npm ci
 npm test
 ```
 
-As suítes também podem ser executadas individualmente com `node tests/<nome-do-arquivo>.js`.
+As suítes também podem ser executadas individualmente com `node tests/<nome-do-arquivo>.js`. A suíte dos laboratórios executa soluções de referência em DOMs separados, mas o jsdom não aplica as restrições reais de sandbox e CSP; valide também a prévia, os formulários e a responsividade em um navegador moderno.
 
 ## Publicação
 
@@ -154,6 +175,8 @@ O site é publicado pelo GitHub Pages a partir da raiz da branch `main`. Para pu
 A chave publicável do Supabase pode aparecer no navegador; a proteção dos dados depende das políticas RLS e das funções `SECURITY DEFINER` do banco. A conta de login do Supabase Auth só pode ser removida com a Admin API e, portanto, a exclusão de aluno no painel remove os dados acadêmicos, não a identidade Auth.
 
 O diagnóstico inicial é formativo: seus desafios verificam noções básicas e são corrigidos no navegador. O gabarito é público e o resultado não mede experiência prática ou conhecimento avançado, não emite certificado nem comprova domínio técnico. As respostas ficam armazenadas no banco para o aluno e administradores autorizados.
+
+Os laboratórios usam iframes em sandbox e uma política que bloqueia chamadas de API, recursos externos e envio de formulários a destinos externos no documento da prévia. Links ou scripts ainda podem navegar o próprio quadro; código com loop pode travar a página. Não execute código desconhecido nem trate os testes ou a RPC de XP como proteção antifraude.
 
 A marcação das aulas é **manual**: o sistema não verifica se o vídeo foi assistido, e a atividade escrita não é corrigida automaticamente. Os vídeos são de terceiros e podem ficar indisponíveis; há links para abri-los no YouTube. A avaliação dificulta a emissão casual, mas não é uma prova supervisionada ou antifraude: o projeto é público e o gabarito da carga inicial está no SQL versionado. Para certificação de maior rigor, seria necessário manter um banco privado de questões e adotar mecanismos adicionais de verificação.
 

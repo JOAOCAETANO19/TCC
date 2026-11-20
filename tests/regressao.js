@@ -158,13 +158,13 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   window.__testHooks.setCompleted([]); window.__testHooks.setAuth('u1');
   const button = window.document.createElement('button');
   window.awardProjectXP = async () => { throw new Error('Network'); };
-  await window.startProject(1, 'Calculadora', button);
+  await window.startProject(5, 'Sistema de Login', button);
   check(window.__testHooks.getCompleted().length === 0, 'falha ao salvar não conclui projeto localmente');
   check(button.disabled === false && button.textContent === 'Tentar novamente', 'falha reativa botão para tentar novamente');
   check(window.document.getElementById('toast-container').textContent.includes('Não foi possível salvar'), 'falha mostra toast de erro');
   window.awardProjectXP = async () => {};
-  await window.startProject(1, 'Calculadora', button);
-  check(window.__testHooks.getCompleted().includes(1) && button.textContent.includes('Concluído'), 'sucesso conclui somente após confirmação');
+  await window.startProject(5, 'Sistema de Login', button);
+  check(window.__testHooks.getCompleted().includes(5) && button.textContent.includes('Concluído'), 'sucesso conclui somente após confirmação');
 
   // Supabase deve propagar erro de getSession em vez de fingir sessão ausente.
   check(supabaseSource.includes('if (error) throw new Error(error.message)'), 'getSession propaga falha de rede');

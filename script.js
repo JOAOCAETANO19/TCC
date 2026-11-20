@@ -278,6 +278,7 @@ const subjectExtras = {
   }
 };
 
+const PROJECT_LAB_IDS = new Set([1, 2, 3, 4, 6]);
 const projects = [
   {
     level: "Iniciante", color: "text-green-400", border: "border-green-500/30",
@@ -1318,6 +1319,7 @@ function cancelPasswordRecovery() {
 async function handleLogout() {
   resetCourseSession();
   resetQuizSession();
+  if (window.ProjectLab) window.ProjectLab.reset();
   await supabaseLogout();
   currentUser       = null;
   currentAuthId     = null;
@@ -1365,6 +1367,7 @@ function rejectBlockedSession() {
 async function loadUserExtras(userId) {
   const session = courseSessionVersion;
   const quizRowsBeforeLoad = userQuizRows;
+  const projectsBeforeLoad = completedProjects;
   const certsBeforeLoad = new Set(userCerts.map(cert => cert.subject_id));
   const [projs, certs, quizRows] = await Promise.all([
     fetchUserProjects(userId),
@@ -1372,7 +1375,10 @@ async function loadUserExtras(userId) {
     fetchQuizAnswers(userId)
   ]);
   if (session !== courseSessionVersion || userId !== currentAuthId) return;
-  completedProjects = projs.map(p => p.project_id);
+  const fetchedProjects = projs.map(p => p.project_id);
+  // Uma conclusão recente não pode ser apagada por uma leitura mais antiga.
+  completedProjects = completedProjects === projectsBeforeLoad
+    ? fetchedProjects : [...new Set([...fetchedProjects, ...completedProjects])];
   // Uma aprovação pode ocorrer enquanto esta leitura ainda está em andamento.
   // Não descarte o certificado recém-confirmado por uma resposta mais antiga.
   const fetchedIds = new Set(certs.map(cert => cert.subject_id));
@@ -1392,6 +1398,11 @@ async function loadUserExtrasSafe(userId) {
     renderDashboard();
     const profileTab = document.getElementById('tab-perfil');
     if (profileTab && profileTab.classList.contains('active')) renderNivelamento();
+    const projectsTab = document.getElementById('tab-projetos');
+    if (projectsTab && projectsTab.classList.contains('active')) {
+      renderProjects();
+      if (window.ProjectLab) window.ProjectLab.refresh();
+    }
     const studiesTab = document.getElementById('tab-estudos');
     if (studiesTab && studiesTab.classList.contains('active')) {
       if (activeSubjectId) {
@@ -1413,6 +1424,7 @@ async function loadUserExtrasSafe(userId) {
 function enterApp() {
   resetCourseSession();
   resetQuizSession();
+  if (window.ProjectLab) window.ProjectLab.reset();
   document.getElementById('boot-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'none';
   hideLanding();
@@ -1920,6 +1932,7 @@ window.addEventListener('resize', () => {
 // ===== TABS =====
 
 function switchTab(tab) {
+  if (tab !== 'projetos' && window.ProjectLab) window.ProjectLab.reset();
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
@@ -2740,20 +2753,20 @@ function renderProjects() {
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
         ${level.items.map(p => {
           const done = completedProjects.includes(p.dbId);
+          const hasLab = PROJECT_LAB_IDS.has(p.dbId);
           return `
             <div class="card-glass rounded-xl p-5 border ${level.border}">
               <h4 class="font-semibold mb-1">${p.name}</h4>
               <p class="text-white/50 text-xs mb-2">${p.desc}</p>
-              <p class="text-xs mb-3">${p.difficulty}</p>
+              <p class="text-xs mb-3">${p.difficulty} · ${hasLab ? 'Laboratório no site' : 'Conclusão manual'}</p>
               <button onclick="openBriefing(${p.dbId})"
                 class="btn-secondary px-3 py-1.5 rounded text-xs w-full mb-2">
                 Ver briefing
               </button>
-              <button onclick="startProject(${p.dbId}, '${p.name}', this)"
+              ${hasLab ? `<button onclick="openProjectLab(${p.dbId})" class="btn-primary px-3 py-1.5 rounded text-xs w-full">${done ? 'Praticar novamente' : 'Abrir laboratório'}</button>` : `<button onclick="startProject(${p.dbId}, '${p.name}', this)"
                 class="btn-primary px-3 py-1.5 rounded text-xs w-full ${done ? 'opacity-50' : ''}"
-                ${done ? 'disabled' : ''}>
-                ${done ? '✅ Concluído!' : 'Concluir Projeto'}
-              </button>
+                ${done ? 'disabled' : ''}>${done ? '✅ Concluído!' : 'Concluir manualmente'}</button>`}
+              ${done && hasLab ? '<p class="text-white/50 text-xs mt-2">✅ Projeto já concluído</p>' : ''}
             </div>
           `;
         }).join('')}
@@ -2761,6 +2774,22 @@ function renderProjects() {
     </div>
   `).join('');
 }
+
+// O laboratório funciona no navegador; seus testes são educativos e não
+// substituem uma validação antifraude no servidor.
+function openProjectLab(projectId) {
+  if (!PROJECT_LAB_IDS.has(projectId) || !window.ProjectLab) {
+    showToast('O laboratório não está disponível. Atualize a página e tente novamente.', 'error');
+    return;
+  }
+  window.ProjectLab.open(projectId);
+}
+function closeProjectLab() { if (window.ProjectLab) window.ProjectLab.close(); }
+function selectProjectLabTab(tab) { if (window.ProjectLab) window.ProjectLab.selectTab(tab); }
+function runProjectLabPreview() { if (window.ProjectLab) window.ProjectLab.preview(); }
+function testProjectLab() { if (window.ProjectLab) window.ProjectLab.test(); }
+function completeProjectLab() { if (window.ProjectLab) window.ProjectLab.complete(); }
+function resetProjectLabDraft() { if (window.ProjectLab) window.ProjectLab.restoreStarter(); }
 
 // ===== BRIEFING: ABRIR / FECHAR =====
 
@@ -2813,12 +2842,15 @@ function openBriefing(projectId) {
     </div>
   `;
 
-  // O botão do rodapé conclui o projeto e fecha o briefing
   const startBtn = document.getElementById('briefing-start-btn');
-  startBtn.disabled = done;
-  startBtn.classList.toggle('opacity-50', done);
-  startBtn.textContent = done ? '✅ Concluído!' : 'Concluir Projeto';
-  startBtn.onclick = done ? null : async () => {
+  const hasLab = PROJECT_LAB_IDS.has(projectId);
+  startBtn.disabled = done && !hasLab;
+  startBtn.classList.toggle('opacity-50', done && !hasLab);
+  startBtn.textContent = hasLab ? (done ? 'Praticar novamente' : 'Abrir laboratório') : (done ? '✅ Concluído!' : 'Concluir manualmente');
+  startBtn.onclick = hasLab ? () => {
+    closeBriefing();
+    openProjectLab(projectId);
+  } : done ? null : async () => {
     closeBriefing();
     const cardBtn = document.querySelector(`#projects-grid button[onclick*="startProject(${projectId},"]`);
     if (cardBtn) {
@@ -2842,20 +2874,29 @@ function closeBriefing() {
 }
 
 async function startProject(projectId, projectName, btn) {
-  if (completedProjects.includes(projectId)) return;
-
+  if (!btn || !currentUser || !currentAuthId || completedProjects.includes(projectId)) return;
+  if (PROJECT_LAB_IDS.has(projectId) && (!window.ProjectLab || !window.ProjectLab.canComplete(projectId))) {
+    showToast('Passe nos testes do laboratório antes de concluir este projeto.', 'error');
+    return;
+  }
+  const uid = currentAuthId;
+  const session = courseSessionVersion;
   btn.disabled = true;
   btn.textContent = 'Salvando...';
 
   try {
-    // Só atualiza o estado local depois de o banco confirmar a transação.
+    // O banco continua idempotente; os testes locais não são antifraude.
     await awardProjectXP(projectId);
-    currentUser = await fetchProfile(currentAuthId);
-    completedProjects.push(projectId);
+    if (session !== courseSessionVersion || uid !== currentAuthId) return;
+    const profile = await fetchProfile(uid);
+    if (session !== courseSessionVersion || uid !== currentAuthId) return;
+    currentUser = profile;
+    if (!completedProjects.includes(projectId)) completedProjects = [...completedProjects, projectId];
     btn.textContent = '✅ Concluído!';
     btn.classList.add('opacity-50');
     renderDashboard();
   } catch (e) {
+    if (session !== courseSessionVersion || uid !== currentAuthId) return;
     console.warn('Erro ao salvar projeto:', e.message);
     btn.disabled = false;
     btn.textContent = 'Tentar novamente';
