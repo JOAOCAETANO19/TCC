@@ -47,6 +47,11 @@ $$;
 -- ============================================================
 -- XP: as 4 funções de premiação recusam usuários bloqueados.
 -- ============================================================
+-- Não substitua a versão idempotente quando o nivelamento ampliado já estiver instalado.
+do $legacy_quiz$
+begin
+  if to_regclass('public.quiz_xp_awards') is null then
+    execute $legacy_fn$
 create or replace function public.award_quiz_xp(p_answers jsonb, p_track text, p_goal text)
 returns void language plpgsql security definer set search_path = public as $$
 declare uid uuid := auth.uid();
@@ -61,6 +66,10 @@ begin
     xp = xp + 50, level = public.recalculate_level(xp + 50) where id = uid;
 end;
 $$;
+$legacy_fn$;
+  end if;
+end;
+$legacy_quiz$;
 
 create or replace function public.award_subject_view_xp(p_subject_id text)
 returns void language plpgsql security definer set search_path = public as $$

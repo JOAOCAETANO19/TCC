@@ -138,17 +138,24 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
   await window.handleRegister();
   check(!window.document.getElementById('main-app').classList.contains('hidden'), 'cadastro válido entra no app');
   check(!window.document.getElementById('quiz-modal').classList.contains('hidden'), 'novo usuário vê o quiz de nivelamento');
-  check(window.document.getElementById('quiz-steps').textContent.includes('1.') && window.document.getElementById('quiz-steps').textContent.includes('nível'), 'quiz abre na primeira pergunta');
-  check(window.document.getElementById('quiz-steps').textContent.includes('1 de 3'), 'quiz indica que são 3 perguntas');
+  check(window.document.getElementById('quiz-steps').textContent.includes('Desafios rápidos'), 'quiz apresenta o diagnóstico antes de começar');
+  window.startQuiz();
+  check(window.document.getElementById('quiz-steps').textContent.includes('1 de 10') && window.document.getElementById('quiz-steps').textContent.includes('nível'), 'quiz indica dez perguntas e abre na primeira');
 
-  window.answerQuiz(0, 0, 'Iniciante total');
-  check(window.document.getElementById('quiz-steps').textContent.includes('2 de 3'), 'responder avança para a segunda pergunta');
-  window.answerQuiz(1, 0, 'Front-end');
-  window.answerQuiz(2, 2, 'Estágio em 6 meses');
+  window.selectQuizAnswer(0, 0);
+  window.nextQuizStep();
+  check(window.document.getElementById('quiz-steps').textContent.includes('2 de 10'), 'responder avança para a segunda pergunta');
+  const choices = [0, 0, 1, 2, 1, 1, 2, 2, 1];
+  for (let step = 1; step < 10; step++) {
+    window.selectQuizAnswer(step, choices[step - 1]);
+    await window.nextQuizStep();
+  }
   await tick(); await tick();
-  check(window.document.getElementById('quiz-modal').classList.contains('hidden'), 'quiz fecha após a terceira resposta');
+  check(window.document.getElementById('quiz-steps').textContent.includes('6/6') && window.document.getElementById('quiz-steps').textContent.includes('Revise seus desafios'), 'resultado apresenta pontuação e revisão');
+  window.closeQuiz();
+  check(window.document.getElementById('quiz-modal').classList.contains('hidden'), 'quiz fecha após o resultado');
   check(profile.track === 'Front-end' && profile.goal === 'Estágio em 6 meses' && profile.quiz_done === true, 'quiz salva trilha, objetivo e marca como concluído');
-  check(window.__testHooks.getQuizRows().length === 3, 'respostas do quiz ficam disponíveis para o Perfil');
+  check(window.__testHooks.getQuizRows().length === 10, 'dez respostas do quiz ficam disponíveis para o Perfil');
 
   // ============================================================
   // 3. DASHBOARD
