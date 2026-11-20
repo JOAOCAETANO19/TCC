@@ -108,9 +108,11 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
 
   // Acessibilidade
   const navItems = [...window.document.querySelectorAll('.nav-item')];
-  check(navItems.length === 9, 'os nove itens do menu existem');
+  check(navItems.length === 10, 'os dez itens do menu existem');
   check(navItems.every(el => el.tagName === 'BUTTON'), 'todos os itens do menu são buttons');
   check(css.includes(':focus-visible'), 'foco de teclado é visível');
+  check(/\.nav-item\.hidden\s*\{[^}]*display:\s*none/s.test(css), 'menu admin oculto não é reaberto pelo estilo de navegação');
+  check(/#toast-container\s*\{[^}]*pointer-events:\s*none/s.test(css), 'toast sem ações não bloqueia cliques nos botões abaixo');
   check(window.document.getElementById('login-form').tagName === 'FORM', 'login usa formulário semântico');
   check(window.document.getElementById('register-form').tagName === 'FORM', 'cadastro usa formulário semântico');
   check(window.document.getElementById('btn-login').type === 'submit' && window.document.getElementById('btn-register').type === 'submit', 'Enter submete login e cadastro');

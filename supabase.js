@@ -117,6 +117,47 @@ async function fetchProfile(userId) {
 }
 
 // ============================================================
+//  PERSONALIZAÇÃO, DESAFIOS E RANKING VOLUNTÁRIO
+//  As RPCs autenticam e filtram os dados no servidor. O ranking não
+//  consulta diretamente perfis de outros alunos pelo navegador.
+// ============================================================
+async function fetchGamificationSettings() {
+  const { data, error } = await db.rpc('get_my_gamification_settings');
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+async function saveProfileAppearance(theme, frame) {
+  const { data, error } = await db.rpc('save_profile_appearance', { p_theme: theme, p_frame: frame });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+async function fetchPublicProfileAppearance(userId) {
+  const { data, error } = await db.rpc('get_public_profile_appearance', { p_user_id: userId });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+async function fetchChallengeProgress() {
+  const { data, error } = await db.rpc('get_my_challenge_progress');
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+async function setRankingParticipation(join, alias = null) {
+  const { data, error } = await db.rpc('set_ranking_participation', { p_join: join, p_alias: alias });
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+async function fetchOptionalRanking() {
+  const { data, error } = await db.rpc('get_optional_ranking');
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+// ============================================================
 //  QUIZ — Buscar respostas de um usuário (usado no painel de admin)
 // ============================================================
 async function fetchQuizAnswers(userId) {

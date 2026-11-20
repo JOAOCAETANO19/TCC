@@ -263,6 +263,9 @@
             <button type="button" class="nav-item" data-tab="projetos" onclick="switchTab('projetos')">
               <i data-lucide="code-2" class="inline w-4 h-4 mr-2"></i>Projetos
             </button>
+            <button type="button" class="nav-item" data-tab="desafios" onclick="switchTab('desafios')">
+              <i data-lucide="target" class="inline w-4 h-4 mr-2"></i>Desafios
+            </button>
             <button type="button" class="nav-item" data-tab="portfolio" onclick="switchTab('portfolio')">
               <i data-lucide="briefcase" class="inline w-4 h-4 mr-2"></i>Portfólio
             </button>
@@ -304,12 +307,16 @@
                 <p class="text-sm text-green-400 font-semibold mb-2">🎯 Próximo Passo Recomendado</p>
                 <p id="dash-recommendation" class="text-white/80"></p>
               </div>
+              <div class="journey-dashboard-card">
+                <div><p class="journey-kicker">SUA JORNADA</p><h3>Seu progresso tem o seu estilo.</h3><p>Acompanhe metas de prática e personalize seu perfil com o XP que você já tem.</p></div>
+                <div class="journey-dashboard-actions"><button type="button" class="journey-button journey-button-primary" onclick="switchTab('desafios')">Ver desafios <span aria-hidden="true">↗</span></button><button type="button" class="journey-button journey-button-quiet" onclick="switchTab('perfil')">Personalizar perfil</button></div>
+              </div>
             </div>
           </div>
 
           <!-- PERFIL -->
           <div class="tab-content" id="tab-perfil">
-            <div class="fade-in">
+            <div class="fade-in profile-shell" id="profile-shell" data-profile-theme="original">
               <h2 class="text-2xl font-bold mb-6">Meu Perfil</h2>
               <div class="card-glass rounded-xl p-6 mb-6">
                 <h3 class="font-bold mb-3">Foto de perfil</h3>
@@ -337,6 +344,10 @@
                 </div>
                 <input type="file" id="avatar-file-input" accept="image/jpeg,image/png" class="hidden" onchange="handleAvatarFileChange(event)">
               </div>
+              <section class="profile-customizer card-glass rounded-xl p-6 mb-6" aria-labelledby="profile-customizer-title">
+                <div class="profile-customizer-heading"><div><p class="journey-kicker">SEU PERFIL, SUA CARA</p><h3 id="profile-customizer-title">Personalize sua jornada</h3><p>Desbloqueie temas e molduras com seu XP acumulado. Escolher um estilo não gasta XP nem muda seu nível.</p></div><span aria-hidden="true" class="customizer-spark">✦</span></div>
+                <div id="profile-customization" aria-live="polite"><p class="journey-status">Carregando personalização...</p></div>
+              </section>
               <div class="card-glass rounded-xl p-6 mb-6">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -533,6 +544,26 @@
             </section>
           </div>
 
+          <!-- DESAFIOS E RANKING OPCIONAL -->
+          <div class="tab-content" id="tab-desafios">
+            <div class="journey-page fade-in">
+              <section class="journey-hero" aria-labelledby="journey-title">
+                <div class="journey-hero-copy"><p class="journey-kicker">PRATICA.DEV / SUA JORNADA</p><h2 id="journey-title">Um passo de cada vez<span>.</span></h2><p>O importante é continuar praticando. Acompanhe pequenas metas feitas para celebrar seu caminho.</p></div>
+                <div class="journey-hero-art" aria-hidden="true"><span class="journey-orbit journey-orbit-one"></span><span class="journey-orbit journey-orbit-two"></span><span class="journey-star">✦</span><span class="journey-art-label">EVOLUA NO SEU RITMO</span></div>
+              </section>
+              <section class="challenge-section" aria-labelledby="challenge-title">
+                <div class="journey-section-heading"><div><p class="journey-kicker">METAS DE PRÁTICA</p><h3 id="challenge-title">Cada conquista conta</h3><p>Metas cumulativas, calculadas pelo seu histórico. Elas não concedem XP extra.</p></div><span class="journey-chip">SEM PRAZO · NO SEU RITMO</span></div>
+                <div id="challenge-content" aria-live="polite"><p class="journey-status">Carregando suas metas...</p></div>
+                <p class="journey-footnote">Contamos aulas marcadas, projetos registrados (inclusive os de conclusão manual) e certificados, incluindo os anteriores.</p>
+              </section>
+              <section class="ranking-section" aria-labelledby="ranking-title">
+                <div class="ranking-heading"><div><p class="journey-kicker">UMA COMUNIDADE, MUITOS CAMINHOS</p><h3 id="ranking-title">Ranking <span>opcional</span></h3><p>Compare seu XP apenas se quiser. Sua jornada continua a mesma sem participar.</p></div><span class="ranking-symbol" aria-hidden="true">↗</span></div>
+                <div class="ranking-privacy"><strong>Você escolhe participar.</strong><p>Somente participantes autenticados e ativos veem a lista, com apelido, posição e XP total — mesmo se seu portfólio estiver privado. O ranking não exibe nome de cadastro, foto, e-mail ou link do perfil. Use um apelido que não identifique você e não inclua dados pessoais. Você pode sair a qualquer momento.</p><p>O XP pode ser manipulado: o ranking é formativo e não comprova aprendizado ou autoria, nem deve servir de base para prêmios.</p></div>
+                <div id="ranking-content" aria-live="polite"><p class="journey-status">Carregando sua preferência...</p></div>
+              </section>
+            </div>
+          </div>
+
           <!-- PORTFÓLIO -->
           <div class="tab-content" id="tab-portfolio">
             <div class="fade-in">
@@ -678,6 +709,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase.js"></script>
     <script src="course-content.js"></script>
+    <script src="gamification.js"></script>
     <script src="script.js"></script>
     <script src="project-labs.js"></script>
 
