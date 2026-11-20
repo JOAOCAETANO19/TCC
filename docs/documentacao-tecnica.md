@@ -26,10 +26,11 @@ Navegador
 - `index.html`: marcação da página inicial (landing), login, dashboard, estudos, certificados, projetos, portfólio e administração.
 - `style.css`: tema visual, diploma e componentes que não são cobertos pelo Tailwind.
 - `script.js`: estado da sessão, eventos, renderização, certificado visual e chamadas de negócio.
+- `project-labs.js`: código inicial, dados de exemplo, isolamento da prévia, testes formativos e rascunhos locais dos cinco laboratórios.
 - `course-content.js`: três videoaulas, objetivos e práticas para cada uma das 12 matérias.
 - `supabase.js`: inicialização do cliente Supabase e funções de acesso ao backend.
 
-O frontend não tem etapa de build. Os scripts são carregados na ordem: biblioteca Supabase, `supabase.js`, `course-content.js` e `script.js`.
+O frontend não tem etapa de build. Os scripts são carregados na ordem: biblioteca Supabase, `supabase.js`, `course-content.js`, `script.js` e `project-labs.js`.
 
 ## 3. Modelo de dados
 
@@ -90,7 +91,7 @@ XP nunca é calculado pelo JavaScript. As ações chamam funções PostgreSQL:
 - `award_quiz_xp`: valida e registra as respostas, trilha e objetivo e adiciona 50 XP apenas na primeira conclusão;
 - `award_subject_view_xp`: registra a primeira visualização e adiciona 10 XP;
 - `submit_course_assessment`: corrige as respostas no banco, registra a tentativa e, na primeira aprovação, emite o certificado e adiciona 30 XP;
-- `award_project_xp`: registra o projeto e usa a recompensa do catálogo.
+- `award_project_xp`: registra o projeto e usa a recompensa do catálogo; não recebe nem avalia código. Um usuário autenticado pode chamá-la diretamente, independentemente dos testes locais.
 
 A unicidade em `quiz_xp_awards`, `subject_progress`, `certificates` e `user_projects` impede duplicar a recompensa dessas ações. O nível é recalculado no servidor pela função `recalculate_level`. A RPC antiga `award_exercise_xp` foi desativada.
 
@@ -115,6 +116,18 @@ O diagnóstico é formativo, corrigido no navegador e não supervisionado. O gab
 O registro em `certificates` é a fonte da verdade. O frontend desenha o diploma em canvas com nome, módulo, data, trilha, nível, XP e um código determinístico; oferece download em PNG e impressão/PDF. Esse código não é uma verificação criptográfica. A tela de login oferece um MODELO sem gravação.
 
 As aulas são marcadas manualmente, sem confirmação do tempo assistido. Os vídeos são externos e têm link alternativo para o YouTube. A prova é formativa e não supervisionada; como o SQL com a carga inicial de gabaritos é versionado neste repositório público, não deve ser tratada como proteção antifraude ou certificação de alto risco.
+
+### Laboratórios de projetos
+
+1. Os projetos Calculadora (1), Lista de Tarefas (2), Relógio Digital (3), Dashboard Analytics (4) e Quiz Interativo (6) oferecem editor HTML/CSS/JavaScript, prévia e feedback por requisito. Sistema de Login (5), E-commerce (7), Rede Social (8) e Chat em Tempo Real (9) preservam a conclusão manual. Os nove briefings continuam acessíveis.
+2. O HTML e o CSS iniciais servem de apoio e o JavaScript começa incompleto. Os contratos de IDs e atributos exibidos no laboratório permitem que os testes encontrem os elementos. Scripts no HTML são removidos; o JavaScript deve ser escrito na aba própria. A prévia é atualizada ao abrir ou restaurar o laboratório e ao clicar em **Executar projeto**, não a cada edição.
+3. A prévia usa `iframe` com `sandbox="allow-scripts allow-forms"`, sem `allow-same-origin` nem navegação do topo. A CSP do documento bloqueia conexões de API, scripts e outros recursos externos, além de envios de formulários; `allow-forms` permite que um formulário dispare o evento `submit` e o código do aluno o trate. Links e scripts ainda podem navegar o próprio quadro, e loops podem travar a página. O isolamento reduz o acesso do código ao DOM e ao armazenamento da aplicação, mas não é uma garantia contra todo comportamento hostil.
+4. A Lista e o Quiz recebem uma implementação virtual de `localStorage` com `getItem`, `setItem`, `removeItem`, `clear`, `key` e `length`. Na prévia, alterações são copiadas para o armazenamento do site sob uma chave por conta e projeto; nos testes, usam memória separada e não afetam a prévia. O Dashboard consome `LAB.buscarDashboard` com dados de exemplo e o Quiz recebe `LAB.perguntas` e `LAB.tempoPorPergunta`. Para testes reproduzíveis, o relógio usa data fixa, a ordem aleatória do Quiz é determinística e seu timer é acelerado.
+5. Cada execução de teste usa outro iframe com uma cópia do código. Lista e Quiz são reiniciados em um segundo iframe para conferir a recuperação dos dados. Mensagens de resultado são associadas à sessão, ao quadro, ao token e à lista esperada de testes, evitando resultados antigos ou parciais; isso não é validação antifraude. Qualquer edição invalida a aprovação. A conclusão só é liberada na interface após todos os testes passarem; a RPC existente é idempotente, mas não verifica os testes nem o código.
+6. Rascunhos e dados da prévia são salvos em `localStorage` do navegador, separados por ID de usuário e projeto, sem sincronização entre dispositivos. Cada arquivo aceita até 50.000 caracteres; o armazenamento virtual aceita até 100 chaves e 50.000 caracteres no total. Sair da conta não apaga esses dados; a limpeza do navegador os remove e pessoas com acesso ao dispositivo podem inspecioná-los. Falhas de gravação são informadas na interface. Restaurar o código inicial não apaga os dados da prévia.
+7. Projetos e XP existentes não são migrados ou removidos, e projetos já concluídos podem ser reabertos para prática. A conclusão continua registrada em `user_projects`; não há upload do código para o banco ou publicação automática do projeto. Não há migração de banco para este recurso.
+
+Os testes verificam cenários específicos, não autoria ou qualidade integral. Como o cliente e as soluções de referência são públicos e `award_project_xp` continua acessível diretamente ao usuário autenticado, o XP de projetos não é uma avaliação segura. Uma validação confiável exigiria uma arquitetura de execução e avaliação no servidor, em ambiente isolado e com controles adicionais.
 
 ### Administração
 
@@ -151,6 +164,7 @@ O bloco incremental correspondente (coluna `avatar_url`, grant da coluna ao `ano
 - O bucket `avatars` é privado: nenhuma foto tem URL pública e as políticas de `storage.objects` liberam a leitura anônima somente de fotos cujo dono publicou o portfólio (mesma regra de `portfolio_public`); a escrita é restrita à pasta do próprio usuário.
 - O upload de avatar é validado duas vezes: tipo e tamanho no cliente e limite de 2 MB/MIME (JPG/PNG) na configuração do bucket. URLs assinadas nunca são concatenadas no HTML sem escape, e a expiração ou falha delas degrada para o avatar de inicial sem quebrar as telas.
 - Alterações de XP, nível e papel administrativo são protegidas por trigger/RPC.
+- **Divergência conhecida no bloqueio:** o `schema.sql` versionado permite, em teste local, que uma conta bloqueada altere a própria coluna `is_blocked`. A instância existente tem proteções adicionais no trigger e na política de atualização de `profiles`, mas os scripts versionados não as reproduzem integralmente. Não reaplique `schema.sql` ou `correcao-xp.sql` nem crie outro banco a partir deles sem revisar e corrigir essa diferença.
 - `course_questions` não concede SELECT ao cliente; as tabelas de progresso têm SELECT restrito ao próprio aluno e não permitem escrita direta. As RPCs validam autenticação, bloqueio, curso, ordem, pré-requisitos e respostas.
 - O cliente não recebe INSERT em `certificates`, e a RPC antiga de emissão direta está desativada. As limitações da avaliação não supervisionada estão descritas acima.
 - Funções privilegiadas revalidam `auth.uid()` e, quando necessário, `is_admin` no banco.
@@ -160,7 +174,7 @@ O bloco incremental correspondente (coluna `avatar_url`, grant da coluna ao `ano
 ## 6. Instalação e configuração
 
 1. Crie um projeto Supabase.
-2. Em um banco novo, execute `database/schema.sql` no SQL Editor. Em um banco existente, aplique as migrações anteriores indicadas no README e, **por último e antes do frontend**, `database/migracao-cursos-certificados.sql`. Ela preserva certificados existentes e fecha a emissão direta.
+2. Antes de criar um banco com `database/schema.sql` ou reaplicar scripts em uma instalação existente, revise a divergência de segurança no bloqueio de contas descrita acima. Em um banco existente, as migrações de cursos e nivelamento devem ser aplicadas **antes dos respectivos frontends**; elas preservam certificados, respostas e XP existentes, e a primeira também fecha a emissão direta de certificados.
 3. Ajuste `SUPABASE_URL` e `SUPABASE_ANON` em `supabase.js` quando necessário.
 4. Sirva a raiz com `python3 -m http.server 8080`.
 5. Abra `http://localhost:8080` e faça um cadastro.

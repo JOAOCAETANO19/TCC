@@ -312,22 +312,22 @@ const tick = () => new Promise(resolve => setTimeout(resolve, 0));
     'renderCareers mostra as 9 carreiras com faixa salarial');
 
   window.switchTab('projetos');
-  window.openBriefing(1);
+  window.openBriefing(5);
   const startBtn = window.document.getElementById('briefing-start-btn');
   check(!window.document.getElementById('briefing-modal').classList.contains('hidden')
-    && startBtn.disabled === false && startBtn.textContent === 'Concluir Projeto',
-    'briefing abre com o botão Concluir Projeto habilitado');
+    && startBtn.disabled === false && startBtn.textContent === 'Concluir manualmente',
+    'briefing sem laboratório abre com a opção de conclusão manual');
 
   await startBtn.onclick();
-  const cardBtn1 = window.document.querySelector('#projects-grid button[onclick*="startProject(1,"]');
+  const cardBtn1 = window.document.querySelector('#projects-grid button[onclick*="startProject(5,"]');
   check(window.document.getElementById('briefing-modal').classList.contains('hidden')
-    && window.__testHooks.getCompleted().includes(1) && cardBtn1.textContent.includes('✅ Concluído!'),
+    && window.__testHooks.getCompleted().includes(5) && cardBtn1.textContent.includes('✅ Concluído!'),
     'concluir pelo briefing fecha o modal e marca o projeto como concluído');
 
-  failProjects.add(2);
-  window.openBriefing(2);
+  failProjects.add(7);
+  window.openBriefing(7);
   await window.document.getElementById('briefing-start-btn').onclick();
-  const cardBtn2 = window.document.querySelector('#projects-grid button[onclick*="startProject(2,"]');
+  const cardBtn2 = window.document.querySelector('#projects-grid button[onclick*="startProject(7,"]');
   check(cardBtn2.textContent === 'Tentar novamente' && cardBtn2.disabled === false,
     'falha ao concluir o projeto devolve o botão com Tentar novamente');
   check(toastText().includes('Não foi possível salvar o projeto. Verifique sua conexão e tente novamente.'),
