@@ -18,8 +18,8 @@ Plataforma educacional gamificada para estudantes de desenvolvimento de sistemas
 
 ## Recursos da interface
 
-- **Quiz de nivelamento com "Meu nivelamento":** no primeiro acesso o aluno responde 3 perguntas (nível atual, área de interesse e objetivo profissional); as respostas ficam visíveis no card **Meu nivelamento** da aba **Perfil**. Contas antigas seguem funcionando normalmente, sem repetir o quiz;
-- **Centro de Estudos:** 12 cursos, cada um com 3 videoaulas em sequência, objetivos, pequenas práticas, exemplos, erros comuns, links externos e um teste de fixação opcional. O aluno acompanha as aulas concluídas e recebe uma trilha recomendada pela área do nivelamento;
+- **Diagnóstico inicial com "Meu nivelamento":** o aluno responde 4 perguntas sobre experiência, interesse, objetivo e disponibilidade e 6 desafios de fundamentos. Há progresso, navegação entre perguntas, a opção **Ainda não sei**, explicações e sugestões de matérias. O diagnóstico pode ser adiado, revisto ou refeito no **Perfil**; respostas antigas são preservadas e os 50 XP são concedidos apenas na primeira conclusão;
+- **Centro de Estudos:** 12 cursos, cada um com 3 videoaulas em sequência, objetivos, pequenas práticas, exemplos, erros comuns, links externos e um teste de fixação opcional. O aluno acompanha as aulas concluídas e recebe uma trilha recomendada de acordo com sua área e os temas a revisar no diagnóstico;
 - **Certificação por aproveitamento:** para emitir um novo certificado, é preciso marcar as 3 aulas, enviar uma resposta para a atividade prática (30 a 4.000 caracteres) e acertar ao menos **5 das 6 questões** da avaliação final (mínimo de 80%). A prova é corrigida no banco, pode ser refeita e apresenta feedback. A primeira aprovação emite o diploma e concede 30 XP; abrir uma matéria continua concedendo 10 XP uma vez. Progresso, atividade e tentativas são salvos por aluno. Certificados anteriores são preservados;
 - **Certificado visual:** diploma renderizado em canvas, com download em PNG e impressão em PDF;
 - **Briefing de projetos:** cada um dos 9 projetos práticos abre um briefing no formato usado no mercado, com contexto do cliente, tecnologias sugeridas, requisitos funcionais, entregáveis e critérios de aceite;
@@ -92,11 +92,16 @@ O script é idempotente para uma instalação nova e inclui tabelas, dados inici
    - reconcede apenas as colunas expostas pelo portfólio público.
 
 5. **Obrigatório:** [`database/migracao-cursos-certificados.sql`](database/migracao-cursos-certificados.sql)
-   - execute no SQL Editor **depois das migrações anteriores e antes de publicar o novo frontend**;
+   - execute no SQL Editor **depois das migrações anteriores e antes de publicar o frontend dos cursos**;
    - cria aulas concluídas, atividades, tentativas e as funções que corrigem a avaliação;
    - desativa a emissão direta e o INSERT de certificados pelo cliente, sem remover diplomas antigos.
 
-Os arquivos incrementais são idempotentes. Para uma instalação nova, `database/schema.sql` já inclui a migração dos cursos. Se reaplicar migrações históricas, reaplique por último a migração de cursos. Sem ela, o novo Centro de Estudos exibe um aviso e não permite salvar aulas ou iniciar a avaliação; o banco antigo ainda precisa ser atualizado para bloquear a emissão direta.
+6. **Obrigatório para o novo diagnóstico:** [`database/migracao-nivelamento.sql`](database/migracao-nivelamento.sql)
+   - execute no SQL Editor **antes de publicar o frontend do diagnóstico**;
+   - amplia o armazenamento para dez respostas e registra a recompensa de forma idempotente, sem excluir respostas antigas nem alterar o XP existente;
+   - mantém compatibilidade com o formulário antigo de três perguntas.
+
+Os arquivos incrementais são idempotentes. Para uma instalação nova, `database/schema.sql` já inclui as duas migrações. Se reaplicar scripts históricos, reaplique ao final as migrações de cursos e de nivelamento. Sem a migração dos cursos, o Centro de Estudos não permite salvar aulas ou iniciar a avaliação; sem a migração do nivelamento, o diagnóstico ampliado não conseguirá salvar todas as respostas.
 
 ## Estrutura
 
@@ -114,6 +119,7 @@ database/
   migracao-bloqueio-usuarios.sql   bloqueio administrativo de contas
   migracao-permissoes-anon.sql     restrição por coluna do papel anon
   migracao-cursos-certificados.sql trilhas, avaliações e emissão de certificados
+  migracao-nivelamento.sql         diagnóstico ampliado e recompensa sem duplicação
 docs/
   documentacao-tecnica.md          arquitetura, banco, segurança e fluxos
 tests/
@@ -123,6 +129,9 @@ tests/
   cursos-interface.js              estados e falhas da interface de cursos
   cursos-banco.js                  regras, RLS e permissões em PostgreSQL (PGlite)
   cursos-integracao.js             jornada da interface com o schema real (PGlite)
+  nivelamento-interface.js         navegação, feedback, falhas e sessões do diagnóstico
+  nivelamento-banco.js             migração, legado, permissões e XP no PostgreSQL
+  nivelamento-integracao.js        diagnóstico do navegador ao banco real (PGlite)
 ```
 
 ## Testes
@@ -143,6 +152,8 @@ O site é publicado pelo GitHub Pages a partir da raiz da branch `main`. Para pu
 ## Segurança e limitações conhecidas
 
 A chave publicável do Supabase pode aparecer no navegador; a proteção dos dados depende das políticas RLS e das funções `SECURITY DEFINER` do banco. A conta de login do Supabase Auth só pode ser removida com a Admin API e, portanto, a exclusão de aluno no painel remove os dados acadêmicos, não a identidade Auth.
+
+O diagnóstico inicial é formativo: seus desafios são corrigidos no navegador, o gabarito é público e o resultado não emite certificado nem comprova domínio técnico. As respostas ficam armazenadas no banco para o aluno e administradores autorizados.
 
 A marcação das aulas é **manual**: o sistema não verifica se o vídeo foi assistido, e a atividade escrita não é corrigida automaticamente. Os vídeos são de terceiros e podem ficar indisponíveis; há links para abri-los no YouTube. A avaliação dificulta a emissão casual, mas não é uma prova supervisionada ou antifraude: o projeto é público e o gabarito da carga inicial está no SQL versionado. Para certificação de maior rigor, seria necessário manter um banco privado de questões e adotar mecanismos adicionais de verificação.
 

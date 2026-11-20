@@ -273,7 +273,7 @@
         </nav>
 
         <!-- CONTENT -->
-        <main class="flex-1 overflow-y-auto p-6" id="main-content">
+        <main class="flex-1 overflow-y-auto p-6" id="main-content" tabindex="-1">
 
           <!-- DASHBOARD -->
           <div class="tab-content active" id="tab-dashboard">
@@ -367,7 +367,7 @@
               </div>
               <div class="card-glass rounded-xl p-6 mb-6">
                 <h3 class="font-bold mb-3">Meu nivelamento</h3>
-                <p class="text-white/40 text-xs mb-3">Suas respostas do quiz de nivelamento, usadas para montar sua trilha de estudos.</p>
+                <p class="text-white/40 text-xs mb-3">Suas respostas ajudam a personalizar sua trilha. Você pode refazer o diagnóstico quando quiser.</p>
                 <div id="prof-nivelamento"></div>
               </div>
               <div class="card-glass rounded-xl p-6 mb-6">
@@ -538,12 +538,18 @@
       </div>
     </div>
 
-    <!-- QUIZ MODAL -->
-    <div id="quiz-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" tabindex="-1" aria-label="Quiz de nivelamento">
-      <div class="card-glass rounded-2xl p-8 w-full max-w-lg mx-4 fade-in">
-        <h2 class="text-xl font-bold mb-2 text-center">🚀 Vamos personalizar sua jornada!</h2>
-        <p class="text-white/50 text-sm text-center mb-6">Responda 3 perguntas rápidas para montar sua trilha.</p>
-        <div id="quiz-steps"></div>
+    <!-- NIVELAMENTO INICIAL -->
+    <div id="quiz-modal" class="modal-overlay quiz-overlay hidden" role="dialog" aria-modal="true" tabindex="-1" aria-labelledby="quiz-dialog-title" aria-describedby="quiz-dialog-description">
+      <div class="quiz-panel fade-in">
+        <div class="quiz-header">
+          <div class="quiz-brand">
+            <span class="quiz-brand-icon" aria-hidden="true">✦</span>
+            <div><p class="quiz-eyebrow">PRATICA.DEV / NIVELAMENTO</p><h2 id="quiz-dialog-title">Seu ponto de partida</h2></div>
+          </div>
+          <button id="quiz-close" type="button" class="quiz-close" onclick="closeQuiz()" aria-label="Fechar nivelamento">&times;</button>
+        </div>
+        <p id="quiz-dialog-description" class="sr-only">Um diagnóstico para personalizar suas recomendações de estudo.</p>
+        <div id="quiz-steps" class="quiz-body"></div>
       </div>
     </div>
 

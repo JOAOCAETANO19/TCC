@@ -517,6 +517,11 @@ let currentAuthId  = null;  // UUID do auth.users
 let completedProjects = []; // array de project_id já concluídos
 let userCerts      = [];    // array de { subject_id, title }
 let quizAnswers    = [];
+let quizStep       = 0;
+let quizPhase      = 'closed';
+let quizSubmitting = false;
+let quizRunVersion = 0;
+let quizProfileRevision = 0;
 let userQuizRows   = [];    // respostas do quiz do usuário logado (exibidas no Perfil)
 let lastCertModel  = null;  // certificado atualmente aberto no modal
 let adminDetailStudent = null;
@@ -1312,6 +1317,7 @@ function cancelPasswordRecovery() {
 
 async function handleLogout() {
   resetCourseSession();
+  resetQuizSession();
   await supabaseLogout();
   currentUser       = null;
   currentAuthId     = null;
@@ -1358,6 +1364,7 @@ function rejectBlockedSession() {
 
 async function loadUserExtras(userId) {
   const session = courseSessionVersion;
+  const quizRowsBeforeLoad = userQuizRows;
   const certsBeforeLoad = new Set(userCerts.map(cert => cert.subject_id));
   const [projs, certs, quizRows] = await Promise.all([
     fetchUserProjects(userId),
@@ -1371,7 +1378,9 @@ async function loadUserExtras(userId) {
   const fetchedIds = new Set(certs.map(cert => cert.subject_id));
   const issuedDuringLoad = userCerts.filter(cert => !certsBeforeLoad.has(cert.subject_id) && !fetchedIds.has(cert.subject_id));
   userCerts = [...issuedDuringLoad, ...certs];
-  userQuizRows = quizRows || [];
+  // Uma leitura iniciada antes de concluir/refazer o quiz não deve apagar
+  // as respostas que já foram confirmadas durante a mesma sessão.
+  if (userQuizRows === quizRowsBeforeLoad) userQuizRows = quizRows || [];
 }
 
 // Projetos e certificados não devem impedir a entrada no app.
@@ -1381,6 +1390,8 @@ async function loadUserExtrasSafe(userId) {
     await loadUserExtras(userId);
     if (session !== courseSessionVersion || userId !== currentAuthId) return;
     renderDashboard();
+    const profileTab = document.getElementById('tab-perfil');
+    if (profileTab && profileTab.classList.contains('active')) renderNivelamento();
     const studiesTab = document.getElementById('tab-estudos');
     if (studiesTab && studiesTab.classList.contains('active')) {
       if (activeSubjectId) {
@@ -1401,6 +1412,7 @@ async function loadUserExtrasSafe(userId) {
 
 function enterApp() {
   resetCourseSession();
+  resetQuizSession();
   document.getElementById('boot-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'none';
   hideLanding();
@@ -1422,63 +1434,376 @@ function enterApp() {
 }
 
 
-// ===== QUIZ =====
-
+// ===== NIVELAMENTO INICIAL =====
+// Os três primeiros IDs e seus textos preservam o formato do quiz anterior.
+// As perguntas seguintes são um diagnóstico formativo, não uma prova ou um
+// requisito para os certificados. O gabarito é público no próprio frontend.
+const QUIZ_UNKNOWN = 'Ainda não sei';
 const quizQuestions = [
-  { q: "Qual seu nível atual?",            options: ["Iniciante total", "Já sei o básico", "Intermediário"] },
-  { q: "Qual área mais te interessa?",     options: ["Front-end", "Back-end", "Full Stack", "Mobile", "Ainda não sei"] },
-  { q: "Qual seu objetivo profissional?",  options: ["Estágio em 6 meses", "Primeiro emprego em 1 ano", "Freelancer", "Criar meu próprio produto"] }
+  {
+    q: 'Qual seu nível atual?', help: 'Escolha a opção que melhor descreve sua experiência hoje.',
+    options: ['Iniciante total', 'Já sei o básico', 'Intermediário'],
+    descriptions: ['Estou começando do zero.', 'Já tive contato com alguns conceitos.', 'Consigo criar projetos e quero avançar.']
+  },
+  {
+    q: 'Qual área mais te interessa?', help: 'Não precisa ter certeza: você pode mudar sua escolha ao refazer o nivelamento.',
+    options: ['Front-end', 'Back-end', 'Full Stack', 'Mobile', 'Ainda não sei'],
+    descriptions: ['Interfaces e experiências na web.', 'Servidores, dados e regras de negócio.', 'Interfaces e servidores juntos.', 'Aplicativos para celulares.', 'Quero explorar antes de escolher.']
+  },
+  {
+    q: 'Qual seu objetivo profissional?', help: 'Isso nos ajuda a entender o que você busca com os estudos.',
+    options: ['Estágio em 6 meses', 'Primeiro emprego em 1 ano', 'Freelancer', 'Criar meu próprio produto'],
+    descriptions: ['Quero conquistar uma oportunidade de estágio.', 'Quero me preparar para minha primeira vaga.', 'Quero trabalhar em projetos para clientes.', 'Quero tirar uma ideia do papel.']
+  },
+  {
+    q: 'Quanto tempo você pode estudar por semana?', help: 'Uma estimativa já ajuda. Você pode ajustar sua rotina depois.',
+    options: ['Até 2 horas', '3 a 5 horas', '6 a 10 horas', 'Mais de 10 horas', 'Ainda estou organizando minha rotina'],
+    descriptions: ['Quero começar com passos pequenos.', 'Consigo separar alguns momentos na semana.', 'Tenho uma rotina regular de estudos.', 'Posso me dedicar com mais intensidade.', 'Ainda preciso descobrir o melhor ritmo.']
+  },
+  {
+    q: 'Qual será o valor final de pontos?', help: 'Leia o trecho e acompanhe o que acontece quando a condição é verdadeira.',
+    code: 'let pontos = 2;\nif (pontos >= 2) {\n  pontos = pontos + 3;\n}',
+    options: ['2', '3', '5', QUIZ_UNKNOWN], correct: 2, subject: 'logica',
+    explanation: 'Como 2 é maior ou igual a 2, a condição é verdadeira. O programa soma 3 ao valor inicial e pontos passa a valer 5.'
+  },
+  {
+    q: 'Qual elemento HTML identifica uma área de navegação?', help: 'Pense na estrutura semântica de uma página.',
+    options: ['<footer>', '<nav>', '<section>', QUIZ_UNKNOWN], correct: 1, subject: 'html',
+    explanation: 'O elemento <nav> identifica uma seção com links de navegação, ajudando a dar significado à estrutura da página.'
+  },
+  {
+    q: 'O que justify-content controla em um contêiner flex?', help: 'Considere o alinhamento dos itens do Flexbox.',
+    options: ['A cor do texto dos itens', 'A distribuição dos itens no eixo principal', 'O tamanho da fonte', QUIZ_UNKNOWN], correct: 1, subject: 'css',
+    explanation: 'No Flexbox, justify-content distribui e alinha os itens ao longo do eixo principal do contêiner.'
+  },
+  {
+    q: 'O que será exibido no console?', help: 'Observe como o array muda antes de consultar seu tamanho.',
+    code: 'const notas = [6, 8];\nnotas.push(10);\nconsole.log(notas.length);',
+    options: ['2', '10', '3', QUIZ_UNKNOWN], correct: 2, subject: 'js',
+    explanation: 'O método push adiciona um elemento ao array. Depois dele, notas contém três valores e length retorna 3.'
+  },
+  {
+    q: 'O que um git commit registra?', help: 'Pense no histórico local do projeto.',
+    options: ['Envia o projeto diretamente ao GitHub', 'Apaga as alterações anteriores', 'Uma versão das alterações preparadas no repositório local', QUIZ_UNKNOWN], correct: 2, subject: 'git',
+    explanation: 'O commit registra no histórico local as alterações preparadas. Para enviá-las ao repositório remoto, usamos git push.'
+  },
+  {
+    q: 'Qual consulta lista produtos com preço maior que 100?', help: 'A cláusula WHERE filtra as linhas retornadas.',
+    options: ['SELECT * FROM produtos WHERE preco < 100;', 'SELECT * FROM produtos WHERE preco > 100;', 'SELECT * FROM produtos ORDER BY preco;', QUIZ_UNKNOWN], correct: 1, subject: 'sql',
+    explanation: 'WHERE preco > 100 seleciona somente as linhas em que o preço é maior que 100. ORDER BY apenas ordena o resultado.'
+  }
 ];
 
+function resetQuizSession() {
+  quizRunVersion += 1;
+  quizProfileRevision += 1;
+  quizAnswers = [];
+  quizStep = 0;
+  quizPhase = 'closed';
+  quizSubmitting = false;
+  const modal = document.getElementById('quiz-modal');
+  const close = document.getElementById('quiz-close');
+  if (modal) modal.classList.add('hidden');
+  if (close) close.disabled = false;
+}
+
 function showQuiz() {
+  if (!currentUser || !currentAuthId || quizSubmitting) return;
+  quizRunVersion += 1;
+  quizAnswers = Array(quizQuestions.length).fill(null);
+  quizStep = 0;
+  quizPhase = 'intro';
   const modal = document.getElementById('quiz-modal');
   modal.classList.remove('hidden');
+  renderQuizIntro();
   focusDialog(modal);
-  renderQuizStep(0);
+}
+
+function renderQuizIntro() {
+  const firstName = (currentUser && currentUser.name || '').trim().split(/\s+/)[0];
+  document.getElementById('quiz-steps').innerHTML = `
+    <div class="quiz-intro">
+      <div class="quiz-kicker"><span aria-hidden="true">✳</span> FEITO PARA SUA JORNADA</div>
+      <h3>${firstName ? `Olá, ${escapeHtml(firstName)}.` : 'Vamos começar.'}<br><span>Encontre seu próximo passo.</span></h3>
+      <p>Conte sobre seus objetivos e experimente alguns desafios. Suas respostas ajudam a indicar por onde começar no Centro de Estudos.</p>
+      <div class="quiz-intro-grid">
+        <div><span class="quiz-intro-number">04</span><strong>Sobre você</strong><small>Interesses, objetivo e rotina</small></div>
+        <div><span class="quiz-intro-number">06</span><strong>Desafios rápidos</strong><small>Fundamentos de programação</small></div>
+      </div>
+      <div class="quiz-intro-note"><span aria-hidden="true">✦</span><p><strong>Sem pressão.</strong> Isto não é uma prova. Se ainda não souber uma resposta, pode escolher “Ainda não sei”.</p></div>
+      <div class="quiz-intro-actions">
+        <button id="quiz-start" type="button" class="quiz-button quiz-button-primary" onclick="startQuiz()">${quizAnswers.some(a => a !== null) ? 'Continuar diagnóstico' : 'Começar diagnóstico'} <span aria-hidden="true">→</span></button>
+        <button type="button" class="quiz-text-button" onclick="closeQuiz()">Continuar depois</button>
+      </div>
+      <p class="quiz-fineprint">Cerca de 3 a 5 minutos · 50 XP na primeira conclusão<br>As respostas são salvas ao finalizar; você pode começar novamente pelo Perfil. Você e administradores autorizados podem consultá-las.</p>
+    </div>`;
+  const panel = document.querySelector('#quiz-modal .quiz-panel');
+  if (panel) panel.scrollTop = 0;
+}
+
+function startQuiz() {
+  if (quizPhase !== 'intro' || quizSubmitting) return;
+  quizPhase = 'questions';
+  renderQuizStep(quizStep);
 }
 
 function renderQuizStep(step) {
-  const container = document.getElementById('quiz-steps');
-  if (step >= quizQuestions.length) { finishQuiz(); return; }
+  if (!Number.isInteger(step) || step < 0 || step >= quizQuestions.length || quizSubmitting) return;
+  quizStep = step;
+  quizPhase = 'questions';
   const q = quizQuestions[step];
+  const selected = q.options.indexOf(quizAnswers[step]);
+  const stage = step < 4 ? 'SEU PERFIL' : 'DESAFIOS DE FUNDAMENTOS';
+  const stagePosition = step < 4 ? `${step + 1} / 4` : `${step - 3} / 6`;
+  const container = document.getElementById('quiz-steps');
   container.innerHTML = `
-    <p class="font-semibold mb-4 text-lg">${step + 1}. ${q.q}</p>
-    <div class="space-y-3">
-      ${q.options.map((o, i) => `
-        <button onclick="answerQuiz(${step}, ${i}, '${o}')"
-          class="w-full text-left card-glass p-4 rounded-lg hover:border-green-400/50 transition border border-white/10">
-          ${o}
-        </button>
-      `).join('')}
+    <div class="quiz-progress-heading"><span>${stage} <b>${stagePosition}</b></span><span>${step + 1} de ${quizQuestions.length}</span></div>
+    <div class="quiz-progress-track" role="progressbar" aria-label="Progresso do nivelamento" aria-valuemin="0" aria-valuemax="${quizQuestions.length}" aria-valuenow="${step + 1}" aria-valuetext="Pergunta ${step + 1} de ${quizQuestions.length}">
+      <span style="width:${(step + 1) * 100 / quizQuestions.length}%"></span>
     </div>
-    <p class="text-white/30 text-xs mt-4">${step + 1} de ${quizQuestions.length}</p>
-  `;
+    <div class="quiz-question-heading">
+      <p class="quiz-step-number">PERGUNTA ${String(step + 1).padStart(2, '0')}</p>
+      <h3 id="quiz-question-title" tabindex="-1">${escapeHtml(q.q)}</h3>
+      <p>${escapeHtml(q.help)}</p>
+    </div>
+    ${q.code ? `<pre class="quiz-code"><code>${escapeHtml(q.code)}</code></pre>` : ''}
+    <fieldset class="quiz-options">
+      <legend class="sr-only">${escapeHtml(q.q)}</legend>
+      ${q.options.map((option, index) => `
+        <label class="quiz-option ${selected === index ? 'is-selected' : ''}">
+          <input id="quiz-option-${step}-${index}" type="radio" name="quiz-answer-${step}" value="${index}" onchange="selectQuizAnswer(${step}, ${index})" ${selected === index ? 'checked' : ''}>
+          <span class="quiz-option-letter" aria-hidden="true">${String.fromCharCode(65 + index)}</span>
+          <span class="quiz-option-copy"><strong>${escapeHtml(option)}</strong>${q.descriptions && q.descriptions[index] ? `<small>${escapeHtml(q.descriptions[index])}</small>` : ''}</span>
+          <span class="quiz-option-check" aria-hidden="true">●</span>
+        </label>`).join('')}
+    </fieldset>
+    <p id="quiz-error" class="quiz-error" role="alert"></p>
+    <div class="quiz-step-actions">
+      <button id="quiz-previous" type="button" class="quiz-button quiz-button-back" onclick="previousQuizStep()"><span aria-hidden="true">←</span> Voltar</button>
+      <span class="quiz-save-hint">Respostas salvas ao finalizar</span>
+      <button id="quiz-next" type="button" class="quiz-button quiz-button-primary" onclick="nextQuizStep()" ${selected < 0 ? 'disabled' : ''}>${step === quizQuestions.length - 1 ? 'Ver meu resultado' : 'Próxima'} <span aria-hidden="true">→</span></button>
+    </div>`;
+  const panel = document.querySelector('#quiz-modal .quiz-panel');
+  if (panel) panel.scrollTop = 0;
+  const title = document.getElementById('quiz-question-title');
+  if (title) title.focus({ preventScroll: true });
 }
 
-function answerQuiz(step, idx, answer) {
-  quizAnswers[step] = answer;
-  renderQuizStep(step + 1);
+function selectQuizAnswer(step, index) {
+  if (quizSubmitting || quizPhase !== 'questions' || step !== quizStep) return;
+  const q = quizQuestions[step];
+  if (!q || !Number.isInteger(index) || index < 0 || index >= q.options.length) return;
+  quizAnswers[step] = q.options[index];
+  const input = document.getElementById(`quiz-option-${step}-${index}`);
+  if (input) input.checked = true;
+  document.querySelectorAll('#quiz-steps .quiz-option').forEach((label, i) => label.classList.toggle('is-selected', i === index));
+  const next = document.getElementById('quiz-next');
+  if (next) next.disabled = false;
+  const error = document.getElementById('quiz-error');
+  if (error) error.textContent = '';
+}
+
+function previousQuizStep() {
+  if (quizSubmitting || quizPhase !== 'questions') return;
+  if (quizStep === 0) {
+    quizPhase = 'intro';
+    renderQuizIntro();
+    document.getElementById('quiz-start').focus({ preventScroll: true });
+  } else renderQuizStep(quizStep - 1);
+}
+
+function nextQuizStep() {
+  if (quizSubmitting || quizPhase !== 'questions') return;
+  if (!quizQuestions[quizStep].options.includes(quizAnswers[quizStep])) {
+    document.getElementById('quiz-error').textContent = 'Escolha uma opção para continuar.';
+    return;
+  }
+  if (quizStep === quizQuestions.length - 1) return finishQuiz();
+  renderQuizStep(quizStep + 1);
 }
 
 async function finishQuiz() {
-  const track = quizAnswers[1] || 'Full Stack';
-  const goal  = quizAnswers[2] || 'Primeiro emprego';
+  if (quizSubmitting || quizPhase !== 'questions' || !currentUser || !currentAuthId) return;
+  const missing = quizQuestions.findIndex((q, i) => !q.options.includes(quizAnswers[i]));
+  if (missing !== -1) {
+    renderQuizStep(missing);
+    document.getElementById('quiz-error').textContent = 'Responda esta pergunta antes de concluir.';
+    return;
+  }
+  const uid = currentAuthId;
+  const session = courseSessionVersion;
+  const run = quizRunVersion;
+  const answers = quizAnswers.slice();
+  const track = answers[1];
+  const goal = answers[2];
+  quizSubmitting = true;
+  document.getElementById('quiz-next').disabled = true;
+  document.getElementById('quiz-next').textContent = 'Salvando...';
+  document.getElementById('quiz-previous').disabled = true;
+  document.getElementById('quiz-close').disabled = true;
+  document.querySelector('#quiz-steps fieldset').disabled = true;
+  document.getElementById('quiz-error').textContent = '';
 
   try {
-    // XP e nível são calculados no banco (função award_quiz_xp), não aqui.
-    // O cliente só manda as respostas e a trilha/objetivo escolhidos.
-    await awardQuizXP(quizAnswers, track, goal);
-    currentUser = await fetchProfile(currentAuthId);
-    // Reflete as respostas recém-salvas no card "Meu nivelamento" do
-    // Perfil, sem precisar de uma nova leitura do banco.
-    userQuizRows = quizAnswers.map((answer, i) => ({ question: i + 1, answer }));
+    await awardQuizXP(answers, track, goal);
   } catch (e) {
-    console.warn('Erro ao salvar quiz:', e.message);
-    showToast('Não foi possível salvar o quiz: ' + e.message, 'error');
+    if (session !== courseSessionVersion || run !== quizRunVersion || uid !== currentAuthId) return;
+    quizSubmitting = false;
+    document.getElementById('quiz-next').disabled = false;
+    document.getElementById('quiz-next').textContent = 'Tentar salvar novamente';
+    document.getElementById('quiz-previous').disabled = false;
+    document.getElementById('quiz-close').disabled = false;
+    document.querySelector('#quiz-steps fieldset').disabled = false;
+    const migrationHint = /quiz_answers_question_check|check constraint|nivelamento inválid/i.test(e.message || '')
+      ? ' Se o problema continuar, peça ao administrador para conferir a migração do nivelamento.' : '';
+    document.getElementById('quiz-error').textContent = 'Não foi possível salvar. Suas respostas continuam aqui; tente novamente.' + migrationHint;
+    console.warn('Erro ao salvar nivelamento:', e.message);
+    return;
   }
 
-  document.getElementById('quiz-modal').classList.add('hidden');
-  renderDashboard();
+  if (session !== courseSessionVersion || run !== quizRunVersion || uid !== currentAuthId) return;
+  quizSubmitting = false;
+  document.getElementById('quiz-close').disabled = false;
+  currentUser = { ...currentUser, track, goal, quiz_done: true };
+  userQuizRows = answers.map((answer, i) => ({ question: i + 1, answer }));
+  quizAnswers = answers;
+  quizPhase = 'result';
+  const revision = ++quizProfileRevision;
+  renderQuizResult();
+  refreshQuizProfileSafe(uid, session, revision);
+}
+
+async function refreshQuizProfileSafe(uid, session, revision) {
+  try {
+    const profile = await fetchProfile(uid);
+    if (session !== courseSessionVersion || revision !== quizProfileRevision || uid !== currentAuthId) return;
+    currentUser = profile;
+    renderDashboard();
+    const profileTab = document.getElementById('tab-perfil');
+    if (profileTab && profileTab.classList.contains('active')) renderProfile();
+  } catch (e) {
+    if (session !== courseSessionVersion || revision !== quizProfileRevision || uid !== currentAuthId) return;
+    showToast('Nivelamento salvo. Seu XP será atualizado quando a conexão voltar.', 'error');
+  }
+}
+
+function quizAnswersFromRows(rows) {
+  const answers = Array(quizQuestions.length).fill(null);
+  (rows || []).forEach(row => {
+    const index = quizQuestionIndex(row.question);
+    if (index >= 0 && index < answers.length && typeof row.answer === 'string') answers[index] = row.answer;
+  });
+  return answers;
+}
+
+function quizDiagnostic(answers) {
+  const technical = quizQuestions.slice(4);
+  if (!technical.every((q, i) => q.options.includes(answers[i + 4]))) return null;
+  return technical.map((q, i) => {
+    const answer = answers[i + 4];
+    return { question: q, answer, correct: answer === q.options[q.correct], unknown: answer === QUIZ_UNKNOWN };
+  });
+}
+
+function quizTrackOrder(answers, track) {
+  const base = Object.prototype.hasOwnProperty.call(trackCurriculum, track) ? trackCurriculum[track] : trackCurriculum.default;
+  const diagnostic = quizDiagnostic(answers);
+  if (!diagnostic) return base.slice();
+  const gaps = diagnostic.filter(item => !item.correct).map(item => item.question.subject);
+  // Primeiro as lacunas dentro da área escolhida; depois os outros fundamentos.
+  return [...new Set([...base.filter(id => gaps.includes(id)), ...gaps, ...base])];
+}
+
+const quizPaceTips = {
+  'Até 2 horas': 'Comece com sessões curtas e mantenha uma rotina possível para você.',
+  '3 a 5 horas': 'Distribua seus estudos em alguns dias e reserve um momento para praticar.',
+  '6 a 10 horas': 'Alterne videoaulas e prática para consolidar cada assunto.',
+  'Mais de 10 horas': 'Organize pausas e combine fundamentos com projetos práticos.',
+  'Ainda estou organizando minha rotina': 'Comece com um pequeno bloco de estudos e ajuste conforme sua disponibilidade.'
+};
+
+function renderQuizResult() {
+  const diagnostic = quizDiagnostic(quizAnswers);
+  if (!diagnostic) return;
+  const correct = diagnostic.filter(item => item.correct).length;
+  const unknown = diagnostic.filter(item => item.unknown).length;
+  const recommendations = quizTrackOrder(quizAnswers, quizAnswers[1]).slice(0, 3);
+  const title = correct === diagnostic.length ? 'Uma ótima base para continuar.' : 'Todo começo é um ponto de partida.';
+  const review = diagnostic.map(item => {
+    const q = item.question;
+    const badge = item.correct ? 'Acertou' : item.unknown ? 'Ainda não sei' : 'Para revisar';
+    return `<details class="quiz-review-item">
+      <summary><span>${escapeHtml(q.q)}</span><span class="quiz-review-badge ${item.correct ? 'is-correct' : 'is-review'}">${badge}</span></summary>
+      <div><p><strong>Sua resposta:</strong> ${escapeHtml(item.answer)}</p>
+        ${item.correct ? '' : `<p><strong>Resposta correta:</strong> ${escapeHtml(q.options[q.correct])}</p>`}
+        <p>${escapeHtml(q.explanation)}</p></div>
+    </details>`;
+  }).join('');
+  document.getElementById('quiz-steps').innerHTML = `
+    <div class="quiz-result">
+      <div class="quiz-result-heading"><div><p class="quiz-step-number">DIAGNÓSTICO CONCLUÍDO</p><h3 id="quiz-result-title" tabindex="-1">${title}</h3><p>Suas respostas foram salvas. Use este resultado como um guia para aprender, não como uma nota final.</p></div><div class="quiz-score"><strong>${correct}<span>/${diagnostic.length}</span></strong><small>acertos</small></div></div>
+      ${unknown ? `<p class="quiz-result-caption">${unknown} ${unknown === 1 ? 'resposta ficou' : 'respostas ficaram'} como “Ainda não sei”. Tudo bem: elas também ajudam a indicar o que estudar.</p>` : ''}
+      <div class="quiz-result-meta"><span><small>ÁREA DE INTERESSE</small><strong>${escapeHtml(quizAnswers[1])}</strong></span><span><small>SEU RITMO</small><strong>${escapeHtml(quizAnswers[3])}</strong></span></div>
+      <p class="quiz-pace-tip">${escapeHtml(quizPaceTips[quizAnswers[3]] || 'Siga no seu ritmo e reserve um momento para praticar.')}</p>
+      <div class="quiz-recommendations"><div><p class="quiz-step-number">SEUS PRÓXIMOS PASSOS</p><h4>${correct === diagnostic.length ? 'Continue pela sua área' : 'Matérias para explorar'}</h4><p>${correct === diagnostic.length ? 'Estas são sugestões para sua área de interesse.' : 'Priorizamos temas a revisar e sua área de interesse.'}</p></div>
+        <div class="quiz-recommendation-list">${recommendations.map((id, index) => {
+          const subject = subjects.find(s => s.id === id);
+          return subject ? `<button type="button" onclick="openQuizRecommendation('${id}')"><span class="quiz-rec-index">0${index + 1}</span><span>${escapeHtml(subject.name)}</span><span aria-hidden="true">↗</span></button>` : '';
+        }).join('')}</div>
+      </div>
+      <div class="quiz-review"><div class="quiz-review-title"><div><p class="quiz-step-number">APRENDA COM AS RESPOSTAS</p><h4>Revise seus desafios</h4></div><span>${correct} de ${diagnostic.length} acertos</span></div><p>Abra cada pergunta para ver a explicação.</p>${review}</div>
+      <button type="button" class="quiz-button quiz-button-primary quiz-result-close" onclick="closeQuiz()">Voltar ao aplicativo <span aria-hidden="true">→</span></button>
+    </div>`;
+  const panel = document.querySelector('#quiz-modal .quiz-panel');
+  if (panel) panel.scrollTop = 0;
+  document.getElementById('quiz-result-title').focus({ preventScroll: true });
+}
+
+function showQuizResultFromProfile() {
+  if (!currentUser || !currentAuthId || quizSubmitting) return;
+  const answers = quizAnswersFromRows(userQuizRows);
+  if (!quizDiagnostic(answers)) {
+    showToast('O diagnóstico completo ainda não está disponível. Você pode refazer o nivelamento.', 'error');
+    return;
+  }
+  quizRunVersion += 1;
+  quizAnswers = answers;
+  quizPhase = 'result';
+  const modal = document.getElementById('quiz-modal');
+  modal.classList.remove('hidden');
+  focusDialog(modal);
+  renderQuizResult();
+}
+
+function closeQuiz() {
+  if (quizSubmitting) return;
+  const modal = document.getElementById('quiz-modal');
+  const wasOpen = modal && !modal.classList.contains('hidden');
+  if (!wasOpen) return;
+  modal.classList.add('hidden');
+  quizRunVersion += 1;
+  quizAnswers = [];
+  quizPhase = 'closed';
+  if (currentUser) {
+    renderDashboard();
+    const profileTab = document.getElementById('tab-perfil');
+    if (profileTab && profileTab.classList.contains('active')) renderProfile();
+  }
+  restoreDialogFocus();
+  const app = document.getElementById('main-app');
+  if (app && (!app.contains(document.activeElement) || document.activeElement.closest('.hidden'))) {
+    const profileTab = document.getElementById('tab-perfil');
+    const target = profileTab && profileTab.classList.contains('active')
+      ? document.querySelector('#prof-nivelamento button') : document.getElementById('main-content');
+    if (target) target.focus({ preventScroll: true });
+  }
+}
+
+function openQuizRecommendation(id) {
+  if (!subjects.some(subject => subject.id === id) || quizSubmitting) return;
+  closeQuiz();
+  switchTab('estudos');
+  openSubject(id);
 }
 
 
@@ -1572,7 +1897,12 @@ function renderDashboard() {
     "Explore Git/GitHub para versionar seus projetos",
     "Tente criar seu primeiro projeto com banco de dados"
   ];
-  document.getElementById('dash-recommendation').textContent = recs[currentUser.level - 1] || recs[0];
+  const diagnostic = quizDiagnostic(quizAnswersFromRows(userQuizRows));
+  const nextId = diagnostic ? recommendedNextSubject(new Set(userCerts.map(cert => cert.subject_id))) : null;
+  const nextSubject = subjects.find(subject => subject.id === nextId);
+  document.getElementById('dash-recommendation').textContent = nextSubject
+    ? `Seu diagnóstico sugere começar por ${nextSubject.name} no Centro de Estudos.`
+    : recs[currentUser.level - 1] || recs[0];
 }
 
 
@@ -1605,33 +1935,43 @@ function renderProfile() {
   renderNivelamento();
 }
 
-// Card "Meu nivelamento": mostra as respostas do quiz de nivelamento
-// (nível atual, área e objetivo) usando o mesmo array quizQuestions.
-// Contas antigas que responderam só 3 perguntas continuam funcionando —
-// o quiz não é repetido e as respostas que existem são exibidas.
+// As três respostas antigas continuam legíveis. Um diagnóstico completo pode
+// ser revisto ou refeito sem apagar certificados ou receber XP novamente.
 function renderNivelamento() {
   const el = document.getElementById('prof-nivelamento');
-  if (!el) return;
+  if (!el || !currentUser) return;
 
-  if (!currentUser || !currentUser.quiz_done) {
-    el.innerHTML = '<p class="text-white/40 text-sm">Quiz de nivelamento ainda não realizado.</p>';
+  if (!currentUser.quiz_done) {
+    el.innerHTML = `<p class="text-white/40 text-sm">Quiz de nivelamento ainda não realizado.</p>
+      <button type="button" class="quiz-profile-button" onclick="showQuiz()">Iniciar diagnóstico <span aria-hidden="true">→</span></button>`;
     return;
   }
 
   if (!userQuizRows.length) {
-    el.innerHTML = '<p class="text-white/40 text-sm">Respostas do quiz ainda não carregadas.</p>';
+    el.innerHTML = `<p class="text-white/40 text-sm">Respostas do quiz ainda não carregadas.</p>
+      <button type="button" class="quiz-profile-button" onclick="showQuiz()">Refazer diagnóstico <span aria-hidden="true">→</span></button>`;
     return;
   }
 
   const rows = userQuizRows.slice().sort((a, b) =>
     quizQuestionIndex(a.question) - quizQuestionIndex(b.question)
   );
-
-  el.innerHTML = rows.map(r => `
+  const diagnostic = quizDiagnostic(quizAnswersFromRows(rows));
+  const correct = diagnostic ? diagnostic.filter(item => item.correct).length : 0;
+  const summary = diagnostic
+    ? `<div class="quiz-profile-summary"><strong>${correct} de ${diagnostic.length} acertos</strong><span>Diagnóstico de fundamentos · sem nota de aprovação</span></div>`
+    : '<p class="quiz-profile-legacy">Suas respostas anteriores foram mantidas. Faça o diagnóstico ampliado para receber sugestões por conhecimento.</p>';
+  const answers = rows.map(r => `
     <div class="bg-white/5 rounded-lg p-3 mb-2 text-sm">
       <p class="text-white/40 text-xs mb-1">${escapeHtml(quizQuestionLabel(r.question))}</p>
       <p>${escapeHtml(r.answer)}</p>
     </div>`).join('');
+
+  el.innerHTML = `${summary}<details class="quiz-profile-answers"><summary>Ver minhas respostas</summary>${answers}</details>
+    <div class="quiz-profile-actions">
+      ${diagnostic ? '<button type="button" class="quiz-profile-button" onclick="showQuizResultFromProfile()">Ver resultado e explicações <span aria-hidden="true">→</span></button>' : ''}
+      <button type="button" class="quiz-profile-button quiz-profile-button-muted" onclick="showQuiz()">${diagnostic ? 'Refazer diagnóstico' : 'Fazer diagnóstico ampliado'}</button>
+    </div>`;
 }
 
 
@@ -1892,7 +2232,7 @@ function courseCertificate(id) {
 
 function recommendedTrack() {
   const track = (currentUser && currentUser.track) || '';
-  return trackCurriculum[track] || trackCurriculum.default;
+  return quizTrackOrder(quizAnswersFromRows(userQuizRows), track);
 }
 
 function recommendedNextSubject(studiedSet) {
@@ -1915,7 +2255,7 @@ function renderSubjects() {
   if (trackEl) {
     trackEl.innerHTML = `
       <p class="text-sm"><span class="text-white/50">Trilha recomendada:</span> <span class="font-semibold text-green-400">${escapeHtml(track)}</span></p>
-      <p class="text-xs text-white/40 mt-1">Siga na ordem sugerida e comece pela matéria com o destaque <span class="text-yellow-400 font-semibold">"Comece por aqui"</span>.</p>`;
+      <p class="text-xs text-white/40 mt-1">${quizDiagnostic(quizAnswersFromRows(userQuizRows)) ? 'A sugestão considera sua área e os temas a revisar no diagnóstico.' : 'Siga na ordem sugerida para sua área.'} Comece pela matéria com o destaque <span class="text-yellow-400 font-semibold">"Comece por aqui"</span>.</p>`;
   }
   renderCourseLoadStatus();
   const nextId = recommendedNextSubject(studied);
@@ -3043,20 +3383,34 @@ async function init() {
   lucide.createIcons();
 }
 
-// Esc fecha apenas o diálogo mais acima da pilha, do topo para baixo:
-// certificado → confirmação → briefing → detalhes do aluno. O quiz de
-// nivelamento é obrigatório e fica fora de propósito; a gaveta do menu
-// mobile mantém o listener de Esc próprio dela.
+// O nivelamento pode ser retomado pelo Perfil. Enquanto estiver aberto,
+// o foco permanece no diálogo; Esc fecha apenas o modal mais acima.
 document.addEventListener('keydown', (event) => {
-  if (event.key !== 'Escape') return;
   const isOpen = id => {
     const el = document.getElementById(id);
     return !!el && !el.classList.contains('hidden');
   };
+  const higherDialogOpen = ['certificate-modal', 'confirm-modal', 'briefing-modal', 'admin-detail-modal'].some(isOpen);
+  if (event.key === 'Tab' && isOpen('quiz-modal') && !higherDialogOpen) {
+    const modal = document.getElementById('quiz-modal');
+    const focusable = [...modal.querySelectorAll('button:not(:disabled), input:not(:disabled), a[href], summary, [tabindex]:not([tabindex="-1"])')]
+      .filter(el => !el.closest('.hidden, [hidden]') && !el.matches(':disabled'));
+    if (!focusable.length) { event.preventDefault(); modal.focus(); return; }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) {
+      event.preventDefault(); last.focus();
+    } else if (!event.shiftKey && (document.activeElement === last || !modal.contains(document.activeElement))) {
+      event.preventDefault(); first.focus();
+    }
+    return;
+  }
+  if (event.key !== 'Escape') return;
   if (isOpen('certificate-modal'))       closeCertificate();
   else if (isOpen('confirm-modal'))      resolveConfirm(false);
   else if (isOpen('briefing-modal'))     closeBriefing();
   else if (isOpen('admin-detail-modal')) closeAdminDetailModal();
+  else if (isOpen('quiz-modal'))         closeQuiz();
 });
 window.addEventListener('hashchange', () => {
   if (isPublicPortfolioHash()) {

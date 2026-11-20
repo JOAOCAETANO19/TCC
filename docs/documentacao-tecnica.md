@@ -36,7 +36,8 @@ O frontend não tem etapa de build. Os scripts são carregados na ordem: bibliot
 | Tabela | Finalidade | Chave/relacionamentos |
 |---|---|---|
 | `profiles` | dados acadêmicos, XP, papel administrativo, visibilidade do portfólio (`portfolio_public`) e caminho da foto (`avatar_url`) | `id` referencia `auth.users` |
-| `quiz_answers` | três respostas do nivelamento | `user_id` → `profiles`; único por pergunta |
+| `quiz_answers` | até dez respostas do nivelamento; as três primeiras mantêm o significado anterior | `user_id` → `profiles`; único por pergunta |
+| `quiz_xp_awards` | registro privado da recompensa de nivelamento, sem duplicação | `user_id` → `profiles`; uma linha por aluno |
 | `projects` | catálogo dos nove projetos | `id` é a chave do catálogo |
 | `subject_progress` | matérias visualizadas (XP de exploração; não conta como concluída na interface) | chave composta `user_id + subject_id` |
 | `user_projects` | projetos concluídos | `user_id + project_id` |
@@ -53,6 +54,7 @@ O diagrama lógico é:
 
 ```text
 auth.users 1──1 profiles 1──N quiz_answers
+                         1──0..1 quiz_xp_awards
                          1──N subject_progress
                          1──N certificates
                          1──N course_lesson_progress ──N:1 course_catalog
@@ -85,12 +87,21 @@ O script completo, incluindo carga inicial do catálogo, está em [`database/sch
 
 XP nunca é calculado pelo JavaScript. As ações chamam funções PostgreSQL:
 
-- `award_quiz_xp`: registra respostas, trilha e objetivo e adiciona 50 XP;
+- `award_quiz_xp`: valida e registra as respostas, trilha e objetivo e adiciona 50 XP apenas na primeira conclusão;
 - `award_subject_view_xp`: registra a primeira visualização e adiciona 10 XP;
 - `submit_course_assessment`: corrige as respostas no banco, registra a tentativa e, na primeira aprovação, emite o certificado e adiciona 30 XP;
 - `award_project_xp`: registra o projeto e usa a recompensa do catálogo.
 
-A unicidade em `subject_progress`, `certificates` e `user_projects` impede duplicar a recompensa dessas ações. O nível é recalculado no servidor pela função `recalculate_level`. A RPC antiga `award_exercise_xp` foi desativada.
+A unicidade em `quiz_xp_awards`, `subject_progress`, `certificates` e `user_projects` impede duplicar a recompensa dessas ações. O nível é recalculado no servidor pela função `recalculate_level`. A RPC antiga `award_exercise_xp` foi desativada.
+
+### Diagnóstico de nivelamento
+
+1. O primeiro acesso apresenta uma introdução, quatro perguntas de perfil e seis desafios de lógica, HTML, CSS, JavaScript, Git e SQL. Há opção de adiar e de responder **Ainda não sei**; as respostas são salvas somente ao finalizar.
+2. O frontend corrige os desafios, mostra acertos, dúvidas, explicações e até três matérias recomendadas. A ordem considera a área escolhida e os fundamentos que precisam de revisão; o Centro de Estudos usa a mesma prioridade, pulando cursos certificados.
+3. `award_quiz_xp` aceita o formato antigo de três respostas e o novo de dez, grava as respostas atomicamente e usa `quiz_xp_awards` para conceder 50 XP apenas uma vez. A migração preenche o registro para contas que já concluíram o quiz, sem alterar seu XP ou excluir respostas; o registro não tem acesso direto pelo cliente.
+4. No Perfil é possível rever as respostas e explicações ou refazer o diagnóstico. Contas com apenas as três respostas antigas continuam legíveis. Uma falha de gravação mantém as respostas na tela para nova tentativa; leituras atrasadas não substituem respostas recém-salvas.
+
+O diagnóstico é formativo, corrigido no navegador e não supervisionado. O gabarito está no código público, o resultado não certifica conhecimento e não altera as regras das avaliações dos cursos. Os identificadores e textos das perguntas já persistidas devem continuar estáveis para preservar o histórico. Para uma instalação existente, execute [`database/migracao-nivelamento.sql`](../database/migracao-nivelamento.sql) antes de publicar o frontend.
 
 ### Centro de Estudos e certificado
 
