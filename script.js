@@ -529,6 +529,7 @@ let adminDetailStudent = null;
 let adminDetailCerts = [];
 let publicProfile  = null;  // perfil carregado na visão pública (sem login)
 let publicCerts    = [];    // certificados carregados na visão pública
+let publicPortfolioVersion = 0; // invalida leituras públicas de uma rota anterior
 let currentAvatarUrl = null;        // URL assinada da foto do usuário logado
 let pendingAvatarFile = null;       // arquivo escolhido aguardando confirmação na prévia
 let pendingAvatarObjectUrl = null;  // URL temporária (blob:) da prévia
@@ -1319,6 +1320,7 @@ function cancelPasswordRecovery() {
 async function handleLogout() {
   resetCourseSession();
   resetQuizSession();
+  if (window.Gamification) window.Gamification.reset();
   if (window.ProjectLab) window.ProjectLab.reset();
   await supabaseLogout();
   currentUser       = null;
@@ -1424,6 +1426,13 @@ async function loadUserExtrasSafe(userId) {
 function enterApp() {
   resetCourseSession();
   resetQuizSession();
+  currentAvatarUrl = null;
+  cancelAvatarPreview();
+  const avatarSave = document.getElementById('btn-avatar-save');
+  const avatarRemove = document.getElementById('btn-avatar-remove');
+  if (avatarSave) { avatarSave.disabled = false; avatarSave.textContent = 'Salvar foto'; }
+  if (avatarRemove) avatarRemove.disabled = false;
+  if (window.Gamification) window.Gamification.start();
   if (window.ProjectLab) window.ProjectLab.reset();
   document.getElementById('boot-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'none';
@@ -1948,6 +1957,7 @@ function switchTab(tab) {
     evolucao:     renderCareers,
     estudos:      renderSubjects,
     projetos:     renderProjects,
+    desafios:     () => { if (window.Gamification) window.Gamification.openChallenges(); },
     portfolio:    renderPortfolio,
     admin:        renderAdminPanel
   };
@@ -2015,6 +2025,7 @@ function renderProfile() {
   document.getElementById('prof-projects').innerHTML = projsHtml;
 
   renderNivelamento();
+  if (window.Gamification) window.Gamification.renderProfile();
 }
 
 // As três respostas antigas continuam legíveis. Um diagnóstico completo pode
@@ -2082,27 +2093,38 @@ function renderAvatarInto(elementId, url, name) {
   const el = document.getElementById(elementId);
   if (!el) return;
   el.innerHTML = avatarInnerHtml(url, name);
+  if (window.Gamification) window.Gamification.applyAvatar(el);
 }
 
 // Recria a URL assinada da foto do usuário logado. Se falhar
 // (rede, permissão), segue a navegação com a bolinha da inicial.
 async function refreshCurrentAvatarUrl() {
-  currentAvatarUrl = null;
-  if (currentUser && currentUser.avatar_url) {
+  const userId = currentAuthId;
+  const session = courseSessionVersion;
+  const path = (currentUser && currentUser.avatar_url) || null;
+  let nextUrl = null;
+  if (path) {
     try {
-      currentAvatarUrl = await fetchAvatarSignedUrl(currentUser.avatar_url);
+      nextUrl = await fetchAvatarSignedUrl(path);
     } catch (e) {
       console.warn('Não foi possível carregar a foto de perfil:', e.message);
     }
   }
+  // Uma assinatura atrasada nunca deve aparecer na conta seguinte ou
+  // substituir uma foto removida/trocada enquanto a leitura estava pendente.
+  if (session !== courseSessionVersion || userId !== currentAuthId || !currentUser || (currentUser.avatar_url || null) !== path) return false;
+  currentAvatarUrl = nextUrl;
+  return true;
 }
 
 // Versão "segura" para o boot/login: nunca bloqueia a entrada no
 // app por causa da foto; quando a URL chega, re-renderiza as telas.
 function refreshCurrentAvatarSafe() {
+  const userId = currentAuthId;
+  const session = courseSessionVersion;
   (async () => {
-    await refreshCurrentAvatarUrl();
-    if (!currentUser) return;
+    const applied = await refreshCurrentAvatarUrl();
+    if (!applied || !currentUser || userId !== currentAuthId || session !== courseSessionVersion) return;
     renderDashboard();
     renderProfile();
     renderPortfolio();
@@ -2162,46 +2184,64 @@ function cancelAvatarPreview() {
 // Confirma a prévia: sobe o arquivo, atualiza o perfil e a tela.
 async function saveAvatar() {
   if (!pendingAvatarFile || !currentAuthId || !currentUser) return;
+  const userId = currentAuthId;
+  const session = courseSessionVersion;
+  const file = pendingAvatarFile;
+  const previousPath = currentUser.avatar_url;
+  const active = () => userId === currentAuthId && session === courseSessionVersion;
   const btn = document.getElementById('btn-avatar-save');
   if (btn) { btn.disabled = true; btn.textContent = 'Aguarde...'; }
 
   try {
-    await uploadAvatar(currentAuthId, pendingAvatarFile, currentUser.avatar_url);
-    currentUser = await fetchProfile(currentAuthId);
+    await uploadAvatar(userId, file, previousPath);
+    if (!active()) return;
+    const profile = await fetchProfile(userId);
+    if (!active()) return;
+    currentUser = profile;
     await refreshCurrentAvatarUrl();
+    if (!active()) return;
     cancelAvatarPreview();
     renderProfile();
     renderDashboard();
     showToast('Foto de perfil atualizada!', 'success');
   } catch (e) {
+    if (!active()) return;
     console.warn('Erro ao salvar avatar:', e.message);
     showToast('Não foi possível salvar a foto: ' + traduzirErroAuth(e.message), 'error');
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Salvar foto'; }
+    if (active() && btn) { btn.disabled = false; btn.textContent = 'Salvar foto'; }
   }
 }
 
 // Remove a foto (confirmação no modal do tema) e volta ao fallback.
 async function removeProfileAvatar() {
   if (!currentAuthId || !currentUser || !currentUser.avatar_url) return;
+  const userId = currentAuthId;
+  const session = courseSessionVersion;
+  const path = currentUser.avatar_url;
+  const active = () => userId === currentAuthId && session === courseSessionVersion;
   const ok = await themedConfirm('Remover sua foto de perfil?\nA bolinha com a sua inicial volta a aparecer.');
-  if (!ok) return;
+  if (!ok || !active() || !currentUser || currentUser.avatar_url !== path) return;
 
   const btn = document.getElementById('btn-avatar-remove');
   if (btn) btn.disabled = true;
 
   try {
-    await removeAvatar(currentAuthId, currentUser.avatar_url);
-    currentUser = await fetchProfile(currentAuthId);
+    await removeAvatar(userId, path);
+    if (!active()) return;
+    const profile = await fetchProfile(userId);
+    if (!active()) return;
+    currentUser = profile;
     currentAvatarUrl = null;
     renderProfile();
     renderDashboard();
     showToast('Foto de perfil removida.', 'success');
   } catch (e) {
+    if (!active()) return;
     console.warn('Erro ao remover avatar:', e.message);
     showToast('Não foi possível remover a foto: ' + traduzirErroAuth(e.message), 'error');
   } finally {
-    if (btn) btn.disabled = false;
+    if (active() && btn) btn.disabled = false;
   }
 }
 
@@ -2918,6 +2958,9 @@ function portfolioPublicUrl() {
 function renderPortfolio() {
   const isPublic = !!currentUser.portfolio_public;
   const publicUrl = portfolioPublicUrl();
+  const portfolioContainer = document.getElementById('portfolio-content');
+  if (window.Gamification) window.Gamification.applyTheme(portfolioContainer);
+  const frameClass = window.Gamification ? window.Gamification.frameClass() : '';
 
   const certNames = userCerts.map((c, i) =>
     `<button type="button" onclick="openCertificate(userCerts[${i}])" class="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded hover:bg-green-500/30 transition">${escapeHtml(c.title.replace(' - Básico',''))}</button>`
@@ -2951,7 +2994,7 @@ function renderPortfolio() {
       </div>
     </div>
     <div class="text-center mb-6">
-      <div class="avatar-circle w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-purple-500 mx-auto mb-3 flex items-center justify-center text-2xl font-bold">
+      <div class="avatar-circle ${frameClass} w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-purple-500 mx-auto mb-3 flex items-center justify-center text-2xl font-bold">
         ${avatarInnerHtml(currentAvatarUrl, currentUser.name)}
       </div>
       <h3 class="text-xl font-bold">${escapeHtml(currentUser.name)}</h3>
@@ -3052,6 +3095,7 @@ function openPublicView() {
 }
 
 function closePublicView() {
+  publicPortfolioVersion++;
   const view = document.getElementById('public-view');
   if (view) view.style.display = 'none';
   publicProfile = null;
@@ -3068,6 +3112,9 @@ function leavePublicView() {
 async function renderPublicPortfolio(userId) {
   const container = document.getElementById('public-portfolio');
   if (!container) return;
+  const request = ++publicPortfolioVersion;
+  publicProfile = null;
+  publicCerts = [];
 
   if (!userId) {
     container.innerHTML = `
@@ -3089,11 +3136,16 @@ async function renderPublicPortfolio(userId) {
   try {
     // Só os dados liberados pela política anon: perfil publicado,
     // projetos do catálogo e certificados. Nada de email/idade/admin.
+    // A aparência é independente: uma RPC lenta ou ausente não deve
+    // atrasar nem derrubar um portfólio já publicado.
+    const appearancePromise = window.Gamification && typeof fetchPublicProfileAppearance === 'function'
+      ? fetchPublicProfileAppearance(userId).catch(() => null) : Promise.resolve(null);
     const [profile, projRows, certs] = await Promise.all([
       fetchPublicProfile(userId),
       fetchPublicProjects(userId),
       fetchPublicCertificates(userId)
     ]);
+    if (request !== publicPortfolioVersion) return;
 
     if (!profile) {
       container.innerHTML = `
@@ -3106,9 +3158,6 @@ async function renderPublicPortfolio(userId) {
       return;
     }
 
-    publicProfile = profile;
-    publicCerts = certs;
-
     // Foto de perfil: só existe se o aluno subiu uma, e a URL
     // assinada só sai se a policy do Storage autorizar (perfil
     // público). Sem foto ou sem permissão → bolinha com a inicial.
@@ -3120,8 +3169,16 @@ async function renderPublicPortfolio(userId) {
         console.warn('Foto pública indisponível:', signErr.message);
       }
     }
-    container.innerHTML = renderPublicPortfolioHTML(profile, projRows, certs, avatarUrl);
+    if (request !== publicPortfolioVersion) return;
+    publicProfile = profile;
+    publicCerts = certs;
+    container.innerHTML = renderPublicPortfolioHTML(profile, projRows, certs, avatarUrl, null);
+    appearancePromise.then(appearance => {
+      if (request !== publicPortfolioVersion || !window.Gamification) return;
+      window.Gamification.applyPublicAppearance(container, appearance, profile.xp);
+    });
   } catch (e) {
+    if (request !== publicPortfolioVersion) return;
     console.warn('Erro ao carregar portfólio público:', e.message);
     container.innerHTML = `
       <div class="card-glass rounded-2xl p-10 text-center">
@@ -3136,7 +3193,11 @@ async function renderPublicPortfolio(userId) {
 // Monta o HTML da visão pública. Só usa campos autorizados do perfil:
 // name, track, goal, level, xp e avatar (foto) — nunca email, age ou
 // is_admin.
-function renderPublicPortfolioHTML(profile, projRows, certs, avatarUrl) {
+function renderPublicPortfolioHTML(profile, projRows, certs, avatarUrl, appearance) {
+  // Os IDs de tema/moldura são filtrados por um catálogo local antes de
+  // virarem classes ou atributos, mesmo quando chegam do banco.
+  const publicTheme = window.Gamification ? window.Gamification.themeId(appearance || null, profile.xp) : 'original';
+  const publicFrame = window.Gamification ? window.Gamification.frameClass(appearance || null, profile.xp) : '';
   const skills = certs.map(c => {
     const subj = subjects.find(s => s.id === c.subject_id);
     return subj ? subj.name : (c.subject_id || 'Módulo');
@@ -3158,8 +3219,9 @@ function renderPublicPortfolioHTML(profile, projRows, certs, avatarUrl) {
     : '<p class="text-white/40 text-sm">Nenhum certificado ainda.</p>';
 
   return `
-    <div class="text-center mb-8">
-      <div class="avatar-circle w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-purple-500 mx-auto mb-4 flex items-center justify-center text-3xl font-bold">
+    <div class="public-appearance" data-profile-theme="${publicTheme}">
+    <div class="public-profile-hero text-center mb-8">
+      <div class="avatar-circle ${publicFrame} w-24 h-24 rounded-full bg-gradient-to-br from-green-400 to-purple-500 mx-auto mb-4 flex items-center justify-center text-3xl font-bold">
         ${avatarInnerHtml(avatarUrl, profile.name)}
       </div>
       <h2 class="text-2xl font-bold">${escapeHtml(profile.name || 'Aluno')}</h2>
@@ -3186,6 +3248,7 @@ function renderPublicPortfolioHTML(profile, projRows, certs, avatarUrl) {
     <div class="card-glass rounded-xl p-6">
       <h3 class="font-semibold text-sm text-white/60 mb-3">🏆 Certificados</h3>
       ${certHtml}
+    </div>
     </div>
   `;
 }

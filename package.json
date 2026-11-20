@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "test": "node tests/regressao.js && node tests/smoke-completo.js && node tests/verificacao-extra.js && node tests/cursos-interface.js && node tests/cursos-banco.js && node tests/cursos-integracao.js && node tests/nivelamento-interface.js && node tests/nivelamento-banco.js && node tests/nivelamento-integracao.js && node tests/projetos-laboratorio.js && node tests/projetos-integracao.js"
+    "test": "node tests/regressao.js && node tests/smoke-completo.js && node tests/verificacao-extra.js && node tests/cursos-interface.js && node tests/cursos-banco.js && node tests/cursos-integracao.js && node tests/nivelamento-interface.js && node tests/nivelamento-banco.js && node tests/nivelamento-integracao.js && node tests/projetos-laboratorio.js && node tests/projetos-integracao.js && node tests/gamificacao-interface.js && node tests/gamificacao-banco.js && node tests/gamificacao-integracao.js"
   },
   "dependencies": {
     "jsdom": "^30.0.1"

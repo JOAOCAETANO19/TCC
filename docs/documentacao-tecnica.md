@@ -26,11 +26,12 @@ Navegador
 - `index.html`: marcação da página inicial (landing), login, dashboard, estudos, certificados, projetos, portfólio e administração.
 - `style.css`: tema visual, diploma e componentes que não são cobertos pelo Tailwind.
 - `script.js`: estado da sessão, eventos, renderização, certificado visual e chamadas de negócio.
+- `gamification.js`: catálogo de aparência, metas cumulativas, estados de carregamento e controles de participação no ranking.
 - `project-labs.js`: código inicial, dados de exemplo, isolamento da prévia, testes formativos e rascunhos locais dos cinco laboratórios.
 - `course-content.js`: três videoaulas, objetivos e práticas para cada uma das 12 matérias.
 - `supabase.js`: inicialização do cliente Supabase e funções de acesso ao backend.
 
-O frontend não tem etapa de build. Os scripts são carregados na ordem: biblioteca Supabase, `supabase.js`, `course-content.js`, `script.js` e `project-labs.js`.
+O frontend não tem etapa de build. Os scripts são carregados na ordem: biblioteca Supabase, `supabase.js`, `course-content.js`, `gamification.js`, `script.js` e `project-labs.js`.
 
 ## 3. Modelo de dados
 
@@ -48,6 +49,8 @@ O frontend não tem etapa de build. Os scripts são carregados na ordem: bibliot
 | `course_lesson_progress` | aulas marcadas como assistidas | `user_id + subject_id + lesson_index` |
 | `course_exercises` | resposta da atividade prática | `user_id + subject_id`; resposta de 30 a 4.000 caracteres |
 | `course_assessment_attempts` | nota, aprovação e feedback de cada tentativa | `user_id` → `profiles`; `subject_id` → `course_catalog` |
+| `profile_appearance` | tema e moldura escolhidos | uma linha opcional por usuário; exclusão em cascata |
+| `ranking_participants` | adesão voluntária e apelido, sem dados de perfil duplicados | uma linha apenas por participante; exclusão em cascata |
 
 Fora das tabelas, o Supabase Storage tem o bucket privado `avatars`, que guarda as fotos de perfil em `avatars/<id do usuário>/avatar.jpg|png`; `profiles.avatar_url` registra o caminho do arquivo de cada aluno.
 
@@ -56,6 +59,8 @@ O diagrama lógico é:
 ```text
 auth.users 1──1 profiles 1──N quiz_answers
                          1──0..1 quiz_xp_awards
+                         1──0..1 profile_appearance
+                         1──0..1 ranking_participants
                          1──N subject_progress
                          1──N certificates
                          1──N course_lesson_progress ──N:1 course_catalog
@@ -129,6 +134,17 @@ As aulas são marcadas manualmente, sem confirmação do tempo assistido. Os ví
 
 Os testes verificam cenários específicos, não autoria ou qualidade integral. Como o cliente e as soluções de referência são públicos e `award_project_xp` continua acessível diretamente ao usuário autenticado, o XP de projetos não é uma avaliação segura. Uma validação confiável exigiria uma arquitetura de execução e avaliação no servidor, em ambiente isolado e com controles adicionais.
 
+### Personalização, desafios e ranking voluntário
+
+1. `gamification.js` mostra quatro temas e quatro molduras. Os limiares de desbloqueio estão duplicados no catálogo da interface e nas funções SQL `profile_theme_min_xp` e `profile_frame_min_xp`: temas 0/100/250/500 XP e molduras 0/100/300/600 XP. `save_profile_appearance` valida o XP no banco, aceita apenas os IDs conhecidos e não atualiza `profiles.xp` nem `level`. Se o XP for reduzido abaixo do requisito, as funções de leitura retornam original/simples para o item indisponível; a seleção armazenada volta a valer quando o XP for recuperado.
+2. `get_my_gamification_settings` retorna aparência efetiva e a própria participação; `get_public_profile_appearance` retorna somente tema e moldura de portfólios públicos não bloqueados. A aparência é carregada em paralelo sem atrasar o portfólio; falha mantém o estilo original e respostas de rotas antigas são descartadas. RLS está habilitado nas duas tabelas novas e clientes não recebem acesso direto. A interface valida novamente os IDs antes de formar classes ou atributos.
+3. `get_my_challenge_progress` conta os registros existentes em `course_lesson_progress`, `user_projects` e `certificates`, sempre para o chamador. Seis metas sem prazo usam essas contagens cumulativas; projetos com conclusão manual e certificados antigos também contam. Não há tabela de recompensas, XP extra ou alteração das regras de certificação. Falhas de leitura mostram opção de tentar novamente, sem inventar progresso zerado.
+4. Não há adesão automática: `set_ranking_participation(true, apelido)` insere/atualiza a linha de quem chama e `false` a apaga. O apelido é validado no cliente e no banco (2 a 24 caracteres, sem `@` ou controles). `get_optional_ranking` exige usuário autenticado, ativo e participante; exclui perfis bloqueados e retorna somente posição, apelido, XP e indicação da própria linha. Calcula `rank()` por XP, limita a lista aos 50 primeiros e acrescenta o próprio aluno quando necessário. O portfólio público é independente: participar expõe apelido e XP aos demais participantes mesmo com portfólio privado. Sair remove a linha de consultas posteriores, mas não pode desfazer cópias feitas por outros.
+5. As funções privadas verificam `auth.uid()`, existência do perfil e `is_blocked`. As gravações bloqueiam a linha do perfil durante a validação. A segurança do bloqueio depende também da proteção existente contra edição indevida de `profiles.is_blocked`; o problema do esquema versionado descrito na seção de Segurança precisa ser corrigido antes de criar um banco novo. A migração desta funcionalidade não modifica essas políticas nem corrige aquela divergência.
+6. Respostas assíncronas são associadas à sessão; falhas ambíguas nas gravações pedem uma releitura antes de afirmar o estado. O ranking é formativo: como aulas são declaradas pelo aluno e a RPC de projeto não verifica código, XP e posição são manipuláveis e não são prova de aprendizado ou base segura para prêmios.
+
+Para instalações existentes, teste [`database/migracao-perfil-desafios-ranking.sql`](../database/migracao-perfil-desafios-ranking.sql) e obtenha autorização antes de aplicá-la no banco ativo; aplique-a antes do frontend correspondente. Ela é incremental e não altera dados acadêmicos ou XP. Não reaplique scripts históricos para instalar este recurso.
+
 ### Administração
 
 `is_admin` controla a exibição do painel no cliente, mas não é a proteção real. As políticas RLS e as funções `admin_reset_xp` e `admin_delete_student` verificam o papel no banco. A lista de alunos permite consulta administrativa; detalhes combinam perfil, respostas, projetos e certificados.
@@ -150,7 +166,7 @@ As políticas `profiles_public_read`, `user_projects_public_read` e `certificate
 1. Na aba Perfil, **Alterar foto** abre o seletor de arquivos; o frontend aceita apenas JPG/PNG de até 2 MB e bloqueia o restante antes de qualquer envio.
 2. Um arquivo válido abre uma **prévia** (URL temporária `blob:` gerada localmente) com botões de salvar ou cancelar — nada é enviado sem confirmação.
 3. Ao salvar, `uploadAvatar` envia o arquivo para o bucket privado `avatars` no caminho `<id do usuário>/avatar.jpg|png` e grava esse caminho em `profiles.avatar_url`. **Remover foto** apaga o arquivo do Storage e limpa a coluna (com confirmação no modal do tema).
-4. Toda exibição usa **URL assinada** (`createSignedUrl`, validade de 1h), renovada no boot, ao salvar/remover e ao carregar a visão pública. Se a assinatura falhar ou não houver foto, a interface cai no fallback da bolinha com a inicial — no topo (dashboard), na aba Perfil, na aba Portfólio e na rota `#publico/<id>`.
+4. Toda exibição usa **URL assinada** (`createSignedUrl`, validade de 1h), renovada no boot, ao salvar/remover e ao carregar a visão pública. Se a assinatura falhar ou não houver foto, a interface cai no fallback da bolinha com a inicial — no topo (dashboard), na aba Perfil, na aba Portfólio e na rota `#publico/<id>`. Assinaturas e ações de foto atrasadas são associadas à sessão para não atualizar outra conta.
 5. A privacidade é a mesma do portfólio: o bucket é privado (`public = false`, sem URL pública) e as políticas do Storage consultam `profiles.portfolio_public` — o papel `anon` só consegue assinar a URL da foto de quem publicou o portfólio; perfil privado nunca expõe a foto. O dono faz upload/update/delete apenas na própria pasta, conferido pelo primeiro segmento do caminho (`storage.foldername(name))[1] = auth.uid()`).
 
 O bloco incremental correspondente (coluna `avatar_url`, grant da coluna ao `anon`, criação do bucket com limite de 2 MB e MIME restrito, e as cinco políticas de `storage.objects`) está no final de `database/schema.sql` e pode ser aplicado diretamente com [`database/migracao-portfolio-avatar.sql`](../database/migracao-portfolio-avatar.sql).
@@ -165,6 +181,7 @@ O bloco incremental correspondente (coluna `avatar_url`, grant da coluna ao `ano
 - O upload de avatar é validado duas vezes: tipo e tamanho no cliente e limite de 2 MB/MIME (JPG/PNG) na configuração do bucket. URLs assinadas nunca são concatenadas no HTML sem escape, e a expiração ou falha delas degrada para o avatar de inicial sem quebrar as telas.
 - Alterações de XP, nível e papel administrativo são protegidas por trigger/RPC.
 - **Divergência conhecida no bloqueio:** o `schema.sql` versionado permite, em teste local, que uma conta bloqueada altere a própria coluna `is_blocked`. A instância existente tem proteções adicionais no trigger e na política de atualização de `profiles`, mas os scripts versionados não as reproduzem integralmente. Não reaplique `schema.sql` ou `correcao-xp.sql` nem crie outro banco a partir deles sem revisar e corrigir essa diferença.
+- `profile_appearance` e `ranking_participants` não concedem leitura ou escrita direta a `anon`/`authenticated`; as RPCs expõem apenas os dados descritos acima e não usam a participação como sinônimo de portfólio público.
 - `course_questions` não concede SELECT ao cliente; as tabelas de progresso têm SELECT restrito ao próprio aluno e não permitem escrita direta. As RPCs validam autenticação, bloqueio, curso, ordem, pré-requisitos e respostas.
 - O cliente não recebe INSERT em `certificates`, e a RPC antiga de emissão direta está desativada. As limitações da avaliação não supervisionada estão descritas acima.
 - Funções privilegiadas revalidam `auth.uid()` e, quando necessário, `is_admin` no banco.
@@ -174,7 +191,7 @@ O bloco incremental correspondente (coluna `avatar_url`, grant da coluna ao `ano
 ## 6. Instalação e configuração
 
 1. Crie um projeto Supabase.
-2. Antes de criar um banco com `database/schema.sql` ou reaplicar scripts em uma instalação existente, revise a divergência de segurança no bloqueio de contas descrita acima. Em um banco existente, as migrações de cursos e nivelamento devem ser aplicadas **antes dos respectivos frontends**; elas preservam certificados, respostas e XP existentes, e a primeira também fecha a emissão direta de certificados.
+2. Antes de criar um banco com `database/schema.sql` ou reaplicar scripts em uma instalação existente, revise a divergência de segurança no bloqueio de contas descrita acima. Em um banco existente, as migrações de cursos, nivelamento e gamificação devem ser aplicadas **antes dos respectivos frontends**, após testes e autorização; elas preservam certificados, respostas e XP existentes, e a primeira também fecha a emissão direta de certificados.
 3. Ajuste `SUPABASE_URL` e `SUPABASE_ANON` em `supabase.js` quando necessário.
 4. Sirva a raiz com `python3 -m http.server 8080`.
 5. Abra `http://localhost:8080` e faça um cadastro.
@@ -195,5 +212,6 @@ Após um push, aguarde a conclusão do build do Pages e valide login, cadastro, 
 - Alterações de banco devem ser feitas primeiro em uma instância de teste e depois refletidas em `database/schema.sql`.
 - Mudanças de campos consumidos no JS devem atualizar o SQL e esta documentação na mesma alteração.
 - Não versionar senhas, tokens privados, dumps de usuários ou a chave `service_role`.
-- Os catálogos iniciais de projetos e cursos são idempotentes e podem ser reaplicados. Ao alterar uma trilha, mantenha alinhados `subjects`, `subjectContent`, `subjectExtras`, `course-content.js`, `course_catalog` e as seis questões da migração. Reaplique a migração de cursos por último ao usar scripts históricos.
+- Os catálogos iniciais de projetos e cursos são idempotentes e podem ser reaplicados. Ao alterar uma trilha, mantenha alinhados `subjects`, `subjectContent`, `subjectExtras`, `course-content.js`, `course_catalog` e as seis questões da migração. Scripts históricos exigem revisão de segurança antes de reaplicação.
+- Ao alterar temas ou molduras, mantenha sincronizados catálogo e classes do frontend, validação e limiares SQL, restrições das tabelas e testes. Não torne o ranking acessível a não participantes nem exponha IDs ou perfis no retorno da RPC sem uma nova decisão de privacidade.
 - Execute `npm ci && npm test`: as suítes usam jsdom e PGlite para cobrir interface, regras, RLS, instalação completa e integração sem um Supabase real.

@@ -12,10 +12,12 @@ Plataforma educacional gamificada para estudantes de desenvolvimento de sistemas
 - **Menu mobile:** abra o sistema em uma tela de até 768px e use o botão de menu no topo
 - **Portfólio público:** na aba **Portfólio**, use **Publicar portfólio** e compartilhe o link `https://joaocaetano19.github.io/TCC/#publico/<id>` — ele abre a visão pública do portfólio sem exigir login
 - **Foto de perfil:** na aba **Perfil**, use **Alterar foto** (JPG ou PNG, até 2 MB), confira a prévia e salve; a foto aparece no topo, no portfólio e na visão pública — visitantes anônimos só a veem se o portfólio estiver público
+- **Personalização:** na aba **Perfil**, escolha um tema e uma moldura desbloqueados pelo seu XP
+- **Desafios e ranking opcional:** acompanhe metas na aba **Desafios** e, se quiser, escolha um apelido para participar do ranking
 - **Scripts do banco de dados:** [`database/schema.sql`](database/schema.sql)
 - **Documentação técnica:** [`docs/documentacao-tecnica.md`](docs/documentacao-tecnica.md)
 
-> A aplicação é uma SPA estática. O backend é consumido pelo cliente por meio do Supabase; por isso, não há um servidor Node separado neste repositório.
+> A aplicação é uma SPA estática. O backend é consumido pelo cliente por meio do Supabase; por isso, não há um servidor Node separado neste repositório. Nesta versão, personalização, desafios e ranking exigem a migração específica abaixo; o site publicado pode estar em uma versão anterior.
 
 ## Recursos da interface
 
@@ -25,6 +27,9 @@ Plataforma educacional gamificada para estudantes de desenvolvimento de sistemas
 - **Certificado visual:** diploma renderizado em canvas, com download em PNG e impressão em PDF;
 - **Briefing de projetos:** cada um dos 9 projetos práticos abre um briefing no formato usado no mercado, com contexto do cliente, tecnologias sugeridas, requisitos funcionais, entregáveis e critérios de aceite;
 - **Laboratórios de projetos:** cinco projetos que funcionam no navegador têm editor HTML/CSS/JavaScript, prévia isolada, testes locais por requisito e rascunho salvo no dispositivo. Os outros quatro continuam com conclusão manual identificada na interface;
+- **Personalização do perfil:** temas e molduras são liberados pelo XP acumulado, sem descontá-lo nem mudar o nível; aparecem no perfil e no portfólio, respeitando a visibilidade dele;
+- **Desafios cumulativos:** seis metas acompanham aulas marcadas, projetos registrados e certificados já existentes; não há prazo nem XP extra;
+- **Ranking voluntário:** a adesão exige apelido escolhido pelo aluno, pode ser desfeita e é independente do portfólio público. A lista é acessível apenas a participantes autenticados e ativos e mostra posição, apelido e XP;
 - **Menu mobile:** em telas de até 768px a barra lateral vira uma gaveta acionada pelo botão de menu, com fundo escurecido, fechamento pelo `Esc`, por clique fora e ao escolher uma aba;
 - **Portfólio digital:** reúne XP, projetos concluídos e certificados do aluno;
 - **Portfólio público:** o aluno publica ou torna privado o portfólio na aba Portfólio e copia o link `#publico/<id>`, que abre uma visão pública sem login com apenas os dados autorizados;
@@ -43,6 +48,27 @@ Plataforma educacional gamificada para estudantes de desenvolvimento de sistemas
 A Lista de Tarefas e o Quiz usam `localStorage.getItem`/`setItem` virtualizados na prévia. O Dashboard usa `LAB.buscarDashboard(periodo)` com dados de exemplo, e o Quiz usa `LAB.perguntas` e `LAB.tempoPorPergunta`; não há consulta a uma API real. A prévia e os testes são ambientes separados: os testes não alteram os dados usados na prévia. Projetos concluídos anteriormente e XP existente são preservados; é possível abrir um projeto concluído para praticar novamente sem ganhar XP duplicado. Sistema de Login, E-commerce, Rede Social e Chat em Tempo Real mantêm **conclusão manual**.
 
 Os testes são exercícios formativos feitos no próprio navegador e cobrem apenas os casos apresentados. Eles não comprovam autoria, qualidade integral ou segurança do projeto. A RPC de XP existente não avalia código e pode ser chamada diretamente por um usuário autenticado; a regra no banco impede recompensa duplicada, não manipulação da conclusão. Não é necessária migração de banco para os laboratórios.
+
+## Personalização, desafios e ranking
+
+No **Perfil**, selecione um tema e uma moldura já liberados. A escolha é salva na conta e usa o XP atual como requisito; não é compra e não muda XP ou nível.
+
+| XP mínimo | Tema | Moldura |
+|---|---|---|
+| 0 | Original | Simples |
+| 100 | Oceano | Menta |
+| 250 | Aurora | — |
+| 300 | — | Violeta |
+| 500 | Cosmos | — |
+| 600 | — | Solar |
+
+Se um administrador reduzir o XP abaixo do requisito, o estilo indisponível volta ao original/simples até o requisito ser recuperado; recarregue a página ou entre novamente para atualizar a exibição. O tema e a moldura também são visíveis em portfólios publicados, mas não tornam um portfólio privado público.
+
+Na aba **Desafios**, as seis metas são cumulativas: 1, 3 e 6 aulas marcadas; 1 e 3 projetos registrados; e 1 certificado. Contam registros antigos, projetos de conclusão manual e certificados anteriores. As metas não concedem XP extra; certificados continuam exigindo aulas, atividade e aprovação nas regras atuais.
+
+O ranking começa **desativado**. Quem quiser participar informa um apelido de 2 a 24 caracteres, sem `@` ou caracteres de controle. Não use nome completo, e-mail ou outros dados pessoais. Apenas participantes autenticados e não bloqueados podem consultar a lista, que mostra **apelido, posição e XP total**, mesmo para portfólios privados; não mostra nome de cadastro, ID, foto, e-mail ou link. Qualquer pessoa que aderir poderá ver esses dados. A lista mostra até 50 participantes e inclui a própria pessoa se estiver fora desse grupo; empates compartilham posição. O apelido pode ser alterado, e **Sair do ranking** remove a participação das consultas seguintes sem afetar o XP. Informações já vistas, copiadas ou armazenadas por terceiros não podem ser recolhidas.
+
+**Limite importante:** o XP pode ser manipulado. O ranking é formativo, não comprova aprendizado ou autoria e não deve fundamentar premiações. A marcação das aulas é manual e a RPC de projeto pode ser chamada sem passar pelos testes locais.
 
 ## Tecnologias
 
@@ -75,7 +101,7 @@ As credenciais públicas do projeto Supabase ficam em `supabase.js`. A chave usa
 ## Configuração do banco
 
 1. Crie um projeto no [Supabase](https://supabase.com).
-2. Abra **SQL Editor** e execute [`database/schema.sql`](database/schema.sql) inteiro.
+2. Antes de executar [`database/schema.sql`](database/schema.sql) no **SQL Editor**, revise e corrija a divergência de bloqueio descrita no aviso abaixo.
 3. Copie a URL e a chave publicável em **Settings → API** para `SUPABASE_URL` e `SUPABASE_ANON` em `supabase.js`, se estiver usando outro projeto.
 4. Em **Authentication → URL Configuration → Redirect URLs**, cadastre a URL do site (por exemplo `https://joaocaetano19.github.io/TCC/` e, para testar localmente, `http://localhost:8080/`). Sem isso, o link do e-mail de recuperação de senha não volta para a aplicação.
 5. Cadastre o primeiro usuário pela tela de registro.
@@ -118,7 +144,12 @@ Para uma instalação existente, a sequência histórica de migrações é:
    - amplia o armazenamento para dez respostas e registra a recompensa de forma idempotente, sem excluir respostas antigas nem alterar o XP existente;
    - mantém compatibilidade com o formulário antigo de três perguntas.
 
-Os arquivos incrementais usam comandos idempotentes, mas uma versão histórica ainda pode substituir funções ou políticas mais recentes: não os reaplique sem a revisão de segurança mencionada acima. `database/schema.sql` inclui as migrações de cursos e nivelamento, além da limitação de bloqueio já mencionada. Sem a migração dos cursos, o Centro de Estudos não permite salvar aulas ou iniciar a avaliação; sem a migração do nivelamento, o diagnóstico ampliado não conseguirá salvar todas as respostas.
+7. **Obrigatório para personalização, desafios e ranking:** [`database/migracao-perfil-desafios-ranking.sql`](database/migracao-perfil-desafios-ranking.sql)
+   - aplique primeiro em uma instância de teste e, após revisão e autorização, na instalação existente **antes de publicar o frontend correspondente**;
+   - cria tabelas privadas e RPCs sem modificar os registros de XP, perfil, aulas, projetos, respostas ou certificados;
+   - pressupõe as migrações anteriores e a proteção correta da coluna `is_blocked`; não corrige a divergência de bloqueio mencionada acima.
+
+Os arquivos incrementais usam comandos idempotentes, mas uma versão histórica ainda pode substituir funções ou políticas mais recentes: não os reaplique sem a revisão de segurança mencionada acima. `database/schema.sql` inclui as migrações de cursos, nivelamento e gamificação, além da limitação de bloqueio já mencionada. Sem a migração dos cursos, o Centro de Estudos não permite salvar aulas ou iniciar a avaliação; sem a migração do nivelamento, o diagnóstico ampliado não conseguirá salvar todas as respostas. Sem a migração de gamificação, as novas telas mostram falha e permitem tentar novamente; o portfólio público continua no estilo original.
 
 ## Estrutura
 
@@ -126,6 +157,7 @@ Os arquivos incrementais usam comandos idempotentes, mas uma versão histórica 
 index.html                         interface e telas da aplicação
 style.css                          estilos complementares, diploma visual, menu mobile e briefing
 script.js                          estado, renderização e regras de interação
+gamification.js                    personalização, metas e ranking voluntário
 project-labs.js                    desafios, prévia isolada, testes e rascunhos locais
 course-content.js                  videoaulas, objetivos e práticas dos 12 cursos
 supabase.js                        cliente Supabase e chamadas ao backend
@@ -138,6 +170,7 @@ database/
   migracao-permissoes-anon.sql     restrição por coluna do papel anon
   migracao-cursos-certificados.sql trilhas, avaliações e emissão de certificados
   migracao-nivelamento.sql         diagnóstico ampliado e recompensa sem duplicação
+  migracao-perfil-desafios-ranking.sql  preferências, metas e ranking voluntário
 docs/
   documentacao-tecnica.md          arquitetura, banco, segurança e fluxos
 tests/
@@ -152,6 +185,9 @@ tests/
   nivelamento-integracao.js        diagnóstico da interface ao banco local (PGlite)
   projetos-laboratorio.js          requisitos, rascunhos, sessões e feedback dos laboratórios
   projetos-integracao.js           fluxo de projetos e RPC de XP em banco local (PGlite)
+  gamificacao-interface.js         estados, privacidade e concorrência nas telas
+  gamificacao-banco.js             migração, autorização, bloqueio e ranking em PGlite
+  gamificacao-integracao.js        jornada da interface às RPCs em banco local
   fixtures/projetos-solucoes.js    soluções de referência usadas nos testes
 ```
 
