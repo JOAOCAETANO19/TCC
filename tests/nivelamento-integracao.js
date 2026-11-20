@@ -8,6 +8,7 @@ const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const tick = () => new Promise(resolve => setTimeout(resolve, 0));
 const uid = '11111111-1111-4111-8111-111111111111';
+const legacyUid = '22222222-2222-4222-8222-222222222222';
 let checks = 0;
 function check(value, message) { assert.ok(value, message); checks++; console.log(`✓ ${message}`); }
 
@@ -26,7 +27,9 @@ function check(value, message) { assert.ok(value, message); checks++; console.lo
       grant usage on schema auth, storage, public to anon, authenticated;
     `);
     await pg.exec(read('database/schema.sql').replace('create extension if not exists pgcrypto;', ''));
-    await pg.exec(`insert into auth.users(id,email,raw_user_meta_data) values ('${uid}','ana@exemplo.com','{"name":"Ana","age":18}');
+    await pg.exec(`insert into auth.users(id,email,raw_user_meta_data) values
+      ('${uid}','ana@exemplo.com','{"name":"Ana","age":18}'),
+      ('${legacyUid}','bia@exemplo.com','{"name":"Bia","age":19}');
       select set_config('request.jwt.claim.sub', '${uid}', false); set role authenticated;`);
     async function query(sql, params = []) { return (await pg.query(sql, params)).rows; }
     dom = new JSDOM(read('index.html'), { url: 'https://joaocaetano19.github.io/TCC/', runScripts: 'outside-only', pretendToBeVisual: true });
@@ -34,11 +37,12 @@ function check(value, message) { assert.ok(value, message); checks++; console.lo
     w.console.warn = () => {};
     w.lucide = { createIcons() {} };
     w.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
+    let loginId = uid;
     Object.assign(w, {
-      getSession: async () => null, supabaseLogin: async () => ({ id: uid }), supabaseLogout: async () => {},
+      getSession: async () => null, supabaseLogin: async () => ({ id: loginId }), supabaseLogout: async () => {},
       fetchProfile: async id => (await query('select * from public.profiles where id=$1', [id]))[0],
       fetchQuizAnswers: async id => query('select question,answer from public.quiz_answers where user_id=$1 order by question', [id]),
-      fetchUserProjects: async () => [], fetchCertificates: async () => [],
+      fetchUserProjects: async () => [], fetchCertificates: async id => query('select subject_id,title,issued_at from public.certificates where user_id=$1', [id]),
       fetchCourseProgress: async () => ({ lessons: [], exercises: [], attempts: [] }), fetchAvatarSignedUrl: async () => null,
       awardQuizXP: async (answers, track, goal) => { await query('select public.award_quiz_xp($1::jsonb,$2,$3)', [JSON.stringify(answers), track, goal]); },
       awardSubjectViewXP: async id => { await query('select public.award_subject_view_xp($1)', [id]); },
@@ -57,11 +61,11 @@ function check(value, message) { assert.ok(value, message); checks++; console.lo
     };
     await tick(); await login();
     check(!w.document.getElementById('quiz-modal').classList.contains('hidden'), 'primeiro login abre diagnóstico');
-    await runQuiz([0, 0, 0, 1, 0, 1, 0, 2, 2, 3]);
-    check(w.document.getElementById('quiz-steps').textContent.includes('3/6') && w.document.getElementById('quiz-steps').textContent.includes('Resposta correta: 5'), 'correção do frontend apresenta explicações coerentes');
+    await runQuiz([0, 0, 0, 1, 0, 0, 0, 2, 0, 3]);
+    check(w.document.getElementById('quiz-steps').textContent.includes('3/6') && w.document.getElementById('quiz-steps').textContent.includes('Resposta correta: Sim, porque tem 18 anos ou mais'), 'correção do frontend apresenta explicações coerentes');
     const rows = await query('select question, answer from public.quiz_answers where user_id=$1 order by question', [uid]);
     const profile = (await query('select xp,track,goal,quiz_done from public.profiles where id=$1', [uid]))[0];
-    check(rows.length === 10 && rows[4].answer === '2' && rows[9].answer === 'Ainda não sei', 'respostas reais chegam ao banco na ordem correta');
+    check(rows.length === 10 && rows[4].answer === '[v2] Não, porque tem menos de 18 anos' && rows[9].answer === '[v2] Ainda não sei', 'respostas básicas e versão chegam ao banco na ordem correta');
     check(profile.quiz_done && profile.xp === 50 && profile.track === 'Front-end', 'RPC marca conclusão e concede XP uma vez');
     w.closeQuiz(); await w.handleLogout(); await login();
     w.switchTab('perfil'); await tick(); await tick();
@@ -69,10 +73,44 @@ function check(value, message) { assert.ok(value, message); checks++; console.lo
     w.showQuizResultFromProfile();
     check(w.document.getElementById('quiz-steps').textContent.includes('3/6') && w.document.getElementById('quiz-steps').textContent.includes('Ainda não sei'), 'novo login recupera feedback e dúvidas');
     w.closeQuiz(); w.showQuiz();
-    await runQuiz([1, 1, 2, 2, 2, 1, 1, 2, 2, 1]);
+    await runQuiz([1, 1, 2, 2, 1, 0, 1, 2, 0, 2]);
     const after = (await query('select xp,track,goal from public.profiles where id=$1', [uid]))[0];
     check(after.xp === 50 && after.track === 'Back-end' && after.goal === 'Freelancer', 'refazer atualiza preferências, mas não duplica XP no banco');
     check(w.document.getElementById('quiz-steps').textContent.includes('6/6'), 'resultado refeito reflete as novas respostas');
+
+    // Simula no banco uma conta que já havia concluído a versão anterior.
+    w.closeQuiz(); await w.handleLogout();
+    await pg.exec(`select set_config('request.jwt.claim.sub', '${legacyUid}', false)`);
+    const previous = ['Já sei o básico', 'Front-end', 'Estágio em 6 meses', '3 a 5 horas', '5', '<nav>', 'A distribuição dos itens no eixo principal', '3', 'Uma versão das alterações preparadas no repositório local', 'SELECT * FROM produtos WHERE preco > 100;'];
+    await query('select public.award_quiz_xp($1::jsonb,$2,$3)', [JSON.stringify(previous), previous[1], previous[2]]);
+    await pg.exec(`reset role;
+      insert into public.certificates(user_id,subject_id,title) values ('${legacyUid}','html','HTML - Básico');
+      insert into public.course_lesson_progress(user_id,subject_id,lesson_index) values ('${legacyUid}','css',1);
+      set role authenticated;`);
+    loginId = legacyUid; await login(); w.switchTab('perfil'); await tick();
+    const legacyProfile = w.document.getElementById('prof-nivelamento').textContent;
+    check(legacyProfile.includes('6 de 6 acertos') && legacyProfile.includes('Qual elemento HTML identifica uma área de navegação?'), 'respostas anteriores reais mantêm pontuação e perguntas no novo frontend');
+    w.showQuizResultFromProfile();
+    check(w.document.getElementById('quiz-steps').textContent.includes('Qual será o valor final de pontos?') && w.document.getElementById('quiz-steps').textContent.includes('Como 2 é maior ou igual'), 'gabarito e explicação anteriores sobrevivem ao novo quiz');
+    const legacyRows = await query('select question,answer from public.quiz_answers where user_id=$1 order by question', [legacyUid]);
+    check(legacyRows.every((row, i) => row.answer === previous[i]), 'apenas visualizar o histórico não modifica respostas no banco');
+    w.closeQuiz(); w.showQuiz();
+    await runQuiz([0, 0, 0, 1, 1, 0, 1, 2, 0, 2]);
+    const legacyAfter = (await query('select xp,quiz_done from public.profiles where id=$1', [legacyUid]))[0];
+    const updatedRows = await query('select question,answer from public.quiz_answers where user_id=$1 order by question', [legacyUid]);
+    check(legacyAfter.xp === 50 && legacyAfter.quiz_done && updatedRows.slice(4).every(row => row.answer.startsWith('[v2] ')), 'conta antiga pode refazer com perguntas fáceis sem duplicar XP');
+    check((await query('select * from public.certificates where user_id=$1', [legacyUid])).length === 1 && (await query('select * from public.course_lesson_progress where user_id=$1', [legacyUid])).length === 1, 'refazer preserva certificado e aula já concluída');
+    w.closeQuiz(); await w.handleLogout(); await login(); w.switchTab('perfil'); await tick();
+    check(w.document.getElementById('prof-nivelamento').textContent.includes('Para que serve o HTML em uma página?') && !w.document.getElementById('prof-nivelamento').textContent.includes('[v2]'), 'nova versão é recuperada após outro login sem mostrar marcador interno');
+    check(w.document.getElementById('dash-recommendation').textContent.includes('CSS'), 'recomendação continua pulando o curso já certificado');
+
+    // Um navegador ainda com o formulário antigo pode salvar apenas três
+    // respostas; ele não deve apagar os seis desafios mais recentes.
+    const oldForm = ['Já sei o básico', 'Mobile', 'Freelancer'];
+    await query('select public.award_quiz_xp($1::jsonb,$2,$3)', [JSON.stringify(oldForm), oldForm[1], oldForm[2]]);
+    w.closeQuiz(); await w.handleLogout(); await login(); w.switchTab('perfil'); await tick();
+    const afterOldForm = w.document.getElementById('prof-nivelamento').textContent;
+    check(afterOldForm.includes('6 de 6 acertos') && afterOldForm.includes('Para que serve o HTML em uma página?') && (await query('select xp from public.profiles where id=$1', [legacyUid]))[0].xp === 50, 'formulário antigo não apaga o diagnóstico básico nem duplica XP');
     console.log(`\n${checks} verificações de integração do nivelamento passaram.`);
   } finally {
     if (dom) dom.window.close();

@@ -18,7 +18,7 @@ Plataforma educacional gamificada para estudantes de desenvolvimento de sistemas
 
 ## Recursos da interface
 
-- **Diagnóstico inicial com "Meu nivelamento":** o aluno responde 4 perguntas sobre experiência, interesse, objetivo e disponibilidade e 6 desafios de fundamentos. Há progresso, navegação entre perguntas, a opção **Ainda não sei**, explicações e sugestões de matérias. O diagnóstico pode ser adiado, revisto ou refeito no **Perfil**; respostas antigas são preservadas e os 50 XP são concedidos apenas na primeira conclusão;
+- **Diagnóstico inicial com "Meu nivelamento":** o aluno responde 4 perguntas sobre experiência, interesse, objetivo e disponibilidade e 6 desafios simples de fundamentos, sem precisar escrever código. Há progresso, navegação, a opção **Ainda não sei**, explicações e sugestões de matérias. O diagnóstico pode ser adiado, revisto ou refeito no **Perfil**; resultados anteriores continuam legíveis até serem substituídos ao refazer, e os 50 XP são concedidos apenas na primeira conclusão;
 - **Centro de Estudos:** 12 cursos, cada um com 3 videoaulas em sequência, objetivos, pequenas práticas, exemplos, erros comuns, links externos e um teste de fixação opcional. O aluno acompanha as aulas concluídas e recebe uma trilha recomendada de acordo com sua área e os temas a revisar no diagnóstico;
 - **Certificação por aproveitamento:** para emitir um novo certificado, é preciso marcar as 3 aulas, enviar uma resposta para a atividade prática (30 a 4.000 caracteres) e acertar ao menos **5 das 6 questões** da avaliação final (mínimo de 80%). A prova é corrigida no banco, pode ser refeita e apresenta feedback. A primeira aprovação emite o diploma e concede 30 XP; abrir uma matéria continua concedendo 10 XP uma vez. Progresso, atividade e tentativas são salvos por aluno. Certificados anteriores são preservados;
 - **Certificado visual:** diploma renderizado em canvas, com download em PNG e impressão em PDF;
@@ -153,7 +153,7 @@ O site é publicado pelo GitHub Pages a partir da raiz da branch `main`. Para pu
 
 A chave publicável do Supabase pode aparecer no navegador; a proteção dos dados depende das políticas RLS e das funções `SECURITY DEFINER` do banco. A conta de login do Supabase Auth só pode ser removida com a Admin API e, portanto, a exclusão de aluno no painel remove os dados acadêmicos, não a identidade Auth.
 
-O diagnóstico inicial é formativo: seus desafios são corrigidos no navegador, o gabarito é público e o resultado não emite certificado nem comprova domínio técnico. As respostas ficam armazenadas no banco para o aluno e administradores autorizados.
+O diagnóstico inicial é formativo: seus desafios verificam noções básicas e são corrigidos no navegador. O gabarito é público e o resultado não mede experiência prática ou conhecimento avançado, não emite certificado nem comprova domínio técnico. As respostas ficam armazenadas no banco para o aluno e administradores autorizados.
 
 A marcação das aulas é **manual**: o sistema não verifica se o vídeo foi assistido, e a atividade escrita não é corrigida automaticamente. Os vídeos são de terceiros e podem ficar indisponíveis; há links para abri-los no YouTube. A avaliação dificulta a emissão casual, mas não é uma prova supervisionada ou antifraude: o projeto é público e o gabarito da carga inicial está no SQL versionado. Para certificação de maior rigor, seria necessário manter um banco privado de questões e adotar mecanismos adicionais de verificação.
 
